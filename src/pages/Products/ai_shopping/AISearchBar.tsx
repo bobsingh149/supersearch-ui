@@ -513,6 +513,12 @@ const AISearchBar: React.FC<AISearchBarProps> = ({ setData }) => {
               backgroundColor: theme => theme.palette.background.paper,
               '& fieldset': {
                 border: 'none'
+              },
+              '&:hover fieldset': {
+                border: 'none'
+              },
+              '&.Mui-focused fieldset': {
+                border: 'none'
               }
             },
             '& .MuiInputBase-input': {

@@ -9,22 +9,18 @@ import {
   IconButton,
   alpha,
   useTheme,
-  Pagination,
   Select,
   MenuItem,
   CircularProgress,
   Collapse,
   Divider,
-  Chip,
   Button,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import EditIcon from '@mui/icons-material/Edit';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import searchApi, { SearchResultItem, SearchResponse } from '../../../../services/searchApi';
+import searchApi, { SearchResultItem } from '../../../../services/searchApi';
 
 export const BrowseTab = () => {
   const theme = useTheme();
@@ -101,13 +97,6 @@ export const BrowseTab = () => {
     fetchSearchResults();
   };
   
-  // Handle page change
-  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
-    setPage(value);
-    // Scroll to top when changing page
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   // Handle next page
   const handleNextPage = () => {
     if (hasMore) {

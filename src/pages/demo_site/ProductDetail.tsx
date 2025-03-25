@@ -14,7 +14,6 @@ import {
   CardMedia,
   Chip,
   IconButton,
-  useTheme,
   alpha,
   CircularProgress,
   Paper,

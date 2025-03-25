@@ -15,9 +15,9 @@
   /* Global scrollbar styling */
   --scrollbar-width: 6px;
   --scrollbar-track: transparent;
-  --scrollbar-thumb: rgba(255, 255, 255, 0.4);
-  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.6);
-  --scrollbar-border: rgba(255, 255, 255, 0.1);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.3);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.5);
+  --scrollbar-border: rgba(255, 255, 255, 0.05);
 }
 
 /* Custom scrollbar styling */
@@ -30,7 +30,6 @@
 ::-webkit-scrollbar {
   width: var(--scrollbar-width);
   height: var(--scrollbar-width);
-  display: block; /* Force display scrollbar */
 }
 
 ::-webkit-scrollbar-track {
@@ -93,9 +92,9 @@ button:focus-visible {
     color: #213547;
     background-color: #ffffff;
     /* Light mode scrollbar colors - increased opacity for better visibility */
-    --scrollbar-thumb: rgba(0, 0, 0, 0.5);
-    --scrollbar-thumb-hover: rgba(0, 0, 0, 0.7);
-    --scrollbar-border: rgba(0, 0, 0, 0.15);
+    --scrollbar-thumb: rgba(0, 0, 0, 0.4);
+    --scrollbar-thumb-hover: rgba(0, 0, 0, 0.6);
+    --scrollbar-border: rgba(0, 0, 0, 0.1);
   }
   a:hover {
     color: #747bff;

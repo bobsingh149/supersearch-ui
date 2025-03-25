@@ -513,12 +513,6 @@ const AISearchBar: React.FC<AISearchBarProps> = ({ setData }) => {
               backgroundColor: theme => theme.palette.background.paper,
               '& fieldset': {
                 border: 'none'
-              },
-              '&:hover fieldset': {
-                border: 'none'
-              },
-              '&.Mui-focused fieldset': {
-                border: 'none'
               }
             },
             '& .MuiInputBase-input': {
@@ -577,7 +571,7 @@ const AISearchBar: React.FC<AISearchBarProps> = ({ setData }) => {
       {/* AI Chat Dialog */}
       <Dialog 
         open={isChatOpen} 
-        onClose={(event, reason) => {
+        onClose={(_event, reason) => {
           // Only close if the close button is clicked, not when clicking outside
           if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
             closeAiChat();

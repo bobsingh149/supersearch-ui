@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect} from 'react';
 import {
   Box,
   Paper,
@@ -21,7 +21,6 @@ import {
   TableRow,
   TableCell,
   IconButton,
-  TablePagination,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -29,14 +28,11 @@ import {
   FormControl,
   InputLabel,
   Select,
-  FormHelperText,
   CircularProgress,
   Alert,
   Snackbar,
   Stack,
   Link,
-  FormControlLabel,
-  Switch,
   Tooltip,
   useTheme,
   alpha,
@@ -44,7 +40,6 @@ import {
 import { 
   DataGrid, 
   GridColDef, 
-  GridRenderCellParams,
   GridToolbar,
   GridPaginationModel,
 } from '@mui/x-data-grid';
@@ -82,8 +77,6 @@ import syncProductApi, {
   SupersearchApiConfig,
   HostedFileConfig,
   SqlDatabaseConfig,
-  SyncHistoryItem,
-  SyncHistoryResponse,
 } from '../../services/syncProductApi';
 import productApi, { Product as DynamicProduct } from '../../services/productApi';
 
@@ -108,10 +101,6 @@ interface UploadedFile {
   preview: string;
 }
 
-interface UploadResponse {
-  name: string;
-  url: string;
-}
 
 interface SyncHistory {
   id: string;
@@ -133,11 +122,6 @@ interface PreviewData {
   rows: any[];
 }
 
-interface DelimiterOption {
-  label: string;
-  value: string;
-  type: 'csv' | 'json' | 'custom';
-}
 
 const TabPanel = ({ children, value, index }: TabPanelProps) => (
   <Box 
@@ -209,146 +193,6 @@ const externalConnectors: Connector[] = [
   },
 ];
 
-const dummySyncHistory: SyncHistory[] = [
-  {
-    id: '1',
-    source: 'Manual File Upload',
-    status: SyncStatus.SUCCESS,
-    startTime: '2024-03-15 14:30:00',
-    endTime: '2024-03-15 14:31:00',
-    recordsProcessed: 1250,
-    nextRun: null,
-    createdAt: '2024-03-15T14:30:00',
-    updatedAt: '2024-03-15T14:31:00',
-  },
-  {
-    id: '2',
-    source: 'Shopify',
-    status: SyncStatus.FAILED,
-    startTime: '2024-03-15 12:00:00',
-    endTime: '2024-03-15 12:00:30',
-    recordsProcessed: 0,
-    nextRun: null,
-    createdAt: '2024-03-15T12:00:00',
-    updatedAt: '2024-03-15T12:00:30',
-  },
-  {
-    id: '3',
-    source: 'SQL Database',
-    status: SyncStatus.SUCCESS,
-    startTime: '2024-03-15 10:00:00',
-    endTime: '2024-03-15 10:02:00',
-    recordsProcessed: 5000,
-    nextRun: null,
-    createdAt: '2024-03-15T10:00:00',
-    updatedAt: '2024-03-15T10:02:00',
-  },
-  {
-    id: '4',
-    source: 'Hosted File',
-    status: SyncStatus.PROCESSING,
-    startTime: '2024-03-15 15:00:00',
-    endTime: '-',
-    recordsProcessed: 750,
-    nextRun: null,
-    createdAt: '2024-03-15T15:00:00',
-    updatedAt: '2024-03-15T15:00:00',
-  },
-  {
-    id: '5',
-    source: 'WooCommerce',
-    status: SyncStatus.SUCCESS,
-    startTime: '2024-03-14 09:30:00',
-    endTime: '2024-03-14 09:35:00',
-    recordsProcessed: 3200,
-    nextRun: null,
-    createdAt: '2024-03-14T09:30:00',
-    updatedAt: '2024-03-14T09:35:00',
-  },
-  {
-    id: '6',
-    source: 'Manual File Upload',
-    status: SyncStatus.SUCCESS,
-    startTime: '2024-03-14 11:45:00',
-    endTime: '2024-03-14 11:46:00',
-    recordsProcessed: 890,
-    nextRun: null,
-    createdAt: '2024-03-14T11:45:00',
-    updatedAt: '2024-03-14T11:46:00',
-  },
-  {
-    id: '7',
-    source: 'SQL Database',
-    status: SyncStatus.FAILED,
-    startTime: '2024-03-13 16:20:00',
-    endTime: '2024-03-13 16:21:00',
-    recordsProcessed: 0,
-    nextRun: null,
-    createdAt: '2024-03-13T16:20:00',
-    updatedAt: '2024-03-13T16:21:00',
-  },
-  {
-    id: '8',
-    source: 'Shopify',
-    status: SyncStatus.SUCCESS,
-    startTime: '2024-03-13 08:00:00',
-    endTime: '2024-03-13 08:05:00',
-    recordsProcessed: 4500,
-    nextRun: null,
-    createdAt: '2024-03-13T08:00:00',
-    updatedAt: '2024-03-13T08:05:00',
-  },
-  {
-    id: '9',
-    source: 'Hosted File',
-    status: SyncStatus.SUCCESS,
-    startTime: '2024-03-12 13:15:00',
-    endTime: '2024-03-12 13:16:00',
-    recordsProcessed: 1100,
-    nextRun: null,
-    createdAt: '2024-03-12T13:15:00',
-    updatedAt: '2024-03-12T13:16:00',
-  },
-  {
-    id: '10',
-    source: 'WooCommerce',
-    status: SyncStatus.PROCESSING,
-    startTime: '2024-03-12 17:30:00',
-    endTime: '-',
-    recordsProcessed: 2800,
-    nextRun: null,
-    createdAt: '2024-03-12T17:30:00',
-    updatedAt: '2024-03-12T17:30:00',
-  },
-  {
-    id: '11',
-    source: 'Manual File Upload',
-    status: SyncStatus.SUCCESS,
-    startTime: '2024-03-11 10:00:00',
-    endTime: '2024-03-11 10:01:00',
-    recordsProcessed: 750,
-    nextRun: null,
-    createdAt: '2024-03-11T10:00:00',
-    updatedAt: '2024-03-11T10:01:00',
-  },
-  {
-    id: '12',
-    source: 'SQL Database',
-    status: SyncStatus.SUCCESS,
-    startTime: '2024-03-10 14:00:00',
-    endTime: '2024-03-10 14:03:00',
-    recordsProcessed: 6200,
-    nextRun: null,
-    createdAt: '2024-03-10T14:00:00',
-    updatedAt: '2024-03-10T14:03:00',
-  },
-];
-
-const delimiterOptions: DelimiterOption[] = [
-  { label: 'CSV', value: ',', type: 'csv' },
-  { label: 'JSON', value: 'json', type: 'json' },
-  { label: 'Custom', value: '', type: 'custom' },
-];
 
 // Reusable button styles for consistent hover effects
 const buttonStyles = {
@@ -376,18 +220,14 @@ export default function DataSources() {
   const [activeTab, setActiveTab] = useState(0);
   const [selectedConnector, setSelectedConnector] = useState<Connector | null>(null);
   const [configuredSource, setConfiguredSource] = useState<Connector | null>(null);
-  const [authType, setAuthType] = useState('none');
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
-  const [selectedFileType, setSelectedFileType] = useState<DelimiterOption>(delimiterOptions[0]);
-  const [customDelimiter, setCustomDelimiter] = useState('');
   const [productsLoading, setProductsLoading] = useState(false);
   const [syncHistoryLoading, setSyncHistoryLoading] = useState(false);
   const [syncHistory, setSyncHistory] = useState<SyncHistory[]>([]);
   const [syncHistoryPage, setSyncHistoryPage] = useState(1);
   const [syncHistoryPageSize, setSyncHistoryPageSize] = useState(10);
-  const [syncHistoryHasMore, setSyncHistoryHasMore] = useState(false);
   const [syncHistoryTotalCount, setSyncHistoryTotalCount] = useState(0);
   
   // Product catalog states
@@ -395,7 +235,6 @@ export default function DataSources() {
   const [productColumns, setProductColumns] = useState<GridColDef<Product>[]>([]);
   const [productPage, setProductPage] = useState(1);
   const [productPageSize, setProductPageSize] = useState(10);
-  const [productHasMore, setProductHasMore] = useState(false);
   const [productTotalCount, setProductTotalCount] = useState(0);
   const [productError, setProductError] = useState<string | null>(null);
   
@@ -405,12 +244,12 @@ export default function DataSources() {
   const [parsedProducts, setParsedProducts] = useState<any[]>([]);
   
   // Source configuration states
-  const [sourceConfig, setSourceConfig] = useState<SourceConfigType | null>(null);
   const [autoSync, setAutoSync] = useState(false);
   const [syncInterval, setSyncInterval] = useState<SyncInterval | ''>('');
   
   // Crawler specific states
   const [crawlerUrls, setCrawlerUrls] = useState('');
+  
   const [maxDepth, setMaxDepth] = useState(1);
   
   // Hosted file specific states
@@ -459,7 +298,6 @@ export default function DataSources() {
       setProducts(response.products);
       setProductPage(response.page);
       setProductPageSize(response.size);
-      setProductHasMore(response.has_more);
       
       // Calculate total count - if we have less items than the page size and no more pages,
       // then the total count is the current offset + number of items
@@ -659,7 +497,6 @@ export default function DataSources() {
       setSyncHistory(formattedHistory);
       setSyncHistoryPage(response.page || 1);
       setSyncHistoryPageSize(response.size || 10);
-      setSyncHistoryHasMore(response.has_more || false);
       
       // Calculate total count - if we have less items than the page size and no more pages,
       // then the total count is the current offset + number of items
@@ -756,7 +593,7 @@ export default function DataSources() {
               setSyncError('Error loading file');
               reject(error);
             });
-        }).catch(error => {
+        }).catch(() => {
           setIsSyncing(false);
           return [];
         });
@@ -791,7 +628,7 @@ export default function DataSources() {
         input.products = products;
       }
 
-      const response = await syncProductApi.syncProducts(input);
+      await syncProductApi.syncProducts(input);
       setSyncSuccess(true);
       
       // Remove automatic tab switch
@@ -1228,7 +1065,7 @@ export default function DataSources() {
     }
   ];
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 
@@ -1262,19 +1099,6 @@ export default function DataSources() {
     setUploadedFile(null);
   }, []);
 
-  const handleConfigurationSuccess = useCallback((connector: Connector) => {
-    if (connector.id === 'file-upload' && !uploadedFile) {
-      // Show error or alert if no file is uploaded
-      setSyncError('Please upload a file first');
-      return;
-    }
-    
-    setConfiguredSource(connector);
-    setSelectedConnector(null);
-    
-    // Sync products
-    syncProducts();
-  }, [uploadedFile, syncProducts]);
 
   const handlePreviewFile = useCallback(async () => {
     if (!uploadedFile) return;

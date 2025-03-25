@@ -1,4 +1,3 @@
-import React from 'react';
 import { 
   Typography, 
   Box, 
@@ -34,7 +33,6 @@ const availableFields = [
 
 const ConfigureTab = ({
   searchConfig,
-  originalConfig,
   loading,
   saveSuccess,
   saveError,

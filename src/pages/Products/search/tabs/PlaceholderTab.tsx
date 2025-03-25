@@ -1,4 +1,3 @@
-import React from 'react';
 import { Typography, Paper, Stack, alpha, useTheme } from '@mui/material';
 import { PlaceholderTabProps } from '../components/types';
 

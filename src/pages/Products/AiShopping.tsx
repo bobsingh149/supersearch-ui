@@ -4,7 +4,6 @@ import {
   Box, 
   Tabs, 
   Tab, 
-  useTheme
 } from '@mui/material';
 
 // Import components
@@ -16,11 +15,10 @@ import HistoryTab from './ai_shopping/tabs/HistoryTab';
 import AnalyticsTab from './ai_shopping/tabs/AnalyticsTab';
 
 export default function AiShopping() {
-  const theme = useTheme();
   const [activeTab, setActiveTab] = useState(0);
 
   // Handle tab change
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 

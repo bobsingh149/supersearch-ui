@@ -1,32 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Box, 
-  Typography, 
-  Container, 
+  Typography,  
   Grid, 
   Card, 
   CardContent, 
   CardMedia, 
-  Chip, 
-  Pagination, 
   AppBar, 
   Toolbar, 
-  useTheme,
   alpha,
   IconButton,
   Tooltip,
   Drawer,
   Divider,
-  List,
-  ListItem,
-  ListItemText,
   Slider,
   FormControl,
-  FormLabel,
   RadioGroup,
   FormControlLabel,
   Radio,
-  InputLabel,
   Select,
   MenuItem,
   Badge,
@@ -35,11 +26,8 @@ import {
   Paper,
   Rating,
   SelectChangeEvent,
-  Fab,
-  Zoom,
   Link
 } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
@@ -48,11 +36,9 @@ import PersonIcon from '@mui/icons-material/Person';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import CloseIcon from '@mui/icons-material/Close';
-import ChatIcon from '@mui/icons-material/Chat';
 import AISearchBar from '../Products/ai_shopping/AISearchBar';
 import { SearchResultItem } from '../../services/searchApi';
 import searchApi from '../../services/searchApi';
-import productApi from '../../services/productApi';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { getTheme } from '../../theme/theme';
@@ -122,20 +108,13 @@ const DemoEcommerce: React.FC = () => {
     setMode(prev => prev === 'light' ? 'dark' : 'light');
   };
 
-  // Calculate pagination
-  const totalPages = Math.ceil(totalResults / itemsPerPage);
-
-  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
-    setPage(value);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
   
   const handlePageSizeChange = (event: SelectChangeEvent<number>) => {
     setItemsPerPage(Number(event.target.value));
     setPage(1); // Reset to first page when changing items per page
   };
 
-  const handlePriceChange = (event: Event, newValue: number | number[]) => {
+  const handlePriceChange = (_event: Event, newValue: number | number[]) => {
     setPriceRange(newValue as number[]);
   };
 
@@ -147,7 +126,7 @@ const DemoEcommerce: React.FC = () => {
     setGenre(event.target.value);
   };
 
-  const handleReleaseYearChange = (event: Event, newValue: number | number[]) => {
+  const handleReleaseYearChange = (_event: Event, newValue: number | number[]) => {
     setReleaseYear(newValue as number[]);
   };
 

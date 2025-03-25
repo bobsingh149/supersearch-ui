@@ -14,16 +14,16 @@
   
   /* Global scrollbar styling */
   --scrollbar-width: 6px;
-  --scrollbar-track-color: transparent;
-  --scrollbar-thumb-color: rgba(255, 255, 255, 0.3);
-  --scrollbar-thumb-hover-color: rgba(255, 255, 255, 0.5);
-  --scrollbar-border-color: rgba(255, 255, 255, 0.05);
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.3);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.5);
+  --scrollbar-border: rgba(255, 255, 255, 0.05);
 }
 
 /* Custom scrollbar styling */
 * {
   scrollbar-width: thin; /* For Firefox */
-  scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color); /* For Firefox */
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track); /* For Firefox */
 }
 
 /* WebKit browsers (Chrome, Safari, Edge) */
@@ -33,17 +33,17 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--scrollbar-track-color);
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb-color);
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
-  border: 1px solid var(--scrollbar-border-color);
+  border: 1px solid var(--scrollbar-border);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover-color);
+  background: var(--scrollbar-thumb-hover);
 }
 
 a {
@@ -92,9 +92,9 @@ button:focus-visible {
     color: #213547;
     background-color: #ffffff;
     /* Light mode scrollbar colors - increased opacity for better visibility */
-    --scrollbar-thumb-color: rgba(0, 0, 0, 0.3);
-    --scrollbar-thumb-hover-color: rgba(0, 0, 0, 0.5);
-    --scrollbar-border-color: rgba(0, 0, 0, 0.08);
+    --scrollbar-thumb: rgba(0, 0, 0, 0.4);
+    --scrollbar-thumb-hover: rgba(0, 0, 0, 0.6);
+    --scrollbar-border: rgba(0, 0, 0, 0.1);
   }
   a:hover {
     color: #747bff;

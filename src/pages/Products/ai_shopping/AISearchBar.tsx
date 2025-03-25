@@ -511,6 +511,9 @@ const AISearchBar: React.FC<AISearchBarProps> = ({ setData }) => {
               height: 46,
               transition: 'all 0.3s',
               backgroundColor: theme => theme.palette.background.paper,
+              '& fieldset': {
+                border: 'none'
+              }
             },
             '& .MuiInputBase-input': {
               padding: '12px 14px'

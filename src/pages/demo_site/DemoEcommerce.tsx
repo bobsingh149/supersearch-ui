@@ -189,12 +189,12 @@ const DemoEcommerce: React.FC = () => {
         background: 'transparent',
       },
       '&::-webkit-scrollbar-thumb': {
-        background: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)',
+        background: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
         borderRadius: '3px',
-        border: theme => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.12)'}`,
+        border: theme => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)'}`,
       },
       '&::-webkit-scrollbar-thumb:hover': {
-        background: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.6)',
+        background: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
       },
     }}>
       <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
@@ -451,12 +451,12 @@ const DemoEcommerce: React.FC = () => {
                   background: 'transparent',
                 },
                 '&::-webkit-scrollbar-thumb': {
-                  background: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)',
+                  background: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
                   borderRadius: '3px',
-                  border: theme => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.12)'}`,
+                  border: theme => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)'}`,
                 },
                 '&::-webkit-scrollbar-thumb:hover': {
-                  background: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.6)',
+                  background: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
                 },
               },
             }}
@@ -488,12 +488,12 @@ const DemoEcommerce: React.FC = () => {
                   background: 'transparent',
                 },
                 '&::-webkit-scrollbar-thumb': {
-                  background: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)',
+                  background: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
                   borderRadius: '3px',
-                  border: theme => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.12)'}`,
+                  border: theme => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)'}`,
                 },
                 '&::-webkit-scrollbar-thumb:hover': {
-                  background: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.6)',
+                  background: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
                 },
               },
             }}
@@ -526,12 +526,12 @@ const DemoEcommerce: React.FC = () => {
                 background: 'transparent',
               },
               '&::-webkit-scrollbar-thumb': {
-                background: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)',
+                background: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
                 borderRadius: '3px',
-                border: theme => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.12)'}`,
+                border: theme => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)'}`,
               },
               '&::-webkit-scrollbar-thumb:hover': {
-                background: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.6)',
+                background: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
               },
             }}
           >

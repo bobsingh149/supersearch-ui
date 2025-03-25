@@ -1,0 +1,50 @@
+{
+  "name": "supersearch-ui",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@clerk/clerk-react": "^5.24.1",
+    "@clerk/themes": "^2.2.20",
+    "@emotion/react": "11.14.0",
+    "@emotion/styled": "11.14.0",
+    "@mui/icons-material": "6.4.2",
+    "@mui/lab": "6.0.0-beta.25",
+    "@mui/material": "6.4.2",
+    "@mui/x-charts": "^7.27.1",
+    "@mui/x-data-grid": "^7.27.1",
+    "@toolpad/core": "^0.12.1",
+    "@types/papaparse": "5.3.15",
+    "@uploadthing/react": "^7.3.0",
+    "framer-motion": "12.4.0",
+    "lucide-react": "0.474.0",
+    "next": "15.1.6",
+    "papaparse": "5.5.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-dropzone": "14.3.5",
+    "react-markdown": "^10.1.0",
+    "react-router-dom": "^7.2.0",
+    "use-file-picker": "2.1.2",
+    "zustand": "5.0.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.21.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^15.15.0",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.24.1",
+    "vite": "^6.2.0"
+  }
+}

@@ -21,10 +21,10 @@ import {
   Logout as LogoutIcon,
   Add as AddIcon,
 } from '@mui/icons-material';
-import { ChevronDown, Users, MessageSquare, HelpCircle, SunMedium, Moon, UserCog } from 'lucide-react';
+import { ChevronDown, Users, HelpCircle, SunMedium, Moon, UserCog } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import useOrganizationStore from '../../store/organizationStore';
-import { SignedIn, SignedOut, SignInButton, UserButton, useUser, SignOutButton, UserProfile } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, SignInButton, useUser, SignOutButton, UserProfile } from '@clerk/clerk-react';
 
 interface NavbarProps {
   isExpanded: boolean;

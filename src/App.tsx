@@ -85,6 +85,21 @@ function App() {
         <CssBaseline />
         <Router>
           <Routes>
+            {/* Demo site route - protected but outside of layout */}
+            <Route 
+              path="/demo_site/*" 
+              element={
+                <>
+                  <SignedIn>
+                    <DemoSiteIndex />
+                  </SignedIn>
+                  <SignedOut>
+                    <SignInPage />
+                  </SignedOut>
+                </>
+              } 
+            />
+            
             {/* Protected routes */}
             <Route
               path="/*"
@@ -100,7 +115,6 @@ function App() {
                         <Route path="/data-sources" element={<DataSources />} />
                         <Route path="/get-started" element={<GetStarted />} />
                         <Route path="/settings" element={<Settings />} />
-                        <Route path="/demo_site/*" element={<DemoSiteIndex />} />
                         <Route path="*" element={<Navigate to="/" replace />} />
                       </Routes>
                     </Layout>

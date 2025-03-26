@@ -85,9 +85,6 @@ function App() {
         <CssBaseline />
         <Router>
           <Routes>
-            {/* Demo site route - outside of authentication and layout */}
-            <Route path="/demo_site/*" element={<DemoSiteIndex />} />
-            
             {/* Protected routes */}
             <Route
               path="/*"
@@ -103,6 +100,7 @@ function App() {
                         <Route path="/data-sources" element={<DataSources />} />
                         <Route path="/get-started" element={<GetStarted />} />
                         <Route path="/settings" element={<Settings />} />
+                        <Route path="/demo_site/*" element={<DemoSiteIndex />} />
                         <Route path="*" element={<Navigate to="/" replace />} />
                       </Routes>
                     </Layout>

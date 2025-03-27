@@ -1,5 +1,5 @@
 import config from '../config';
-import { withAuth } from './authUtils';
+import useAuthHeader from '../hooks/useAuthHeader';
 
 // Define the search endpoint
 const SEARCH_ENDPOINT = '/api/v1/search';
@@ -48,6 +48,7 @@ const searchApi = {
   searchProducts: async (params: SearchParams): Promise<SearchResponse> => {
     try {
       const { query, page = 1, size = 10, filters = {} } = params;
+      const authHeader = await useAuthHeader();
       
       // Build query parameters
       const queryParams = new URLSearchParams();
@@ -69,17 +70,15 @@ const searchApi = {
         }
       });
       
-      // Add authentication using withAuth utility
-      const options = await withAuth({
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-      
       const response = await fetch(
         `${apiConfig.baseUrl}${apiConfig.endpoints.search}?${queryParams.toString()}`, 
-        options
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            ...authHeader,
+          },
+        }
       );
       
       if (!response.ok) {
@@ -128,6 +127,7 @@ const searchApi = {
       throw error;
     }
   },
+  
 };
 
 export default searchApi; 

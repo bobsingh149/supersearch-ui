@@ -4,8 +4,8 @@ const ENV = import.meta.env.VITE_ENV || 'local';
 // API base URL configuration based on environment
 const API_BASE_URLS = {
   local: 'http://localhost:9000',
-  development: 'https://api.staging-supersearch.com',
-  production: 'https://api.production-supersearch.com',
+  development: 'https://api.cognishop.co',
+  production: 'https://api.cognishop.co',
 };
 
 // Configuration object

@@ -1,5 +1,5 @@
 import config from '../config';
-import { withAuth } from './authUtils';
+import useAuthHeader from '../hooks/useAuthHeader';
 
 // Interface for search configuration
 export interface SearchConfig {
@@ -26,16 +26,16 @@ const searchApi = {
   // Save search configuration
   saveSearchConfig: async (searchConfig: SearchConfig): Promise<any> => {
     try {
-      const options = await withAuth({
+      const authHeader = await useAuthHeader();
+      const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.searchConfig}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          ...authHeader,
         },
         body: JSON.stringify(searchConfig),
       });
-      
-      const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.searchConfig}`, options);
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
@@ -51,14 +51,14 @@ const searchApi = {
   // Get search configuration
   getSearchConfig: async (): Promise<SearchConfig> => {
     try {
-      const options = await withAuth({
+      const authHeader = await useAuthHeader();
+      const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.searchConfig}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
+          ...authHeader,
         },
       });
-      
-      const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.searchConfig}`, options);
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
@@ -77,14 +77,14 @@ const settingsApi = {
   // Get search configuration settings
   getSearchConfig: async (): Promise<SettingsResponse> => {
     try {
-      const options = await withAuth({
+      const authHeader = await useAuthHeader();
+      const response = await fetch(`${config.apiBaseUrl}/api/v1/settings/SEARCH_CONFIG`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
+          ...authHeader,
         },
       });
-      
-      const response = await fetch(`${config.apiBaseUrl}/api/v1/settings/SEARCH_CONFIG`, options);
       
       if (!response.ok) {
         // If status is 404, it means the record doesn't exist yet

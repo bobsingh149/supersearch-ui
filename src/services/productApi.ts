@@ -1,5 +1,5 @@
 import config from '../config';
-import { withAuth } from './authUtils';
+import useAuthHeader from '../hooks/useAuthHeader';
 
 // API endpoints
 const API_ENDPOINTS = {
@@ -37,14 +37,14 @@ const productApi = {
   // Get products with pagination
   getProducts: async (page: number = 1, size: number = 10): Promise<ProductsResponse> => {
     try {
-      const options = await withAuth({
+      const authHeader = await useAuthHeader();
+      const response = await fetch(`${config.apiBaseUrl}${API_ENDPOINTS.products}?page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
+          ...authHeader,
         },
       });
-      
-      const response = await fetch(`${config.apiBaseUrl}${API_ENDPOINTS.products}?page=${page}&size=${size}`, options);
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
@@ -60,14 +60,14 @@ const productApi = {
   // Get a single product by ID
   getProductById: async (productId: string): Promise<Product> => {
     try {
-      const options = await withAuth({
+      const authHeader = await useAuthHeader();
+      const response = await fetch(`${config.apiBaseUrl}${API_ENDPOINTS.products}/${productId}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
+          ...authHeader,
         },
       });
-      
-      const response = await fetch(`${config.apiBaseUrl}${API_ENDPOINTS.products}/${productId}`, options);
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);

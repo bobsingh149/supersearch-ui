@@ -1,5 +1,5 @@
 import config from '../config';
-import { withAuth } from './authUtils';
+import useAuthHeader from '../hooks/useAuthHeader';
 
 // Enums matching the backend
 export enum SyncSource {
@@ -156,16 +156,16 @@ const syncProductApi = {
   // Sync products
   syncProducts: async (input: ProductSyncInput): Promise<SyncResponse> => {
     try {
-      const options = await withAuth({
+      const authHeader = await useAuthHeader();
+      const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.syncProducts}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          ...authHeader,
         },
         body: JSON.stringify(input),
       });
-      
-      const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.syncProducts}`, options);
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
@@ -181,14 +181,14 @@ const syncProductApi = {
   // Get sync history with pagination
   getSyncHistory: async (page: number = 1, size: number = 10): Promise<SyncHistoryResponse> => {
     try {
-      const options = await withAuth({
+      const authHeader = await useAuthHeader();
+      const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.syncHistory}?page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
+          ...authHeader,
         },
       });
-      
-      const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.syncHistory}?page=${page}&size=${size}`, options);
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);

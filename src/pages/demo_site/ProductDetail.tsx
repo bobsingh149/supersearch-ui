@@ -31,12 +31,12 @@ import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { getTheme } from '../../theme/theme';
-import productApi, { MovieProduct } from '../../services/productApi';
+import { useProduct, MovieProduct } from '../../hooks/useProduct';
 
 const ProductDetail: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const { loading: apiLoading, error, getProductById } = useProduct();
   const [product, setProduct] = useState<MovieProduct | null>(null);
   const [mode, setMode] = useState<'light' | 'dark'>(() => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -47,22 +47,19 @@ const ProductDetail: React.FC = () => {
 
   useEffect(() => {
     const fetchProduct = async () => {
-      setLoading(true);
       try {
         if (productId) {
-          // Fetch product by ID using productApi
-          const response = await productApi.getProductById(productId);
+          // Fetch product by ID using the hook
+          const response = await getProductById(productId);
           setProduct(response as MovieProduct);
         }
       } catch (error) {
         console.error('Error fetching product:', error);
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchProduct();
-  }, [productId]);
+  }, [productId, getProductById]);
 
   const toggleTheme = () => {
     setMode(prev => prev === 'light' ? 'dark' : 'light');
@@ -72,7 +69,7 @@ const ProductDetail: React.FC = () => {
     navigate(-1);
   };
 
-  if (loading) {
+  if (apiLoading) {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />

@@ -1,9 +1,6 @@
+import { useState } from 'react';
+import { useAuth } from '@clerk/clerk-react';
 import config from '../config';
-
-// API endpoints
-const API_ENDPOINTS = {
-  products: '/api/v1/products'
-};
 
 // Movie product interface
 export interface MovieProduct {
@@ -31,15 +28,25 @@ export interface ProductsResponse {
   has_more: boolean;
 }
 
-// API service for product-related operations
-const productApi = {
+export const useProduct = () => {
+  const { getToken } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   // Get products with pagination
-  getProducts: async (page: number = 1, size: number = 10): Promise<ProductsResponse> => {
+  const getProducts = async (page: number = 1, size: number = 10): Promise<ProductsResponse> => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}${API_ENDPOINTS.products}?page=${page}&size=${size}`, {
+      setLoading(true);
+      setError(null);
+      
+      // Get authentication token
+      const token = await getToken();
+      
+      const response = await fetch(`${config.apiBaseUrl}/api/v1/products?page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
       });
       
@@ -48,19 +55,29 @@ const productApi = {
       }
       
       return await response.json();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching products:', error);
+      setError(error.message || 'Failed to fetch products. Please try again.');
       throw error;
+    } finally {
+      setLoading(false);
     }
-  },
+  };
   
   // Get a single product by ID
-  getProductById: async (productId: string): Promise<Product> => {
+  const getProductById = async (productId: string): Promise<Product> => {
     try {
-      const response = await fetch(`http://localhost:9000${API_ENDPOINTS.products}/${productId}`, {
+      setLoading(true);
+      setError(null);
+      
+      // Get authentication token
+      const token = await getToken();
+      
+      const response = await fetch(`${config.apiBaseUrl}/api/v1/products/${productId}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
       });
       
@@ -69,14 +86,17 @@ const productApi = {
       }
       
       return await response.json();
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error fetching product with ID ${productId}:`, error);
+      setError(error.message || `Failed to fetch product with ID ${productId}. Please try again.`);
       throw error;
+    } finally {
+      setLoading(false);
     }
-  },
+  };
   
   // Helper function to extract column definitions from products
-  getColumnDefinitions: (products: Product[]): Array<{ field: string; headerName: string; type: string }> => {
+  const getColumnDefinitions = (products: Product[]): Array<{ field: string; headerName: string; type: string }> => {
     if (!products || products.length === 0) {
       return [];
     }
@@ -110,10 +130,10 @@ const productApi = {
         type
       };
     });
-  },
+  };
   
   // Helper function to format cell values based on their type
-  formatCellValue: (value: any): string => {
+  const formatCellValue = (value: any): string => {
     if (value === null || value === undefined) {
       return '-';
     }
@@ -139,7 +159,14 @@ const productApi = {
     }
     
     return String(value);
-  }
-};
-
-export default productApi; 
+  };
+  
+  return {
+    loading,
+    error,
+    getProducts,
+    getProductById,
+    getColumnDefinitions,
+    formatCellValue
+  };
+}; 

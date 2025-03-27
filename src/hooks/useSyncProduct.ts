@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { useAuth } from '@clerk/clerk-react';
 import config from '../config';
 
 // Enums matching the backend
@@ -95,7 +97,7 @@ export type SourceConfigType =
   | SqlDatabaseConfig;
 
 // Product interface
-export interface Product {
+export interface SyncProduct {
   product_id: string;
   product_name: string;
   description: string;
@@ -108,7 +110,7 @@ export interface Product {
 
 // Input for syncing products
 export interface ProductSyncInput {
-  products?: Product[];
+  products?: SyncProduct[];
   source_config: SourceConfigType;
 }
 
@@ -141,25 +143,26 @@ export interface SyncHistoryResponse {
   has_more: boolean;
 }
 
-// Update config to include the sync products endpoint
-if (!config.apiEndpoints.syncProducts) {
-  config.apiEndpoints = {
-    ...config.apiEndpoints,
-    syncProducts: '/api/v1/sync-products',
-    syncHistory: '/api/v1/sync-history'
-  };
-}
-
-// API service for product sync operations
-const syncProductApi = {
+export const useSyncProduct = () => {
+  const { getToken } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   // Sync products
-  syncProducts: async (input: ProductSyncInput): Promise<SyncResponse> => {
+  const syncProducts = async (input: ProductSyncInput): Promise<SyncResponse> => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.syncProducts}`, {
+      setLoading(true);
+      setError(null);
+      
+      // Get authentication token
+      const token = await getToken();
+      
+      const response = await fetch(`${config.apiBaseUrl}/api/v1/sync-products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(input),
       });
@@ -169,19 +172,29 @@ const syncProductApi = {
       }
       
       return await response.json();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error syncing products:', error);
+      setError(error.message || 'Failed to sync products. Please try again.');
       throw error;
+    } finally {
+      setLoading(false);
     }
-  },
+  };
   
   // Get sync history with pagination
-  getSyncHistory: async (page: number = 1, size: number = 10): Promise<SyncHistoryResponse> => {
+  const getSyncHistory = async (page: number = 1, size: number = 10): Promise<SyncHistoryResponse> => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.syncHistory}?page=${page}&size=${size}`, {
+      setLoading(true);
+      setError(null);
+      
+      // Get authentication token
+      const token = await getToken();
+      
+      const response = await fetch(`${config.apiBaseUrl}/api/v1/sync-history?page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
       });
       
@@ -190,11 +203,19 @@ const syncProductApi = {
       }
       
       return await response.json();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting sync history:', error);
+      setError(error.message || 'Failed to get sync history. Please try again.');
       throw error;
+    } finally {
+      setLoading(false);
     }
-  }
-};
-
-export default syncProductApi; 
+  };
+  
+  return {
+    loading,
+    error,
+    syncProducts,
+    getSyncHistory
+  };
+}; 

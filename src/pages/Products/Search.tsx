@@ -5,7 +5,8 @@ import {
   Tabs, 
   Tab, 
 } from '@mui/material';
-import api, { SearchConfig } from '../../services/settingsApi';
+import { SearchConfig } from '../../services/settingsApi';
+import { useSearchConfig } from '../../hooks/useSearchConfig';
 
 // Import components from search directory
 import TabPanel from './search/components/TabPanel';
@@ -17,11 +18,17 @@ import DemoTab from './search/tabs/DemoTab';
 
 export default function Search() {
   const [activeTab, setActiveTab] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [configError, setConfigError] = useState<string | null>(null);
   const [isConfigChanged, setIsConfigChanged] = useState(false);
+  
+  // Use the custom hook for search configuration
+  const { 
+    loading, 
+    saveSuccess, 
+    saveError, 
+    configError,
+    loadSearchConfig,
+    saveSearchConfig
+  } = useSearchConfig();
   
   // Search configuration state
   const [searchConfig, setSearchConfig] = useState<SearchConfig>({
@@ -47,9 +54,27 @@ export default function Search() {
   // Load search configuration when Configure tab is selected
   useEffect(() => {
     if (activeTab === 1) { // Configure tab
-      loadSearchConfig();
+      fetchSearchConfig();
     }
   }, [activeTab]);
+  
+  // Fetch search configuration using the custom hook
+  const fetchSearchConfig = async () => {
+    try {
+      const config = await loadSearchConfig();
+      setSearchConfig(config);
+      setOriginalConfig(config); // Store original config for comparison
+    } catch (error) {
+      // Error is already handled in the hook
+      // Reset original config to empty state if needed
+      setOriginalConfig({
+        id_field: '',
+        title_field: '',
+        image_url_field: '',
+        searchable_attribute_fields: []
+      });
+    }
+  };
   
   // Check if configuration has changed
   useEffect(() => {
@@ -63,49 +88,6 @@ export default function Search() {
     
     setIsConfigChanged(hasChanged);
   }, [searchConfig, originalConfig]);
-  
-  // Load search configuration from API
-  const loadSearchConfig = async () => {
-    try {
-      setLoading(true);
-      setConfigError(null);
-      
-      // Try to get configuration from the search config API
-      const response = await api.settings.getSearchConfig();
-      
-      // Check if the response has the expected structure
-      if (response.value) {
-        const config = response.value as SearchConfig;
-        setSearchConfig(config);
-        setOriginalConfig(config); // Store original config for comparison
-      } else {
-        // Fallback to the existing getSearchConfig method if needed
-        const config = await api.search.getSearchConfig();
-        setSearchConfig(config);
-        setOriginalConfig(config); // Store original config for comparison
-      }
-    } catch (error: any) {
-      console.error('Failed to load search configuration', error);
-      
-      // If error is 'not_found', it means the record doesn't exist yet
-      if (error.message === 'not_found') {
-        // Just use the default empty state, no need to show an error
-        console.log('Search configuration not found, using default empty state');
-        // Reset original config to empty state
-        setOriginalConfig({
-          id_field: '',
-          title_field: '',
-          image_url_field: '',
-          searchable_attribute_fields: []
-        });
-      } else {
-        // Show error message for other errors
-        setConfigError('Error loading your configuration. Please try again later.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
   
   // Handle ID field change
   const handleIdFieldChange = (value: string | null) => {
@@ -141,23 +123,10 @@ export default function Search() {
   
   // Save search configuration
   const handleSaveConfig = async () => {
-    try {
-      setLoading(true);
-      setSaveSuccess(false);
-      setSaveError(null);
-      
-      await api.search.saveSearchConfig(searchConfig);
-      
+    const success = await saveSearchConfig(searchConfig);
+    if (success) {
       // Update the original config to match the current config
       setOriginalConfig({...searchConfig});
-      
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-    } catch (error) {
-      console.error('Failed to save search configuration', error);
-      setSaveError('Failed to save configuration. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
   

@@ -21,7 +21,7 @@ export interface SettingsResponse {
 }
 
 // API service for search-related operations
-const searchApi = {
+const searchConfigApi = {
   // Save search configuration
   saveSearchConfig: async (searchConfig: SearchConfig): Promise<any> => {
     try {
@@ -96,6 +96,6 @@ const settingsApi = {
 };
 
 export default {
-  search: searchApi,
+  search: searchConfigApi,
   settings: settingsApi,
 }; 

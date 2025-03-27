@@ -20,11 +20,23 @@ export default function useAuthFetch() {
       // Get the current authentication token
       const token = await getToken();
 
+      // Handle headers correctly with type safety
+      const currentHeaders = options.headers || {};
+      let contentType = 'application/json';
+      
+      // Determine content type from existing headers
+      if (currentHeaders instanceof Headers) {
+        contentType = currentHeaders.get('Content-Type') || contentType;
+      } else if (typeof currentHeaders === 'object') {
+        const headerRecord = currentHeaders as Record<string, string>;
+        contentType = headerRecord['Content-Type'] || contentType;
+      }
+
       // Create headers with authorization
       const headers = {
-        ...options.headers,
+        ...currentHeaders,
         Authorization: `Bearer ${token}`,
-        'Content-Type': options.headers?.['Content-Type'] || 'application/json',
+        'Content-Type': contentType,
       };
 
       // Make the authenticated request

@@ -1,8 +1,30 @@
 import { useState } from 'react';
-import api, { SearchConfig } from '../services/settingsApi';
+import { useAuth } from '@clerk/clerk-react';
+import config from '../config';
+
+// Interface for search configuration
+export interface SearchConfig {
+  id_field: string;
+  title_field: string;
+  image_url_field: string;
+  searchable_attribute_fields: string[];
+  removeStopWords?: boolean;
+  optionalWords?: string[];
+}
+
+// Interface for settings response
+export interface SettingsResponse {
+  key: string;
+  title: string;
+  description: string;
+  value: any;
+  created_at: string;
+  updated_at: string;
+}
 
 // Custom hook for managing search configuration
 export const useSearchConfig = () => {
+  const { getToken } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -14,17 +36,57 @@ export const useSearchConfig = () => {
       setLoading(true);
       setConfigError(null);
       
-      // Try to get configuration from the search config API
-      const response = await api.settings.getSearchConfig();
+      // Get authentication token
+      const token = await getToken();
       
-      // Check if the response has the expected structure
-      if (response.value) {
-        const config = response.value as SearchConfig;
-        return config;
-      } else {
-        // Fallback to the existing getSearchConfig method if needed
-        const config = await api.search.getSearchConfig();
-        return config;
+      // Try to get configuration from the settings API
+      try {
+        const response = await fetch(`${config.apiBaseUrl}/api/v1/settings/SEARCH_CONFIG`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+        });
+        
+        if (!response.ok) {
+          // If status is 404, it means the record doesn't exist yet
+          if (response.status === 404) {
+            throw new Error('not_found');
+          }
+          throw new Error(`API error: ${response.status}`);
+        }
+        
+        const settingsResponse = await response.json() as SettingsResponse;
+        
+        // Check if the response has the expected structure
+        if (settingsResponse.value) {
+          const config = settingsResponse.value as SearchConfig;
+          return config;
+        } else {
+          throw new Error('Invalid response format');
+        }
+      } catch (error: any) {
+        // If the settings API fails with not_found or has invalid format, try the search config API
+        if (error.message === 'not_found' || error.message === 'Invalid response format') {
+          // Fallback to the search config API
+          const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.searchConfig}`, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+          });
+          
+          if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+          }
+          
+          return await response.json();
+        } else {
+          // Re-throw other errors
+          throw error;
+        }
       }
     } catch (error: any) {
       console.error('Failed to load search configuration', error);
@@ -58,7 +120,25 @@ export const useSearchConfig = () => {
       setSaveSuccess(false);
       setSaveError(null);
       
-      await api.search.saveSearchConfig(searchConfig);
+      // Get authentication token
+      const token = await getToken();
+      
+      // Save configuration using the search config API
+      const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.searchConfig}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(searchConfig),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      await response.json();
       
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);

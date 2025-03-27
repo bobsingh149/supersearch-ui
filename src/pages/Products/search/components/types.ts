@@ -1,4 +1,4 @@
-import { SearchConfig } from '../../../../services/settingsApi';
+import { SearchConfig } from '../../../../hooks/useSearchConfig';
 
 export interface ConfigureTabProps {
   searchConfig: SearchConfig;

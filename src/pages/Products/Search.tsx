@@ -5,8 +5,7 @@ import {
   Tabs, 
   Tab, 
 } from '@mui/material';
-import { SearchConfig } from '../../services/settingsApi';
-import { useSearchConfig } from '../../hooks/useSearchConfig';
+import { useSearchConfig, SearchConfig } from '../../hooks/useSearchConfig';
 
 // Import components from search directory
 import TabPanel from './search/components/TabPanel';

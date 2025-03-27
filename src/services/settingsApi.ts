@@ -1,4 +1,5 @@
 import config from '../config';
+import { withAuth } from './authUtils';
 
 // Interface for search configuration
 export interface SearchConfig {
@@ -25,7 +26,7 @@ const searchApi = {
   // Save search configuration
   saveSearchConfig: async (searchConfig: SearchConfig): Promise<any> => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.searchConfig}`, {
+      const options = await withAuth({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -33,6 +34,8 @@ const searchApi = {
         },
         body: JSON.stringify(searchConfig),
       });
+      
+      const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.searchConfig}`, options);
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
@@ -48,12 +51,14 @@ const searchApi = {
   // Get search configuration
   getSearchConfig: async (): Promise<SearchConfig> => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.searchConfig}`, {
+      const options = await withAuth({
         method: 'GET',
         headers: {
           'Accept': 'application/json',
         },
       });
+      
+      const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.searchConfig}`, options);
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
@@ -72,12 +77,14 @@ const settingsApi = {
   // Get search configuration settings
   getSearchConfig: async (): Promise<SettingsResponse> => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/api/v1/settings/SEARCH_CONFIG`, {
+      const options = await withAuth({
         method: 'GET',
         headers: {
           'Accept': 'application/json',
         },
       });
+      
+      const response = await fetch(`${config.apiBaseUrl}/api/v1/settings/SEARCH_CONFIG`, options);
       
       if (!response.ok) {
         // If status is 404, it means the record doesn't exist yet

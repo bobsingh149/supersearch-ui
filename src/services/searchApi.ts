@@ -1,4 +1,5 @@
 import config from '../config';
+import { withAuth } from './authUtils';
 
 // Define the search endpoint
 const SEARCH_ENDPOINT = '/api/v1/search';
@@ -68,14 +69,17 @@ const searchApi = {
         }
       });
       
+      // Add authentication using withAuth utility
+      const options = await withAuth({
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      
       const response = await fetch(
         `${apiConfig.baseUrl}${apiConfig.endpoints.search}?${queryParams.toString()}`, 
-        {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          },
-        }
+        options
       );
       
       if (!response.ok) {
@@ -124,7 +128,6 @@ const searchApi = {
       throw error;
     }
   },
-  
 };
 
 export default searchApi; 

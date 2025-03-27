@@ -1,5 +1,4 @@
 import config from '../config';
-import useAuthHeader from '../hooks/useAuthHeader';
 
 // API endpoints
 const API_ENDPOINTS = {
@@ -37,12 +36,10 @@ const productApi = {
   // Get products with pagination
   getProducts: async (page: number = 1, size: number = 10): Promise<ProductsResponse> => {
     try {
-      const authHeader = await useAuthHeader();
       const response = await fetch(`${config.apiBaseUrl}${API_ENDPOINTS.products}?page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          ...authHeader,
         },
       });
       
@@ -60,12 +57,10 @@ const productApi = {
   // Get a single product by ID
   getProductById: async (productId: string): Promise<Product> => {
     try {
-      const authHeader = await useAuthHeader();
-      const response = await fetch(`${config.apiBaseUrl}${API_ENDPOINTS.products}/${productId}`, {
+      const response = await fetch(`http://localhost:9000${API_ENDPOINTS.products}/${productId}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          ...authHeader,
         },
       });
       

@@ -1,5 +1,4 @@
 import config from '../config';
-import useAuthHeader from '../hooks/useAuthHeader';
 
 // Interface for search configuration
 export interface SearchConfig {
@@ -26,13 +25,11 @@ const searchApi = {
   // Save search configuration
   saveSearchConfig: async (searchConfig: SearchConfig): Promise<any> => {
     try {
-      const authHeader = await useAuthHeader();
       const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.searchConfig}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          ...authHeader,
         },
         body: JSON.stringify(searchConfig),
       });
@@ -51,12 +48,10 @@ const searchApi = {
   // Get search configuration
   getSearchConfig: async (): Promise<SearchConfig> => {
     try {
-      const authHeader = await useAuthHeader();
       const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.searchConfig}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          ...authHeader,
         },
       });
       
@@ -77,12 +72,10 @@ const settingsApi = {
   // Get search configuration settings
   getSearchConfig: async (): Promise<SettingsResponse> => {
     try {
-      const authHeader = await useAuthHeader();
       const response = await fetch(`${config.apiBaseUrl}/api/v1/settings/SEARCH_CONFIG`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          ...authHeader,
         },
       });
       

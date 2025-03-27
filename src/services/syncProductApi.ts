@@ -1,5 +1,4 @@
 import config from '../config';
-import useAuthHeader from '../hooks/useAuthHeader';
 
 // Enums matching the backend
 export enum SyncSource {
@@ -156,13 +155,11 @@ const syncProductApi = {
   // Sync products
   syncProducts: async (input: ProductSyncInput): Promise<SyncResponse> => {
     try {
-      const authHeader = await useAuthHeader();
       const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.syncProducts}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          ...authHeader,
         },
         body: JSON.stringify(input),
       });
@@ -181,12 +178,10 @@ const syncProductApi = {
   // Get sync history with pagination
   getSyncHistory: async (page: number = 1, size: number = 10): Promise<SyncHistoryResponse> => {
     try {
-      const authHeader = await useAuthHeader();
       const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.syncHistory}?page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          ...authHeader,
         },
       });
       

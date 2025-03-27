@@ -1,5 +1,4 @@
 import config from '../config';
-import useAuthHeader from '../hooks/useAuthHeader';
 
 // Define the search endpoint
 const SEARCH_ENDPOINT = '/api/v1/search';
@@ -48,7 +47,6 @@ const searchApi = {
   searchProducts: async (params: SearchParams): Promise<SearchResponse> => {
     try {
       const { query, page = 1, size = 10, filters = {} } = params;
-      const authHeader = await useAuthHeader();
       
       // Build query parameters
       const queryParams = new URLSearchParams();
@@ -76,7 +74,6 @@ const searchApi = {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
-            ...authHeader,
           },
         }
       );

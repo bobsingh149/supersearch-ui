@@ -66,7 +66,10 @@ import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
 import {
   useProduct, 
-  Product
+  Product,
+  formatCellValue,
+  getColumnDefinitions,
+  useProducts,
 } from '../../hooks/useProduct';
 import {
   useSyncProduct,
@@ -274,9 +277,8 @@ export default function DataSources() {
   
   const { 
     error: productApiError, 
-    getProducts, 
-    getColumnDefinitions 
-  } = useProduct();
+    getProducts
+  } = useProducts();
 
   const {
     error: syncApiError,

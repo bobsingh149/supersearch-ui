@@ -31,12 +31,12 @@ import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { getTheme } from '../../theme/theme';
-import { useProduct, MovieProduct } from '../../hooks/useProduct';
+import { useProductById, MovieProduct } from '../../hooks/useProduct';
 
 const ProductDetail: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
-  const { loading: apiLoading, getProductById } = useProduct();
+  const { loading: apiLoading, getProductById } = useProductById();
   const [product, setProduct] = useState<MovieProduct | null>(null);
   const [mode, setMode] = useState<'light' | 'dark'>(() => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -59,7 +59,7 @@ const ProductDetail: React.FC = () => {
     };
 
     fetchProduct();
-  }, [productId, getProductById]);
+  }, [productId]);
 
   const toggleTheme = () => {
     setMode(prev => prev === 'light' ? 'dark' : 'light');

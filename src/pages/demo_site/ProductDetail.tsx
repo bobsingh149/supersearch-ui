@@ -36,7 +36,7 @@ import { useProduct, MovieProduct } from '../../hooks/useProduct';
 const ProductDetail: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
-  const { loading: apiLoading, error, getProductById } = useProduct();
+  const { loading: apiLoading, getProductById } = useProduct();
   const [product, setProduct] = useState<MovieProduct | null>(null);
   const [mode, setMode] = useState<'light' | 'dark'>(() => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';

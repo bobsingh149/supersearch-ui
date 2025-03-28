@@ -270,15 +270,16 @@ export default function DataSources() {
   const [dbPassword, setDbPassword] = useState('');
   const [tableName, setTableName] = useState('');
   
+  // Add this near other state declarations
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  
   const { 
-    loading: productApiLoading, 
     error: productApiError, 
     getProducts, 
     getColumnDefinitions 
   } = useProduct();
 
   const {
-    loading: syncApiLoading,
     error: syncApiError,
     syncProducts: syncProductsApi,
     getSyncHistory
@@ -325,7 +326,7 @@ export default function DataSources() {
       setProductTotalCount(totalCount);
       
       // Extract column definitions from the products
-      setProductColumns(getColumnDefinitions(response.products));
+      setProductColumns(getColumnDefinitions(response.products) as unknown as GridColDef<Product>[]);
       
       console.log('Products loaded:', {
         products: response.products,
@@ -413,7 +414,7 @@ export default function DataSources() {
         }
         
         // Parse the file and get products directly instead of using state
-        products = await new Promise<SyncProduct[]>((resolve, reject) => {
+        products = await new Promise<SyncProduct[]>((resolve: (value: SyncProduct[]) => void, reject) => {
           fetch(uploadedFile.preview)
             .then(r => r.blob())
             .then(blob => {
@@ -442,8 +443,21 @@ export default function DataSources() {
                     header: true,
                     delimiter: delimiter,
                     complete: (results) => {
-                      setParsedProducts(results.data); // Update state for future use
-                      resolve(results.data);
+                      // Map the parsed data to ensure it matches SyncProduct structure
+                      const typedData = (results.data as any[]).map(item => {
+                        return {
+                          product_id: item.product_id || item.id || '',
+                          product_name: item.product_name || item.title || '',
+                          description: item.description || '',
+                          price: Number(item.price) || 0,
+                          category: item.category || '',
+                          tags: item.tags || '',
+                          in_stock: Boolean(item.in_stock),
+                          image_url: item.image_url || ''
+                        } as SyncProduct;
+                      });
+                      setParsedProducts(typedData);
+                      resolve(typedData);
                     },
                     error: (error: Error) => {
                       console.error('Error parsing delimited file:', error);
@@ -1618,7 +1632,7 @@ export default function DataSources() {
             variant="filled"
             sx={{ width: '100%' }}
           >
-            Products synced successfully!{' '}
+            {syncMessage || 'Products synced successfully!'}{' '}
             <Link 
               component="button"
               onClick={() => setActiveTab(3)}

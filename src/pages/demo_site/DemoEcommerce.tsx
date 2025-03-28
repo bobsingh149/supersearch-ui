@@ -49,7 +49,7 @@ const DRAWER_WIDTH = 280;
 const DemoEcommerce: React.FC = () => {
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
   const [page, setPage] = useState(1);
-  const { loading: apiLoading, error: apiError, searchProducts } = useSearch();
+  const { loading: apiLoading, searchProducts } = useSearch();
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(12);
   const [totalResults, setTotalResults] = useState(0);

@@ -115,7 +115,7 @@ interface AISearchBarProps {
 const AISearchBar: React.FC<AISearchBarProps> = ({ setData }) => {
   const theme = useTheme();
   const { getToken } = useAuth();
-  const { loading: apiLoading, error: apiError, searchProducts } = useSearch();
+  const {searchProducts} = useSearch();
   const [searchQuery, setSearchQuery] = useState('');
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);

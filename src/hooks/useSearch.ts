@@ -67,7 +67,7 @@ export const useSearch = () => {
       });
       
       const response = await fetch(
-        `${config.apiBaseUrl}/api/v1/search?${queryParams.toString()}`, 
+        `${config.apiBaseUrl}/search?${queryParams.toString()}`, 
         {
           method: 'GET',
           headers: {

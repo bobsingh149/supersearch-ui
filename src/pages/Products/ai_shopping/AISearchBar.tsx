@@ -34,6 +34,7 @@ import { keyframes } from '@mui/material/styles';
 import { useSearch, SearchResultItem } from '../../../hooks/useSearch';
 import { useAuth } from '@clerk/clerk-react';
 import ReactMarkdown from 'react-markdown';
+import config from '../../../config';
 
 // Animation for the magic wand icon
 const sparkle = keyframes`
@@ -103,7 +104,7 @@ interface Message {
 }
 
 // API endpoint
-const API_ENDPOINT = 'http://localhost:9000/api/v1/shopping-assistant/chat';
+const API_ENDPOINT = `${config.apiBaseUrl}/shopping-assistant/chat`;
 
 // Generate new conversation ID
 const generateConversationId = () => `c${Date.now()}`;
@@ -218,15 +219,22 @@ const AISearchBar: React.FC<AISearchBarProps> = ({ setData }) => {
           // Get the authentication token
           const token = await getToken();
           
-          // Construct URL with query parameters
-          const url = `${API_ENDPOINT}?query=${encodeURIComponent(messageText)}&conversation_id=${conversationId}&stream=true`;
+          // Create the request payload
+          const payload = {
+            query: messageText,
+            conversation_id: conversationId,
+            product_ids: [],
+            stream: true
+          };
           
-          const response = await fetch(url, {
-            method: 'GET',
+          const response = await fetch(API_ENDPOINT, {
+            method: 'POST',
             headers: {
               'Accept': 'application/json',
+              'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`
-            }
+            },
+            body: JSON.stringify(payload)
           });
           
           if (!response.ok) {

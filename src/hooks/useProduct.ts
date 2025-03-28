@@ -42,7 +42,7 @@ export const useProduct = () => {
       // Get authentication token
       const token = await getToken();
       
-      const response = await fetch(`${config.apiBaseUrl}/api/v1/products?page=${page}&size=${size}`, {
+      const response = await fetch(`${config.apiBaseUrl}/products?page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -73,7 +73,7 @@ export const useProduct = () => {
       // Get authentication token
       const token = await getToken();
       
-      const response = await fetch(`${config.apiBaseUrl}/api/v1/products/${productId}`, {
+      const response = await fetch(`${config.apiBaseUrl}/products/${productId}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',

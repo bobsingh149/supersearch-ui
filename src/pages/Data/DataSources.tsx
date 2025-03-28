@@ -75,7 +75,6 @@ import {
   SyncInterval,
   DatabaseType,
   AuthType,
-  SyncProduct,
   ProductSyncInput,
   SourceConfigType,
   ManualFileUploadConfig,
@@ -404,7 +403,7 @@ export default function DataSources() {
       setSyncSuccess(false);
 
       // For file upload, parse the file first and wait for it to complete
-      let products: SyncProduct[] = [];
+      let products: any[] = [];
       
       if (selectedConnector?.id === 'file-upload' || configuredSource?.id === 'file-upload') {
         if (!uploadedFile) {
@@ -414,7 +413,7 @@ export default function DataSources() {
         }
         
         // Parse the file and get products directly instead of using state
-        products = await new Promise<SyncProduct[]>((resolve: (value: SyncProduct[]) => void, reject) => {
+        products = await new Promise<any[]>((resolve: (value: any[]) => void, reject) => {
           fetch(uploadedFile.preview)
             .then(r => r.blob())
             .then(blob => {
@@ -443,21 +442,9 @@ export default function DataSources() {
                     header: true,
                     delimiter: delimiter,
                     complete: (results) => {
-                      // Map the parsed data to ensure it matches SyncProduct structure
-                      const typedData = (results.data as any[]).map(item => {
-                        return {
-                          product_id: item.product_id || item.id || '',
-                          product_name: item.product_name || item.title || '',
-                          description: item.description || '',
-                          price: Number(item.price) || 0,
-                          category: item.category || '',
-                          tags: item.tags || '',
-                          in_stock: Boolean(item.in_stock),
-                          image_url: item.image_url || ''
-                        } as SyncProduct;
-                      });
-                      setParsedProducts(typedData);
-                      resolve(typedData);
+                      // Use the data directly without mapping
+                      setParsedProducts(results.data as any[]);
+                      resolve(results.data as any[]);
                     },
                     error: (error: Error) => {
                       console.error('Error parsing delimited file:', error);

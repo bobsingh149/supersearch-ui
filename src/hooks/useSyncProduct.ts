@@ -96,21 +96,9 @@ export type SourceConfigType =
   | HostedFileConfig
   | SqlDatabaseConfig;
 
-// Product interface
-export interface SyncProduct {
-  product_id: string;
-  product_name: string;
-  description: string;
-  price: number;
-  category: string;
-  tags: string;
-  in_stock: boolean;
-  image_url: string;
-}
-
 // Input for syncing products
 export interface ProductSyncInput {
-  products?: SyncProduct[];
+  products?: any[];
   source_config: SourceConfigType;
 }
 
@@ -157,7 +145,7 @@ export const useSyncProduct = () => {
       // Get authentication token
       const token = await getToken();
       
-      const response = await fetch(`${config.apiBaseUrl}/api/v1/sync-products`, {
+      const response = await fetch(`${config.apiBaseUrl}/sync-products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -190,7 +178,7 @@ export const useSyncProduct = () => {
       // Get authentication token
       const token = await getToken();
       
-      const response = await fetch(`${config.apiBaseUrl}/api/v1/sync-history?page=${page}&size=${size}`, {
+      const response = await fetch(`${config.apiBaseUrl}/sync-history?page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',

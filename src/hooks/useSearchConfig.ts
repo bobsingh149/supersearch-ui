@@ -39,54 +39,31 @@ export const useSearchConfig = () => {
       // Get authentication token
       const token = await getToken();
       
-      // Try to get configuration from the settings API
-      try {
-        const response = await fetch(`${config.apiBaseUrl}/api/v1/settings/SEARCH_CONFIG`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-        });
-        
-        if (!response.ok) {
-          // If status is 404, it means the record doesn't exist yet
-          if (response.status === 404) {
-            throw new Error('not_found');
-          }
-          throw new Error(`API error: ${response.status}`);
+      // Get configuration from the settings API
+      const response = await fetch(`${config.apiBaseUrl}/api/v1/settings/SEARCH_CONFIG`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+      });
+      
+      if (!response.ok) {
+        // If status is 404, it means the record doesn't exist yet
+        if (response.status === 404) {
+          throw new Error('not_found');
         }
-        
-        const settingsResponse = await response.json() as SettingsResponse;
-        
-        // Check if the response has the expected structure
-        if (settingsResponse.value) {
-          const config = settingsResponse.value as SearchConfig;
-          return config;
-        } else {
-          throw new Error('Invalid response format');
-        }
-      } catch (error: any) {
-        // If the settings API fails with not_found or has invalid format, try the search config API
-        if (error.message === 'not_found' || error.message === 'Invalid response format') {
-          // Fallback to the search config API
-          const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.searchConfig}`, {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-          });
-          
-          if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
-          }
-          
-          return await response.json();
-        } else {
-          // Re-throw other errors
-          throw error;
-        }
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const settingsResponse = await response.json() as SettingsResponse;
+      
+      // Check if the response has the expected structure
+      if (settingsResponse.value) {
+        const config = settingsResponse.value as SearchConfig;
+        return config;
+      } else {
+        throw new Error('Invalid response format');
       }
     } catch (error: any) {
       console.error('Failed to load search configuration', error);

@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import AISearchBar from '../AISearchBar';
-import { SearchResultItem } from '../../../../services/searchApi';
+import { SearchResultItem } from '../../../../hooks/useSearch';
 
 const ChatTab: React.FC = () => {
   const theme = useTheme();

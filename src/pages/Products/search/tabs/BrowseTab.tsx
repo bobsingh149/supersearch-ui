@@ -20,15 +20,15 @@ import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import searchApi, { SearchResultItem } from '../../../../services/searchApi';
+import { useSearch, SearchResultItem } from '../../../../hooks/useSearch';
 
 export const BrowseTab = () => {
   const theme = useTheme();
+  const { loading: apiLoading, error: apiError, searchProducts } = useSearch();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const [totalResults, setTotalResults] = useState(0);
@@ -54,11 +54,10 @@ export const BrowseTab = () => {
   const fetchSearchResults = async (queryOverride?: string) => {
     const queryToUse = queryOverride !== undefined ? queryOverride : searchQuery;
     
-    setLoading(true);
     setError(null);
     
     try {
-      const response = await searchApi.searchProducts({
+      const response = await searchProducts({
         query: queryToUse,
         page,
         size: pageSize,
@@ -69,10 +68,9 @@ export const BrowseTab = () => {
       setTotalResults(response.total || response.results.length);
     } catch (err) {
       console.error('Error fetching search results:', err);
-      setError('Failed to fetch search results. Please try again.');
+      setError(apiError || 'Failed to fetch search results. Please try again.');
       setSearchResults([]);
     } finally {
-      setLoading(false);
       setInitialLoad(false);
     }
   };
@@ -164,7 +162,7 @@ export const BrowseTab = () => {
                   <SearchIcon color="action" />
                 </InputAdornment>
               ),
-              endAdornment: loading && (
+              endAdornment: apiLoading && (
                 <InputAdornment position="end">
                   <CircularProgress size={20} />
                 </InputAdornment>
@@ -241,7 +239,7 @@ export const BrowseTab = () => {
       )}
 
       {/* Loading Indicator */}
-      {loading && searchResults.length === 0 && (
+      {apiLoading && searchResults.length === 0 && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
           <CircularProgress />
         </Box>
@@ -406,7 +404,7 @@ export const BrowseTab = () => {
             </Grid>
           ))}
         </Grid>
-      ) : searchQuery && !loading ? (
+      ) : searchQuery && !apiLoading ? (
         <Box sx={{ textAlign: 'center', py: 6 }}>
           <Typography variant="h6" color="text.secondary">No results found</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>

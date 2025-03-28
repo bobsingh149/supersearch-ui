@@ -64,21 +64,26 @@ import {
 } from '@mui/icons-material';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
-import syncProductApi, { 
-  SyncSource, 
-  SyncStatus, 
-  SyncInterval, 
-  AuthType, 
+import {
+  useProduct, 
+  Product
+} from '../../hooks/useProduct';
+import {
+  useSyncProduct,
+  SyncSource,
+  SyncStatus,
+  SyncInterval,
   DatabaseType,
+  AuthType,
+  SyncProduct,
   ProductSyncInput,
   SourceConfigType,
   ManualFileUploadConfig,
   CrawlerConfig,
   SupersearchApiConfig,
   HostedFileConfig,
-  SqlDatabaseConfig,
-} from '../../services/syncProductApi';
-import productApi, { Product as DynamicProduct } from '../../services/productApi';
+  SqlDatabaseConfig
+} from '../../hooks/useSyncProduct';
 
 interface TabPanelProps {
   children: React.ReactNode;
@@ -113,9 +118,6 @@ interface SyncHistory {
   createdAt: string;
   updatedAt: string;
 }
-
-// Use the dynamic product type from productApi
-type Product = DynamicProduct;
 
 interface PreviewData {
   headers: string[];
@@ -268,6 +270,20 @@ export default function DataSources() {
   const [dbPassword, setDbPassword] = useState('');
   const [tableName, setTableName] = useState('');
   
+  const { 
+    loading: productApiLoading, 
+    error: productApiError, 
+    getProducts, 
+    getColumnDefinitions 
+  } = useProduct();
+
+  const {
+    loading: syncApiLoading,
+    error: syncApiError,
+    syncProducts: syncProductsApi,
+    getSyncHistory
+  } = useSyncProduct();
+
   // Load data when tab changes
   useEffect(() => {
     if (activeTab === 2) { // Products tab
@@ -290,7 +306,7 @@ export default function DataSources() {
       
       console.log('Fetching products:', { page, pageSize });
       
-      const response = await productApi.getProducts(page, pageSize);
+      const response = await getProducts(page, pageSize);
       
       console.log('API Response:', response);
       
@@ -308,152 +324,8 @@ export default function DataSources() {
       
       setProductTotalCount(totalCount);
       
-      // Generate dynamic columns based on the products
-      if (response.products.length > 0) {
-        const columnDefs = productApi.getColumnDefinitions(response.products);
-        
-        // Convert to GridColDef format
-        const gridColumns: GridColDef<Product>[] = columnDefs.map(col => {
-          // Special handling for specific fields
-          if (col.field === 'product_name' || col.field === 'title') {
-            return {
-              field: col.field,
-              headerName: col.headerName,
-              flex: 1,
-              minWidth: 180,
-              renderCell: (params) => (
-                <Tooltip title={String(params.value)} arrow>
-                  <Box sx={{ width: '100%', py: 1 }}>
-                    <Typography variant="body2" noWrap>
-                      {String(params.value)}
-                    </Typography>
-                  </Box>
-                </Tooltip>
-              )
-            };
-          }
-          
-          if (col.field === 'description') {
-            return {
-              field: col.field,
-              headerName: col.headerName,
-              flex: 2,
-              minWidth: 250,
-              renderCell: (params) => (
-                <Tooltip title={String(params.value)} arrow>
-                  <Box sx={{ width: '100%', py: 1 }}>
-                    <Typography variant="body2" noWrap>
-                      {String(params.value)}
-                    </Typography>
-                  </Box>
-                </Tooltip>
-              )
-            };
-          }
-          
-          if (col.field === 'price') {
-            return {
-              field: col.field,
-              headerName: col.headerName,
-              type: 'number',
-              width: 120,
-              align: 'right',
-              headerAlign: 'right',
-              valueFormatter: (params: { value: number | null | undefined }) => {
-                if (params.value == null) return '-';
-                return `$${Number(params.value).toFixed(2)}`;
-              },
-              renderCell: (params) => (
-                <Box sx={{ width: '100%', textAlign: 'right', py: 1 }}>
-                  <Typography variant="body2">
-                    {params.value != null ? `$${Number(params.value).toFixed(2)}` : '-'}
-                  </Typography>
-                </Box>
-              )
-            };
-          }
-          
-          if (col.field === 'in_stock' || col.field === 'inStock') {
-            return {
-              field: col.field,
-              headerName: col.headerName,
-              width: 120,
-              align: 'center',
-              headerAlign: 'center',
-              renderCell: (params) => (
-                <Box sx={{ width: '100%', textAlign: 'center', py: 1 }}>
-                  <Chip
-                    size="small"
-                    label={params.value ? 'In Stock' : 'Out of Stock'}
-                    color={params.value ? 'success' : 'error'}
-                    variant="outlined"
-                    sx={{ borderRadius: '6px' }}
-                  />
-                </Box>
-              )
-            };
-          }
-          
-          if (col.field === 'image_url') {
-            return {
-              field: col.field,
-              headerName: 'Image',
-              width: 120,
-              align: 'center',
-              headerAlign: 'center',
-              renderCell: (params) => (
-                <Box sx={{ width: '100%', textAlign: 'center', py: 1 }}>
-                  {params.value ? (
-                    <Tooltip title="View Image" arrow>
-                      <IconButton size="small" onClick={() => window.open(String(params.value), '_blank')}>
-                        <VisibilityIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  ) : (
-                    '-'
-                  )}
-                </Box>
-              )
-            };
-          }
-          
-          if (col.type === 'number') {
-            return {
-              field: col.field,
-              headerName: col.headerName,
-              type: 'number',
-              width: 120,
-              align: 'right',
-              headerAlign: 'right',
-              renderCell: (params) => (
-                <Box sx={{ width: '100%', textAlign: 'right', py: 1 }}>
-                  <Typography variant="body2">
-                    {params.value != null ? String(params.value) : '-'}
-                  </Typography>
-                </Box>
-              )
-            };
-          }
-          
-          // Default column definition
-          return {
-            field: col.field,
-            headerName: col.headerName,
-            width: 150,
-            renderCell: (params) => (
-              <Tooltip title={String(params.value)} arrow>
-                <Box sx={{ width: '100%', py: 1 }}>
-                  <Typography variant="body2" noWrap>
-                    {params.value != null ? String(params.value) : '-'}
-                  </Typography>
-                </Box>
-              </Tooltip>
-            )
-          };
-        });
-        
-        setProductColumns(gridColumns);
-      }
+      // Extract column definitions from the products
+      setProductColumns(getColumnDefinitions(response.products));
       
       console.log('Products loaded:', {
         products: response.products,
@@ -464,7 +336,7 @@ export default function DataSources() {
       });
     } catch (error) {
       console.error('Error fetching products:', error);
-      setProductError('Failed to load products. Please try again later.');
+      setProductError(productApiError || 'Failed to load products. Please try again later.');
       setProducts([]);
     } finally {
       setProductsLoading(false);
@@ -475,7 +347,7 @@ export default function DataSources() {
   const fetchSyncHistory = async (page: number = syncHistoryPage, pageSize: number = syncHistoryPageSize) => {
     try {
       setSyncHistoryLoading(true);
-      const response = await syncProductApi.getSyncHistory(page, pageSize);
+      const response = await getSyncHistory(page, pageSize);
       
       console.log('API Response:', response); // Log the API response for debugging
       
@@ -524,14 +396,14 @@ export default function DataSources() {
   };
 
   // Sync products with the API
-  const syncProducts = async () => {
+  const handleSyncProducts = async () => {
     try {
       setIsSyncing(true);
       setSyncError(null);
       setSyncSuccess(false);
 
       // For file upload, parse the file first and wait for it to complete
-      let products: any[] = [];
+      let products: SyncProduct[] = [];
       
       if (selectedConnector?.id === 'file-upload' || configuredSource?.id === 'file-upload') {
         if (!uploadedFile) {
@@ -541,7 +413,7 @@ export default function DataSources() {
         }
         
         // Parse the file and get products directly instead of using state
-        products = await new Promise<any[]>((resolve, reject) => {
+        products = await new Promise<SyncProduct[]>((resolve, reject) => {
           fetch(uploadedFile.preview)
             .then(r => r.blob())
             .then(blob => {
@@ -628,14 +500,15 @@ export default function DataSources() {
         input.products = products;
       }
 
-      await syncProductApi.syncProducts(input);
+      const response = await syncProductsApi(input);
       setSyncSuccess(true);
+      setSyncMessage(`Products synced successfully! Sync ID: ${response.sync_id}`);
       
       // Remove automatic tab switch
       // setActiveTab(3);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error syncing products:', error);
-      setSyncError(error instanceof Error ? error.message : 'Unknown error occurred');
+      setSyncError(syncApiError || error.message || 'Failed to sync products. Please try again.');
     } finally {
       setIsSyncing(false);
     }
@@ -1723,7 +1596,7 @@ export default function DataSources() {
           <Button
             variant="contained"
             color="primary"
-            onClick={syncProducts}
+            onClick={handleSyncProducts}
             disabled={isSyncing}
             startIcon={isSyncing ? <CircularProgress size={20} color="inherit" /> : null}
             sx={buttonStyles.containedButton}

@@ -1,17 +1,6 @@
+import { useState } from 'react';
+import { useAuth } from '@clerk/clerk-react';
 import config from '../config';
-
-// Define the search endpoint
-const SEARCH_ENDPOINT = '/api/v1/search';
-
-// Extend the config with the search endpoint
-// This approach avoids TypeScript errors by not directly modifying the config object
-const apiConfig = {
-  baseUrl: config.apiBaseUrl,
-  endpoints: {
-    ...config.apiEndpoints,
-    search: SEARCH_ENDPOINT,
-  }
-};
 
 // Type for search result item
 export interface SearchResultItem {
@@ -41,12 +30,21 @@ export interface SearchParams {
   filters?: Record<string, any>;
 }
 
-// API service for search-related operations
-const searchApi = {
+export const useSearch = () => {
+  const { getToken } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   // Search products
-  searchProducts: async (params: SearchParams): Promise<SearchResponse> => {
+  const searchProducts = async (params: SearchParams): Promise<SearchResponse> => {
     try {
+      setLoading(true);
+      setError(null);
+      
       const { query, page = 1, size = 10, filters = {} } = params;
+      
+      // Get authentication token
+      const token = await getToken();
       
       // Build query parameters
       const queryParams = new URLSearchParams();
@@ -69,11 +67,12 @@ const searchApi = {
       });
       
       const response = await fetch(
-        `${apiConfig.baseUrl}${apiConfig.endpoints.search}?${queryParams.toString()}`, 
+        `${config.apiBaseUrl}/api/v1/search?${queryParams.toString()}`, 
         {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
           },
         }
       );
@@ -119,12 +118,18 @@ const searchApi = {
         total: totalCount,
         has_more: hasMore,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error searching products:', error);
+      setError(error.message || 'Failed to search products. Please try again.');
       throw error;
+    } finally {
+      setLoading(false);
     }
-  },
+  };
   
-};
-
-export default searchApi; 
+  return {
+    loading,
+    error,
+    searchProducts
+  };
+}; 

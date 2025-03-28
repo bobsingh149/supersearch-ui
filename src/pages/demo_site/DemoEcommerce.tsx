@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Box, 
   Typography,  
@@ -37,8 +37,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import CloseIcon from '@mui/icons-material/Close';
 import AISearchBar from '../Products/ai_shopping/AISearchBar';
-import { SearchResultItem } from '../../services/searchApi';
-import searchApi from '../../services/searchApi';
+import { useSearch, SearchResultItem } from '../../hooks/useSearch';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { getTheme } from '../../theme/theme';
@@ -50,7 +49,7 @@ const DRAWER_WIDTH = 280;
 const DemoEcommerce: React.FC = () => {
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const { loading: apiLoading, error: apiError, searchProducts } = useSearch();
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(12);
   const [totalResults, setTotalResults] = useState(0);
@@ -60,6 +59,9 @@ const DemoEcommerce: React.FC = () => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
   const navigate = useNavigate();
+  const isInitialRender = useRef(true);
+  const previousPage = useRef(page);
+  const previousItemsPerPage = useRef(itemsPerPage);
 
   // Filter states
   const [priceRange, setPriceRange] = useState<number[]>([0, 10]);
@@ -81,37 +83,55 @@ const DemoEcommerce: React.FC = () => {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
-  // Initial search on page load
-  useEffect(() => {
-    const fetchInitialProducts = async () => {
-      setLoading(true);
-      try {
-        const response = await searchApi.searchProducts({
-          query: '',
-          page: page,
-          size: itemsPerPage
-        });
-        setSearchResults(response.results);
-        setTotalResults(response.total || response.results.length);
-        setHasMore(response.has_more || false);
-      } catch (error) {
-        console.error('Error fetching initial products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Memoized fetch function to prevent recreation on each render
+  const fetchProducts = useCallback(async (currentPage: number, pageSize: number) => {
+    try {
+      const response = await searchProducts({
+        query: '',
+        page: currentPage,
+        size: pageSize
+      });
+      setSearchResults(response.results);
+      setTotalResults(response.total || response.results.length);
+      setHasMore(response.has_more || false);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  }, [searchProducts]);
 
-    fetchInitialProducts();
-  }, [page, itemsPerPage]);
+  // Initial load - runs only once
+  useEffect(() => {
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      fetchProducts(page, itemsPerPage);
+    }
+  }, [fetchProducts, page, itemsPerPage]);
+
+  // Handle page or page size changes
+  useEffect(() => {
+    // Don't run on initial render
+    if (!isInitialRender.current) {
+      // Check if page or itemsPerPage actually changed to prevent unnecessary API calls
+      if (page !== previousPage.current || itemsPerPage !== previousItemsPerPage.current) {
+        fetchProducts(page, itemsPerPage);
+        previousPage.current = page;
+        previousItemsPerPage.current = itemsPerPage;
+      }
+    }
+  }, [page, itemsPerPage, fetchProducts]);
 
   const toggleTheme = () => {
     setMode(prev => prev === 'light' ? 'dark' : 'light');
   };
 
-  
   const handlePageSizeChange = (event: SelectChangeEvent<number>) => {
-    setItemsPerPage(Number(event.target.value));
-    setPage(1); // Reset to first page when changing items per page
+    const newPageSize = Number(event.target.value);
+    // When changing page size, adjust the current page to maintain the start position
+    const currentStartIndex = (page - 1) * itemsPerPage; 
+    const newPage = Math.floor(currentStartIndex / newPageSize) + 1;
+    
+    setItemsPerPage(newPageSize);
+    setPage(newPage);
   };
 
   const handlePriceChange = (_event: Event, newValue: number | number[]) => {
@@ -611,14 +631,14 @@ const DemoEcommerce: React.FC = () => {
             </Box>
 
             {/* Loading Indicator */}
-            {loading && (
+            {apiLoading && (
               <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
                 <CircularProgress />
               </Box>
             )}
 
             {/* Product Grid */}
-            {!loading && (
+            {!apiLoading && (
               <>
                 {searchResults.length > 0 ? (
                   <Grid container spacing={3}>

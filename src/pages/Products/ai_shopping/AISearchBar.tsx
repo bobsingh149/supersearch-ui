@@ -31,7 +31,8 @@ import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import AddCommentIcon from '@mui/icons-material/AddComment';
 import { keyframes } from '@mui/material/styles';
-import searchApi, { SearchResultItem } from '../../../services/searchApi';
+import { useSearch, SearchResultItem } from '../../../hooks/useSearch';
+import { useAuth } from '@clerk/clerk-react';
 import ReactMarkdown from 'react-markdown';
 
 // Animation for the magic wand icon
@@ -113,6 +114,8 @@ interface AISearchBarProps {
 
 const AISearchBar: React.FC<AISearchBarProps> = ({ setData }) => {
   const theme = useTheme();
+  const { getToken } = useAuth();
+  const { loading: apiLoading, error: apiError, searchProducts } = useSearch();
   const [searchQuery, setSearchQuery] = useState('');
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -129,7 +132,7 @@ const AISearchBar: React.FC<AISearchBarProps> = ({ setData }) => {
     if (searchQuery.trim()) {
       try {
         setIsSearching(true);
-        const response = await searchApi.searchProducts({
+        const response = await searchProducts({
           query: searchQuery,
           page: 1,
           size: 10
@@ -212,13 +215,17 @@ const AISearchBar: React.FC<AISearchBarProps> = ({ setData }) => {
       // Call shopping assistant API
       const fetchWithReader = async () => {
         try {
+          // Get the authentication token
+          const token = await getToken();
+          
           // Construct URL with query parameters
           const url = `${API_ENDPOINT}?query=${encodeURIComponent(messageText)}&conversation_id=${conversationId}&stream=true`;
           
           const response = await fetch(url, {
             method: 'GET',
             headers: {
-              'Accept': 'application/json'
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${token}`
             }
           });
           
@@ -375,7 +382,7 @@ const AISearchBar: React.FC<AISearchBarProps> = ({ setData }) => {
               updatedMessages[aiMessageIndex] = {
                 id: Date.now(),
                 text: '**Error connecting to shopping assistant. Please try again later.**',
-          sender: 'ai',
+                sender: 'ai',
                 timestamp: new Date(),
                 isTyping: false
               };

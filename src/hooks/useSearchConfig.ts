@@ -40,7 +40,7 @@ export const useSearchConfig = () => {
       const token = await getToken();
       
       // Get configuration from the settings API
-      const response = await fetch(`${config.apiBaseUrl}/api/v1/settings/SEARCH_CONFIG`, {
+      const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.settings}/SEARCH_CONFIG`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',

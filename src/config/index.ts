@@ -15,7 +15,8 @@ const config = {
   apiEndpoints: {
     searchConfig: '/api/v1/settings/search-config',
     syncProducts: '/api/v1/sync-products',
-    syncHistory: '/api/v1/sync-history'
+    syncHistory: '/api/v1/sync-history',
+    settings: '/api/v1/settings'
   }
 };
 

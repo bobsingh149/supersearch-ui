@@ -26,6 +26,7 @@ import {
 import { Link, useLocation } from 'react-router-dom';
 
 const drawerWidth = 240;
+const collapsedWidth = 72;
 
 // Menu items configuration
 const mainMenuItems = [
@@ -221,10 +222,10 @@ export default function Sidebar({ isExpanded, onExpandedChange }: SidebarProps) 
     <Drawer
       variant="permanent"
       sx={{
-        width: isExpanded ? drawerWidth : 65,
+        width: isExpanded ? drawerWidth : collapsedWidth,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
-          width: isExpanded ? drawerWidth : 65,
+          width: isExpanded ? drawerWidth : collapsedWidth,
           boxSizing: 'border-box',
           transition: theme => theme.transitions.create(['width', 'background-color'], {
             easing: theme.transitions.easing.easeInOut,
@@ -240,22 +241,41 @@ export default function Sidebar({ isExpanded, onExpandedChange }: SidebarProps) 
       }}
     >
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: isExpanded ? 'space-between' : 'center' }}>
-        {isExpanded && (
-          <Typography
-            variant="h6"
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box
+            component="img"
+            src="/cognishop-logo.png"
+            alt="CogniShop Logo"
             sx={{
-              background: theme => `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              fontWeight: 'bold',
+              height: 32,
+              width: 32,
+              mr: isExpanded ? 1.5 : 0,
             }}
-          >
-            CogniShop
-          </Typography>
-        )}
+          />
+          {isExpanded && (
+            <Typography
+              variant="h6"
+              sx={{
+                background: theme => `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontWeight: 'bold',
+              }}
+            >
+              CogniShop
+            </Typography>
+          )}
+        </Box>
         <IconButton
           onClick={() => onExpandedChange(!isExpanded)}
+          size="small"
           sx={{
+            width: 28,
+            height: 28,
+            '& svg': {
+              width: 18,
+              height: 18,
+            },
             '&:focus': {
               outline: 'none',
             },

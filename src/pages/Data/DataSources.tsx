@@ -64,10 +64,8 @@ import {
 } from '@mui/icons-material';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
-import {
-  useProduct, 
+import { 
   Product,
-  formatCellValue,
   getColumnDefinitions,
   useProducts,
 } from '../../hooks/useProduct';

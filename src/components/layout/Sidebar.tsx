@@ -288,10 +288,21 @@ export default function Sidebar({ isExpanded, onExpandedChange }: SidebarProps) 
         </IconButton>
       </Box>
 
+      <Box 
+        sx={{ 
+          height: '1px', 
+          bgcolor: 'divider',
+          mx: 2,
+          mb: 2,
+          opacity: 0.6 
+        }} 
+      />
+
       <Box sx={{ 
         flexGrow: 1, 
         overflowY: 'auto',
         overflowX: 'hidden',
+        mt: 1,
         '&::-webkit-scrollbar': {
           width: '4px',
         },

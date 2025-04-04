@@ -83,7 +83,11 @@ export default function Search() {
       searchConfig.title_field !== originalConfig.title_field ||
       searchConfig.image_url_field !== originalConfig.image_url_field ||
       JSON.stringify(searchConfig.searchable_attribute_fields) !== 
-      JSON.stringify(originalConfig.searchable_attribute_fields);
+      JSON.stringify(originalConfig.searchable_attribute_fields) ||
+      JSON.stringify(searchConfig.filter_fields) !== 
+      JSON.stringify(originalConfig.filter_fields) ||
+      JSON.stringify(searchConfig.sortable_fields) !== 
+      JSON.stringify(originalConfig.sortable_fields);
     
     setIsConfigChanged(hasChanged);
   }, [searchConfig, originalConfig]);
@@ -117,6 +121,22 @@ export default function Search() {
     setSearchConfig(prev => ({
       ...prev,
       searchable_attribute_fields: value
+    }));
+  };
+  
+  // Handle filter fields change
+  const handleFilterFieldsChange = (value: string[]) => {
+    setSearchConfig(prev => ({
+      ...prev,
+      filter_fields: value
+    }));
+  };
+  
+  // Handle sortable fields change
+  const handleSortableFieldsChange = (value: string[]) => {
+    setSearchConfig(prev => ({
+      ...prev,
+      sortable_fields: value
     }));
   };
   
@@ -217,6 +237,8 @@ export default function Search() {
           handleTitleFieldChange={handleTitleFieldChange}
           handleImageUrlFieldChange={handleImageUrlFieldChange}
           handleSearchableAttributesChange={handleSearchableAttributesChange}
+          handleFilterFieldsChange={handleFilterFieldsChange}
+          handleSortableFieldsChange={handleSortableFieldsChange}
           handleSaveConfig={handleSaveConfig}
         />
       </TabPanel>

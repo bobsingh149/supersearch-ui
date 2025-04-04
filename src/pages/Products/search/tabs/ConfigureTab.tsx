@@ -15,6 +15,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import TitleIcon from '@mui/icons-material/Title';
 import ImageIcon from '@mui/icons-material/Image';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import SortIcon from '@mui/icons-material/Sort';
 import { ConfigureTabProps } from '../components/types';
 
 // Updated available fields based on movie database columns
@@ -42,6 +44,8 @@ const ConfigureTab = ({
   handleTitleFieldChange,
   handleImageUrlFieldChange,
   handleSearchableAttributesChange,
+  handleFilterFieldsChange,
+  handleSortableFieldsChange,
   handleSaveConfig
 }: ConfigureTabProps) => {
   const theme = useTheme();
@@ -338,6 +342,150 @@ const ConfigureTab = ({
             />
           </Box>
           
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="subtitle1" fontWeight="medium" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <FilterListIcon sx={{ color: theme.palette.primary.main, mr: 1.5 }} />
+              Filterable Attributes
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Select fields that users can filter by when searching.
+            </Typography>
+            
+            <Autocomplete
+              multiple
+              options={availableFields.map(field => field.id)}
+              getOptionLabel={(option) => {
+                const field = availableFields.find(f => f.id === option);
+                return field ? `${field.label}` : option;
+              }}
+              value={searchConfig.filter_fields || []}
+              onChange={(_, newValue) => handleFilterFieldsChange(newValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Choose fields for filtering"
+                  variant="outlined"
+                  fullWidth
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&.Mui-focused fieldset': {
+                        borderColor: theme.palette.primary.main,
+                      },
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: theme.palette.primary.main,
+                    },
+                  }}
+                />
+              )}
+              renderOption={(props, option) => {
+                const field = availableFields.find(f => f.id === option);
+                return (
+                  <li {...props}>
+                    <Box sx={{ py: 0.5 }}>
+                      <Typography variant="body1" fontWeight="medium">
+                        {field?.label}
+                      </Typography>
+                    </Box>
+                  </li>
+                );
+              }}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => {
+                  const field = availableFields.find(f => f.id === option);
+                  return (
+                    <Chip
+                      label={field?.label || option}
+                      {...getTagProps({ index })}
+                      key={option}
+                      sx={{ 
+                        borderRadius: '6px',
+                        '& .MuiChip-deleteIcon': {
+                          color: alpha(theme.palette.text.primary, 0.5),
+                          '&:hover': {
+                            color: theme.palette.text.primary
+                          }
+                        }
+                      }}
+                    />
+                  );
+                })
+              }
+            />
+          </Box>
+          
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="subtitle1" fontWeight="medium" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <SortIcon sx={{ color: theme.palette.primary.main, mr: 1.5 }} />
+              Sortable Attributes
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Select fields that users can sort by when viewing results.
+            </Typography>
+            
+            <Autocomplete
+              multiple
+              options={availableFields.map(field => field.id)}
+              getOptionLabel={(option) => {
+                const field = availableFields.find(f => f.id === option);
+                return field ? `${field.label}` : option;
+              }}
+              value={searchConfig.sortable_fields || []}
+              onChange={(_, newValue) => handleSortableFieldsChange(newValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Choose fields for sorting"
+                  variant="outlined"
+                  fullWidth
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&.Mui-focused fieldset': {
+                        borderColor: theme.palette.primary.main,
+                      },
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: theme.palette.primary.main,
+                    },
+                  }}
+                />
+              )}
+              renderOption={(props, option) => {
+                const field = availableFields.find(f => f.id === option);
+                return (
+                  <li {...props}>
+                    <Box sx={{ py: 0.5 }}>
+                      <Typography variant="body1" fontWeight="medium">
+                        {field?.label}
+                      </Typography>
+                    </Box>
+                  </li>
+                );
+              }}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => {
+                  const field = availableFields.find(f => f.id === option);
+                  return (
+                    <Chip
+                      label={field?.label || option}
+                      {...getTagProps({ index })}
+                      key={option}
+                      sx={{ 
+                        borderRadius: '6px',
+                        '& .MuiChip-deleteIcon': {
+                          color: alpha(theme.palette.text.primary, 0.5),
+                          '&:hover': {
+                            color: theme.palette.text.primary
+                          }
+                        }
+                      }}
+                    />
+                  );
+                })
+              }
+            />
+          </Box>
+          
           <Box sx={{ 
             display: 'flex', 
             justifyContent: 'flex-end',
@@ -349,11 +497,7 @@ const ConfigureTab = ({
               onClick={handleSaveConfig}
               disabled={
                 loading || 
-                !isConfigChanged || 
-                !searchConfig.id_field || 
-                !searchConfig.title_field || 
-                !searchConfig.image_url_field ||
-                searchConfig.searchable_attribute_fields.length === 0
+                !isConfigChanged
               }
               startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
               sx={{ 

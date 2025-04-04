@@ -8,6 +8,8 @@ export interface SearchConfig {
   title_field: string;
   image_url_field: string;
   searchable_attribute_fields: string[];
+  filter_fields?: string[];
+  sortable_fields?: string[];
   removeStopWords?: boolean;
   optionalWords?: string[];
 }
@@ -78,7 +80,9 @@ export const useSearchConfig = () => {
           id_field: '',
           title_field: '',
           image_url_field: '',
-          searchable_attribute_fields: []
+          searchable_attribute_fields: [],
+          filter_fields: [],
+          sortable_fields: []
         };
       } else {
         // Show error message for other errors

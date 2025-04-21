@@ -19,18 +19,26 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import SortIcon from '@mui/icons-material/Sort';
 import { ConfigureTabProps } from '../components/types';
 
-// Updated available fields based on movie database columns
+// Updated available fields based on the specified movie database columns
 const availableFields = [
+  { id: 'adult', label: 'Adult' },
+  { id: 'backdrop_path', label: 'Backdrop Path' },
+  { id: 'genres', label: 'Genres' },
   { id: 'id', label: 'ID' },
-  { id: 'Release_Date', label: 'Release Date' },
-  { id: 'Title', label: 'Title' },
-  { id: 'Overview', label: 'Overview' },
-  { id: 'Popularity', label: 'Popularity' },
-  { id: 'Vote_Count', label: 'Vote Count' },
-  { id: 'Vote_Average', label: 'Vote Average' },
-  { id: 'Original_Language', label: 'Original Language' },
-  { id: 'Genre', label: 'Genre' },
-  { id: 'Poster_Url', label: 'Poster URL' }
+  { id: 'imdb_id', label: 'IMDB ID' },
+  { id: 'original_language', label: 'Original Language' },
+  { id: 'overview', label: 'Overview' },
+  { id: 'popularity', label: 'Popularity' },
+  { id: 'poster_path', label: 'Poster Path' },
+  { id: 'release_date', label: 'Release Date' },
+  { id: 'runtime', label: 'Runtime' },
+  { id: 'tagline', label: 'Tagline' },
+  { id: 'title', label: 'Title' },
+  { id: 'vote_average', label: 'Vote Average' },
+  { id: 'vote_count', label: 'Vote Count' },
+  { id: 'actors', label: 'Actors' },
+  { id: 'director', label: 'Director' },
+  { id: 'keywords', label: 'Keywords' }
 ];
 
 const ConfigureTab = ({

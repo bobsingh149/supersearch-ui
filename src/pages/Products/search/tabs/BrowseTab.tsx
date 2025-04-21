@@ -20,7 +20,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import { useSearch, SearchResultItem } from '../../../../hooks/useSearch';
+import { useSearch, SearchResultItem} from '../../../../hooks/useSearch';
 
 export const BrowseTab = () => {
   const theme = useTheme();
@@ -68,7 +68,7 @@ export const BrowseTab = () => {
       setTotalResults(response.total || response.results.length);
     } catch (err) {
       console.error('Error fetching search results:', err);
-      setError(apiError || 'Failed to fetch search results. Please try again.');
+      setError(apiError?.message || 'Failed to fetch search results. Please try again.');
       setSearchResults([]);
     } finally {
       setInitialLoad(false);

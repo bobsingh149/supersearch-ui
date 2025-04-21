@@ -26,7 +26,8 @@ import {
   Paper,
   Rating,
   SelectChangeEvent,
-  Link
+  Link,
+  Stack,  
 } from '@mui/material';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
@@ -36,8 +37,9 @@ import PersonIcon from '@mui/icons-material/Person';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import CloseIcon from '@mui/icons-material/Close';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import AISearchBar from '../Products/ai_shopping/AISearchBar';
-import { useSearch, SearchResultItem } from '../../hooks/useSearch';
+import { useSearch, SearchResultItem} from '../../hooks/useSearch';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { getTheme } from '../../theme/theme';
@@ -49,7 +51,7 @@ const DRAWER_WIDTH = 280;
 const DemoEcommerce: React.FC = () => {
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
   const [page, setPage] = useState(1);
-  const { loading: apiLoading, searchProducts } = useSearch();
+  const { loading: apiLoading, searchProducts, error: apiError, errorStatusCode } = useSearch();
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(12);
   const [totalResults, setTotalResults] = useState(0);
@@ -96,6 +98,7 @@ const DemoEcommerce: React.FC = () => {
       setHasMore(response.has_more || false);
     } catch (error) {
       console.error('Error fetching products:', error);
+      // Error is handled via the apiError state from useSearch
     }
   }, [searchProducts]);
 
@@ -302,6 +305,82 @@ const DemoEcommerce: React.FC = () => {
       </Box>
     </Box>
   );
+
+  // Render error message based on status code
+  const renderErrorMessage = () => {
+    if (!apiError) return null;
+
+
+    console.log('errorStatusCode');
+    console.log(errorStatusCode);
+    
+    const errorSeverity = errorStatusCode === 429 ? 'warning' : 'error';
+    
+    return (
+      <Box sx={{ mt: 4, mb: 4 }}>
+        <Paper 
+          elevation={0}
+          sx={{
+            p: 3,
+            borderRadius: 2,
+            bgcolor: theme.palette.mode === 'dark' 
+              ? alpha(theme.palette.error.dark, 0.15)
+              : alpha(theme.palette.error.light, 0.15),
+            border: '1px solid',
+            borderColor: errorSeverity === 'warning'
+              ? theme.palette.warning.main
+              : theme.palette.error.main,
+          }}
+        >
+          <Stack direction="row" spacing={2} alignItems="flex-start">
+            <ErrorOutlineIcon 
+              color={errorSeverity} 
+              sx={{ mt: 0.5, fontSize: 24 }} 
+            />
+            <Box>
+              {errorStatusCode === 429 ? (
+                <>
+                  <Typography variant="h6" color="text.primary" gutterBottom fontWeight={600}>
+                    Search Limit Reached
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" paragraph>
+                    You've exceeded your free quota. Contact us to use our AI-powered search for your site and transform your customer experience.
+                  </Typography>
+                  <Button 
+                    variant="contained" 
+                    color="primary"
+                    size="medium"
+                    sx={{ mt: 1, borderRadius: 1.5, textTransform: 'none', fontWeight: 500 }}
+                    onClick={() => window.open('mailto:sales@supersearch.ai', '_blank')}
+                  >
+                    Contact Us to Supercharge Your Search
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Typography variant="h6" color="text.primary" gutterBottom fontWeight={600}>
+                    Something went wrong
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    We couldn't complete your search request. Please try again later.
+                  </Typography>
+                  <Button 
+                    variant="outlined" 
+                    color="primary"
+                    size="small"
+                    sx={{ mt: 2, borderRadius: 1.5, textTransform: 'none' }}
+                    onClick={() => fetchProducts(page, itemsPerPage)}
+                  >
+                    Try Again
+                  </Button>
+                </>
+              )}
+            </Box>
+          </Stack>
+        </Paper>
+      </Box>
+    );
+  };
 
   return (
     <ThemeProvider theme={theme}>
@@ -637,8 +716,11 @@ const DemoEcommerce: React.FC = () => {
               </Box>
             )}
 
+            {/* Error Message */}
+            {!apiLoading && apiError && renderErrorMessage()}
+
             {/* Product Grid */}
-            {!apiLoading && (
+            {!apiLoading && !apiError && (
               <>
                 {searchResults.length > 0 ? (
                   <Grid container spacing={3}>

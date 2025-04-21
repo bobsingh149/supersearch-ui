@@ -30,16 +30,23 @@ export interface SearchParams {
   filters?: Record<string, any>;
 }
 
+// Custom error type with status code
+export interface SearchError extends Error {
+  statusCode?: number;
+}
+
 export const useSearch = () => {
   const { getToken } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SearchError | null>(null);
+  const [errorStatusCode, setErrorStatusCode] = useState<number | null>(null);
   
   // Search products
   const searchProducts = async (params: SearchParams): Promise<SearchResponse> => {
     try {
       setLoading(true);
       setError(null);
+      setErrorStatusCode(null);
       
       const { query, page = 1, size = 10, filters = {} } = params;
       
@@ -65,7 +72,6 @@ export const useSearch = () => {
           queryParams.append(key, value.toString());
         }
       });
-      
       const response = await fetch(
         `${config.apiBaseUrl}/search?${queryParams.toString()}`, 
         {
@@ -78,7 +84,12 @@ export const useSearch = () => {
       );
       
       if (!response.ok) {
-        throw new Error(`Search API error: ${response.status} ${response.statusText}`);
+        const statusCode = response.status;
+        setErrorStatusCode(statusCode);
+        
+        const customError = new Error(`Search API error: ${statusCode} ${response.statusText}`) as SearchError;
+        customError.statusCode = statusCode;
+        throw customError;
       }
       
       // Parse the API response
@@ -120,8 +131,21 @@ export const useSearch = () => {
       };
     } catch (error: any) {
       console.error('Error searching products:', error);
-      setError(error.message || 'Failed to search products. Please try again.');
-      throw error;
+      
+      // Create a custom error object
+      const customError = new Error(error.message || 'Search failed') as SearchError;
+      
+      // Set status code if not already set
+      if (!errorStatusCode) {
+        const statusCode = error.statusCode || error.status || 500;
+        setErrorStatusCode(statusCode);
+        customError.statusCode = statusCode;
+      } else {
+        customError.statusCode = errorStatusCode;
+      }
+      
+      setError(customError);
+      throw customError;
     } finally {
       setLoading(false);
     }
@@ -130,6 +154,7 @@ export const useSearch = () => {
   return {
     loading,
     error,
+    errorStatusCode,
     searchProducts
   };
 }; 

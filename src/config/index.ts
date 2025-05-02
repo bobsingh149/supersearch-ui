@@ -20,7 +20,8 @@ const config = {
     leads: '/leads',
     reviews: '/reviews',
     productQuestions: '/products/{product_id}/questions',
-    autocomplete: '/search/autocomplete'
+    autocomplete: '/search/autocomplete',
+    similarProducts: '/recommend/similar/{product_id}'
   }
 };
 

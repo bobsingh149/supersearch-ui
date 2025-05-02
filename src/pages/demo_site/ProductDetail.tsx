@@ -53,6 +53,7 @@ import { useProductById, MovieProduct } from '../../hooks/useProduct';
 import { useReviews } from '../../hooks/useReviews';
 import { useReviewSummary } from '../../hooks/useReviewSummary';
 import { useProductQuestions } from '../../hooks/useProductQuestions';
+import { useSimilarProducts, SimilarProduct } from '../../hooks/useSimilarProducts';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import random_name from 'node-random-name';
 import AISearchBar, { AISearchBarRef } from '../Products/ai_shopping/AISearchBar';
@@ -65,6 +66,7 @@ const ProductDetail: React.FC = () => {
   const { reviews, loading: reviewsLoading, error: reviewsError, fetchReviews } = useReviews();
   const { summary: reviewSummary, loading: summaryLoading, error: summaryError, fetchReviewSummary } = useReviewSummary();
   const { questions, loading: questionsLoading, error: questionsError, fetchProductQuestions } = useProductQuestions();
+  const { similarProducts, loading: similarProductsLoading, error: similarProductsError, fetchSimilarProducts } = useSimilarProducts();
   const [product, setProduct] = useState<MovieProduct | null>(null);
   const [mode, setMode] = useState<'light' | 'dark'>(() => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -96,6 +98,8 @@ const ProductDetail: React.FC = () => {
           await fetchReviewSummary(productId);
           // Fetch product questions
           await fetchProductQuestions(productId);
+          // Fetch similar products
+          await fetchSimilarProducts(productId);
         }
       } catch (error) {
         console.error('Error fetching product:', error);
@@ -227,6 +231,96 @@ const ProductDetail: React.FC = () => {
           </Paper>
         </Zoom>
       </ClickAwayListener>
+    );
+  };
+
+  // Similar product card component
+  const SimilarProductCard = ({ product }: { product: SimilarProduct }) => {
+    return (
+      <Card
+        elevation={0}
+        sx={{
+          borderRadius: 2,
+          overflow: 'hidden',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          transition: 'transform 0.2s, box-shadow 0.2s',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: theme.shadows[4],
+            cursor: 'pointer'
+          }
+        }}
+        onClick={() => navigate(`/demo_site/product/${product.id}`)}
+      >
+        <Box sx={{ position: 'relative', paddingTop: '150%' }}>
+          <CardMedia
+            component="img"
+            image={product.image_url || `https://picsum.photos/300/450?random=${product.id}`}
+            alt={product.title}
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover'
+            }}
+          />
+        </Box>
+        <Box sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+          <Typography 
+            variant="subtitle1" 
+            component="h3" 
+            sx={{ 
+              fontWeight: 600,
+              mb: 1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              lineHeight: 1.2,
+              height: '2.4em'
+            }}
+          >
+            {product.title}
+          </Typography>
+          
+          {product.custom_data?.genres && (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
+              {parseArrayField(product.custom_data.genres).slice(0, 2).map((genre, idx) => (
+                <Chip
+                  key={idx}
+                  label={genre}
+                  size="small"
+                  sx={{
+                    fontSize: '0.7rem',
+                    height: 20,
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    color: 'primary.main'
+                  }}
+                />
+              ))}
+            </Box>
+          )}
+          
+          {product.custom_data?.vote_average && (
+            <Box sx={{ display: 'flex', alignItems: 'center', mt: 'auto' }}>
+              <Rating
+                value={parseFloat(product.custom_data.vote_average) / 2}
+                precision={0.5}
+                readOnly
+                size="small"
+              />
+              <Typography variant="caption" sx={{ ml: 0.5 }}>
+                {(parseFloat(product.custom_data.vote_average) / 2).toFixed(1)}
+              </Typography>
+            </Box>
+          )}
+        </Box>
+      </Card>
     );
   };
 
@@ -810,6 +904,43 @@ const ProductDetail: React.FC = () => {
               </Box>
             </Grid>
           </Grid>
+
+          {/* Similar Products Section */}
+          <Box sx={{ mt: 8 }}>
+            <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
+              Similar Items
+            </Typography>
+            <Divider sx={{ mb: 3 }} />
+            
+            {similarProductsLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : similarProductsError ? (
+              <Paper sx={{ p: 3, textAlign: 'center', bgcolor: 'error.light' }}>
+                <Typography color="error">{similarProductsError}</Typography>
+              </Paper>
+            ) : similarProducts.length === 0 ? (
+              <Paper 
+                sx={{ 
+                  p: 3, 
+                  textAlign: 'center',
+                  bgcolor: theme => alpha(theme.palette.background.paper, 0.6),
+                  borderRadius: 2
+                }}
+              >
+                <Typography color="text.secondary">No similar items found.</Typography>
+              </Paper>
+            ) : (
+              <Grid container spacing={3}>
+                {similarProducts.map((product) => (
+                  <Grid item key={product.id} xs={6} sm={4} md={2}>
+                    <SimilarProductCard product={product} />
+                  </Grid>
+                ))}
+              </Grid>
+            )}
+          </Box>
 
           {/* Review Summary Section */}
           <Box sx={{ mt: 8 }}>

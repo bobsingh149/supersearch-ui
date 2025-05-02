@@ -5,16 +5,23 @@ import config from '../config';
 // Movie product interface
 export interface MovieProduct {
   id: string;
-  Genre?: string;
-  Title?: string;
-  Overview?: string;
-  Popularity?: string;
-  Poster_Url?: string;
-  Vote_Count?: string;
-  Release_Date?: string;
-  Vote_Average?: string;
-  Original_Language?: string;
-  [key: string]: any;
+  adult: string;
+  title: string;
+  actors: string;
+  genres: string;
+  imdb_id: string;
+  runtime: string;
+  tagline: string;
+  director: string;
+  keywords: string;
+  overview: string;
+  popularity: string;
+  vote_count: string;
+  poster_path: string;
+  release_date: string;
+  vote_average: string;
+  backdrop_path: string;
+  original_language: string;
 }
 
 // Generic product type that can handle any fields
@@ -40,7 +47,8 @@ export const getColumnDefinitions = (products: Product[]): Array<{ field: string
   return Object.keys(firstProduct).map(key => {
     // Determine the type of the field
     let type = 'string';
-    const value = firstProduct[key];
+    // Use type assertion with Record<string, any> to resolve the indexing issue
+    const value = (firstProduct as Record<string, any>)[key];
     
     if (typeof value === 'number') {
       type = 'number';
@@ -142,10 +150,10 @@ export const useProducts = () => {
 export const useProductById = () => {
   const { getToken } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   
   // Get a single product by ID
-  const getProductById = async (productId: string): Promise<Product> => {
+  const getProductById = async (productId: string): Promise<MovieProduct> => {
     try {
       setLoading(true);
       setError(null);
@@ -153,22 +161,26 @@ export const useProductById = () => {
       // Get authentication token
       const token = await getToken();
       
-      const response = await fetch(`${config.apiBaseUrl}/products/${productId}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-      });
+      const response = await fetch(
+        `${config.apiBaseUrl}/products/${productId}`, 
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+        }
+      );
       
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        throw new Error(`Failed to fetch product: ${response.status} ${response.statusText}`);
       }
       
-      return await response.json();
+      const data = await response.json();
+      return data as MovieProduct;
     } catch (error: any) {
-      console.error(`Error fetching product with ID ${productId}:`, error);
-      setError(error.message || `Failed to fetch product with ID ${productId}. Please try again.`);
+      console.error('Error getting product by ID:', error);
+      setError(error);
       throw error;
     } finally {
       setLoading(false);

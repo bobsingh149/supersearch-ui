@@ -16,7 +16,11 @@ const config = {
     searchConfig: '/settings/search-config',
     syncProducts: '/sync-products',
     syncHistory: '/sync-history',
-    settings: '/settings'
+    settings: '/settings',
+    leads: '/leads',
+    reviews: '/reviews',
+    productQuestions: '/products/{product_id}/questions',
+    autocomplete: '/search/autocomplete'
   }
 };
 

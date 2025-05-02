@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -19,7 +19,17 @@ import {
   Paper,
   Tooltip,
   AppBar,
-  Toolbar
+  Toolbar,
+  List,
+  ListItem,
+  ListItemText,
+  Avatar,
+  Collapse,
+  Stack,
+  Fab,
+  Modal,
+  ClickAwayListener,
+  Zoom
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -28,19 +38,47 @@ import ShareIcon from '@mui/icons-material/Share';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ThumbUpIcon from '@mui/icons-material/ThumbUp';
+import ThumbDownIcon from '@mui/icons-material/ThumbDown';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import HelpIcon from '@mui/icons-material/Help';
+import CloseIcon from '@mui/icons-material/Close';
+import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { getTheme } from '../../theme/theme';
 import { useProductById, MovieProduct } from '../../hooks/useProduct';
+import { useReviews } from '../../hooks/useReviews';
+import { useReviewSummary } from '../../hooks/useReviewSummary';
+import { useProductQuestions } from '../../hooks/useProductQuestions';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import random_name from 'node-random-name';
+import AISearchBar, { AISearchBarRef } from '../Products/ai_shopping/AISearchBar';
+import { useSearch } from '../../hooks/useSearch';
 
 const ProductDetail: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
   const { loading: apiLoading, getProductById } = useProductById();
+  const { reviews, loading: reviewsLoading, error: reviewsError, fetchReviews } = useReviews();
+  const { summary: reviewSummary, loading: summaryLoading, error: summaryError, fetchReviewSummary } = useReviewSummary();
+  const { questions, loading: questionsLoading, error: questionsError, fetchProductQuestions } = useProductQuestions();
   const [product, setProduct] = useState<MovieProduct | null>(null);
   const [mode, setMode] = useState<'light' | 'dark'>(() => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
+  const { searchProducts } = useSearch();
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [questionsOpen, setQuestionsOpen] = useState(true);
+  const questionsButtonRef = useRef<HTMLButtonElement>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<string>('');
+  
+  // Updated refs with proper typing
+  const desktopSearchRef = useRef<AISearchBarRef>(null);
+  const mobileSearchRef = useRef<AISearchBarRef>(null);
 
   // Use the theme from theme.ts
   const theme = getTheme(mode);
@@ -52,6 +90,12 @@ const ProductDetail: React.FC = () => {
           // Fetch product by ID using the hook
           const response = await getProductById(productId);
           setProduct(response as MovieProduct);
+          // Fetch reviews when product is loaded
+          await fetchReviews(productId);
+          // Fetch review summary
+          await fetchReviewSummary(productId);
+          // Fetch product questions
+          await fetchProductQuestions(productId);
         }
       } catch (error) {
         console.error('Error fetching product:', error);
@@ -69,6 +113,123 @@ const ProductDetail: React.FC = () => {
     navigate(-1);
   };
 
+  const handleContactModalOpen = () => {
+    // Will be implemented if needed
+  };
+
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsFavorite(!isFavorite);
+  };
+
+  const toggleQuestionsModal = () => {
+    // Only allow opening the modal if questions are loaded
+    if (questionsLoading) {
+      return;
+    }
+    setQuestionsOpen(!questionsOpen);
+  };
+
+  const handleQuestionClick = (question: string) => {
+    // Store the selected question
+    setSelectedQuestion(question);
+    
+    // Close the questions modal
+    setQuestionsOpen(false);
+    
+    // Get a reference to the AI search bar (desktop or mobile)
+    const aiSearchBar = desktopSearchRef.current || mobileSearchRef.current;
+    
+    // If we have access to the AI search bar, send the question directly
+    if (aiSearchBar) {
+      // This will: 
+      // 1. Open the AI chat
+      // 2. Set the question in the input field
+      // 3. Send the message immediately
+      // 4. Process the response
+      aiSearchBar.openAiChatWithMessage(question);
+    }
+  };
+
+  // Questions modal component
+  const QuestionsModal = () => {
+    if (!questionsOpen) return null;
+    
+    return (
+      <ClickAwayListener onClickAway={() => setQuestionsOpen(false)}>
+        <Zoom in={questionsOpen}>
+          <Paper
+            elevation={4}
+            sx={{
+              position: 'fixed',
+              right: { xs: '50%', md: 100 },
+              top: { xs: '50%', md: questionsButtonRef.current?.getBoundingClientRect().top || 250 },
+              transform: { xs: 'translate(50%, -50%)', md: 'translateY(-50%)' },
+              zIndex: 1300,
+              width: { xs: '90%', sm: 400 },
+              height: { xs: 'auto', sm: 450 },
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              borderRadius: 2,
+              p: 3
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <QuestionAnswerIcon color="primary" fontSize="small" />
+                Frequently Asked Questions
+              </Typography>
+              <IconButton size="small" onClick={toggleQuestionsModal}>
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+            
+            <Divider sx={{ mb: 2 }} />
+            
+            {questionsLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : questionsError ? (
+              <Typography color="error">{questionsError}</Typography>
+            ) : questions.length === 0 ? (
+              <Typography color="text.secondary">No questions available for this product.</Typography>
+            ) : (
+              <List>
+                {questions.map((question, index) => (
+                  <ListItem 
+                    key={index} 
+                    sx={{ 
+                      py: 1.5, 
+                      px: 2,
+                      borderRadius: 1,
+                      mb: 1,
+                      bgcolor: alpha(theme.palette.primary.main, 0.05),
+                      '&:hover': {
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        cursor: 'pointer'
+                      }
+                    }}
+                    onClick={() => handleQuestionClick(question)}
+                  >
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                          <HelpIcon fontSize="small" sx={{ color: 'primary.main', mr: 1, mt: 0.3 }} />
+                          <Typography variant="body1">{question}</Typography>
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            )}
+          </Paper>
+        </Zoom>
+      </ClickAwayListener>
+    );
+  };
+
   if (apiLoading) {
     return (
       <ThemeProvider theme={theme}>
@@ -78,8 +239,13 @@ const ProductDetail: React.FC = () => {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
             minHeight: '100vh',
-            bgcolor: theme.palette.mode === 'dark' ? 'background.default' : '#f5f5f7'
+            bgcolor: theme.palette.mode === 'dark' ? 'background.default' : '#f5f5f7',
+            width: '100%'
           }}
         >
           <CircularProgress />
@@ -94,12 +260,17 @@ const ProductDetail: React.FC = () => {
         <CssBaseline />
         <Box
           sx={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             minHeight: '100vh',
             flexDirection: 'column',
-            bgcolor: theme.palette.mode === 'dark' ? 'background.default' : '#f5f5f7'
+            bgcolor: theme.palette.mode === 'dark' ? 'background.default' : '#f5f5f7',
+            width: '100%'
           }}
         >
           <Paper 
@@ -129,11 +300,151 @@ const ProductDetail: React.FC = () => {
   }
 
   // Extract product data - prioritize the movie-specific fields
-  const title = product.Title || 'Product Title';
-  const imageUrl = product.Poster_Url || '';
+  const title = product.title || 'Product Title';
+  const imageUrl = product.poster_path || '';
   
-  // Check if product is a movie
-  const isMovie = !!product.Genre;
+  // Helper function to parse different formats of stringified arrays
+  const parseArrayField = (field?: string): string[] => {
+    if (!field) return [];
+    
+    try {
+      // Try standard JSON parse first
+      return JSON.parse(field);
+    } catch (e) {
+      try {
+        // Handle single quotes format by replacing with double quotes
+        const normalizedField = field.replace(/'/g, '"');
+        return JSON.parse(normalizedField);
+      } catch (e2) {
+        try {
+          // Handle mixed quotes format (escaped double quotes inside single quotes)
+          const fixedField = field
+            .replace(/\\\"/g, '"') // Replace escaped double quotes
+            .replace(/'/g, '"');   // Replace single quotes with double quotes
+          return JSON.parse(fixedField);
+        } catch (e3) {
+          console.error("Failed to parse array field:", field, e3);
+          return [];
+        }
+      }
+    }
+  };
+  
+  // Parse stringified arrays
+  const genres = parseArrayField(product.genres);
+  const actors = parseArrayField(product.actors);
+  const directors = parseArrayField(product.director);
+  
+  // Review component
+  const ReviewCard = ({ review }: { review: any }) => {
+    const [expanded, setExpanded] = useState(false);
+    // Use useMemo to create a stable random name that won't change on re-renders
+    const reviewAuthor = useMemo(() => random_name(), []);
+    const maxPreviewLength = 150;
+    const shouldShowExpand = review.content.length > maxPreviewLength;
+    const previewText = shouldShowExpand ? review.content.slice(0, maxPreviewLength) + '...' : review.content;
+
+    // Generate color based on first letter
+    const getAvatarColor = (name: string) => {
+      const colors = [
+        '#f44336', // red
+        '#e91e63', // pink
+        '#9c27b0', // purple
+        '#673ab7', // deep purple
+        '#3f51b5', // indigo
+        '#2196f3', // blue
+        '#03a9f4', // light blue
+        '#00bcd4', // cyan
+        '#009688', // teal
+        '#4caf50', // green
+        '#8bc34a', // light green
+        '#cddc39', // lime
+        '#ffc107', // amber
+        '#ff9800', // orange
+        '#ff5722', // deep orange
+        '#795548', // brown
+        '#607d8b', // blue grey
+      ];
+      const charCode = name.charCodeAt(0);
+      return colors[charCode % colors.length];
+    };
+
+    return (
+      <Paper 
+        elevation={0}
+        sx={{ 
+          p: 3, 
+          mb: 2, 
+          borderRadius: 2,
+          bgcolor: theme => alpha(theme.palette.background.paper, 0.6),
+          border: '1px solid',
+          borderColor: theme => alpha(theme.palette.divider, 0.1),
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            boxShadow: theme => theme.shadows[2],
+            borderColor: theme => alpha(theme.palette.divider, 0.2),
+          }
+        }}
+      >
+        <Stack spacing={2}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar 
+              sx={{ 
+                bgcolor: getAvatarColor(reviewAuthor),
+                width: 40,
+                height: 40,
+                fontSize: '1rem',
+                fontWeight: 600,
+                color: 'white'
+              }}
+            >
+              {reviewAuthor.charAt(0).toUpperCase()}
+            </Avatar>
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                {reviewAuthor}
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
+                <AccessTimeIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                <Typography variant="caption">
+                  {new Date(review.created_at).toLocaleDateString()}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+
+          <Typography
+            variant="body1"
+            color="text.primary"
+            sx={{ 
+              whiteSpace: 'pre-line',
+              lineHeight: 1.6
+            }}
+          >
+            {expanded ? review.content : previewText}
+          </Typography>
+
+          {shouldShowExpand && (
+            <Button
+              onClick={() => setExpanded(!expanded)}
+              endIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              sx={{ 
+                alignSelf: 'flex-start',
+                textTransform: 'none',
+                color: 'text.secondary',
+                '&:hover': {
+                  bgcolor: 'transparent',
+                  color: 'primary.main'
+                }
+              }}
+            >
+              {expanded ? 'Show less' : 'Show more'}
+            </Button>
+          )}
+        </Stack>
+      </Paper>
+    );
+  };
 
   return (
     <ThemeProvider theme={theme}>
@@ -145,7 +456,8 @@ const ProductDetail: React.FC = () => {
         maxWidth: '100vw',
         overflowX: 'hidden',
         margin: 0,
-        padding: 0
+        padding: 0,
+        position: 'relative'
       }}>
         {/* Header */}
         <AppBar 
@@ -205,27 +517,57 @@ const ProductDetail: React.FC = () => {
               </Typography>
             </Box>
             
-            <Box sx={{ flexGrow: 1 }} />
+            {/* Search Bar - Desktop */}
+            <Box sx={{ 
+              flexGrow: 1, 
+              mx: 2, 
+              display: { xs: 'none', md: 'block' } 
+            }}>
+              <AISearchBar 
+                setData={setSearchResults} 
+                ref={desktopSearchRef}
+              />
+            </Box>
             
             {/* Action Icons */}
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Tooltip title="Favorites">
-                <IconButton size="small" color="inherit" sx={{ ml: { xs: 0, md: 1 } }}>
-                  <FavoriteIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Cart">
-                <IconButton size="small" color="inherit" sx={{ ml: { xs: 0, md: 1 } }}>
-                  <ShoppingCartIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+            <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto', gap: 2 }}>
               <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
-                <IconButton size="small" onClick={toggleTheme} color="inherit" sx={{ ml: { xs: 0, md: 1 } }}>
+                <IconButton size="small" onClick={toggleTheme} color="inherit">
                   {mode === 'light' ? <DarkModeIcon fontSize="small" /> : <LightModeIcon fontSize="small" />}
                 </IconButton>
               </Tooltip>
+              <Button
+                variant="contained"
+                color="primary"
+                size="medium"
+                onClick={handleContactModalOpen}
+                sx={{ 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  px: 4,
+                  py: 1,
+                  fontSize: '0.95rem',
+                  minWidth: '140px',
+                  display: { xs: 'none', sm: 'block' }
+                }}
+              >
+                Contact Us
+              </Button>
             </Box>
           </Toolbar>
+          
+          {/* Search Bar - Mobile */}
+          <Box sx={{ 
+            px: { xs: 2, md: 3 }, 
+            pb: 1, 
+            display: { xs: 'block', md: 'none' } 
+          }}>
+            <AISearchBar 
+              setData={setSearchResults} 
+              ref={mobileSearchRef}
+            />
+          </Box>
         </AppBar>
 
         {/* Main Content */}
@@ -246,7 +588,7 @@ const ProductDetail: React.FC = () => {
             >
               Home
             </Link>
-            {isMovie && (
+            {genres.length > 0 && (
               <Link 
                 color="inherit" 
                 href="#" 
@@ -330,7 +672,8 @@ const ProductDetail: React.FC = () => {
                   gap: 1
                 }}>
                   <IconButton 
-                    size="small" 
+                    size="small"
+                    onClick={handleToggleFavorite}
                     sx={{ 
                       bgcolor: 'background.paper',
                       boxShadow: theme.shadows[2],
@@ -339,7 +682,7 @@ const ProductDetail: React.FC = () => {
                       }
                     }}
                   >
-                    <FavoriteIcon fontSize="small" />
+                    <FavoriteIcon fontSize="small" sx={{ color: isFavorite ? 'error.main' : 'inherit' }} />
                   </IconButton>
                   <IconButton 
                     size="small" 
@@ -361,9 +704,9 @@ const ProductDetail: React.FC = () => {
             <Grid item xs={12} md={7}>
               <Box>
                 {/* Title and Genre/Category */}
-                {isMovie && product.Genre && (
+                {genres.length > 0 && (
                   <Chip 
-                    label={product.Genre.split(',')[0]} 
+                    label={genres[0]} 
                     size="small" 
                     sx={{ 
                       mb: 2,
@@ -379,23 +722,23 @@ const ProductDetail: React.FC = () => {
                 </Typography>
                 
                 {/* Rating */}
-                {isMovie && product.Vote_Average && (
+                {product.vote_average && (
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <Rating 
-                      value={parseFloat(product.Vote_Average) / 2} 
+                      value={parseFloat(product.vote_average) / 2} 
                       precision={0.5} 
                       readOnly 
                     />
                     <Typography variant="body2" sx={{ ml: 1 }}>
-                      {(parseFloat(product.Vote_Average) / 2).toFixed(1)} ({product.Vote_Count} reviews)
+                      {(parseFloat(product.vote_average) / 2).toFixed(1)} ({product.vote_count} reviews)
                     </Typography>
                   </Box>
                 )}
                 
                 {/* Release Date */}
-                {isMovie && product.Release_Date && (
+                {product.release_date && (
                   <Typography variant="body1" sx={{ mb: 2 }}>
-                    <strong>Released:</strong> {new Date(product.Release_Date).toLocaleDateString('en-US', {
+                    <strong>Released:</strong> {new Date(product.release_date).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'
@@ -404,9 +747,23 @@ const ProductDetail: React.FC = () => {
                 )}
                 
                 {/* Language */}
-                {isMovie && product.Original_Language && (
+                {product.original_language && (
                   <Typography variant="body1" sx={{ mb: 2 }}>
-                    <strong>Language:</strong> {product.Original_Language.toUpperCase()}
+                    <strong>Language:</strong> {product.original_language.toUpperCase()}
+                  </Typography>
+                )}
+                
+                {/* Director */}
+                {directors.length > 0 && (
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    <strong>Director:</strong> {directors.join(', ')}
+                  </Typography>
+                )}
+                
+                {/* Actors */}
+                {actors.length > 0 && (
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    <strong>Starring:</strong> {actors.join(', ')}
                   </Typography>
                 )}
                 
@@ -417,19 +774,17 @@ const ProductDetail: React.FC = () => {
                   Description
                 </Typography>
                 <Typography variant="body1" paragraph>
-                  {isMovie && product.Overview 
-                    ? product.Overview 
-                    : "No description available for this product."}
+                  {product.overview || "No description available for this product."}
                 </Typography>
                 
                 {/* Popularity for Movies */}
-                {isMovie && product.Popularity && (
+                {product.popularity && (
                   <Box sx={{ mt: 3 }}>
                     <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
                       Popularity Score
                     </Typography>
                     <Typography variant="body2">
-                      {parseFloat(product.Popularity).toFixed(1)}
+                      {parseFloat(product.popularity).toFixed(1)}
                     </Typography>
                   </Box>
                 )}
@@ -451,23 +806,183 @@ const ProductDetail: React.FC = () => {
                   >
                     Add to Cart
                   </Button>
-                  <Button
-                    variant="outlined"
-                    size="large"
-                    startIcon={<FavoriteIcon />}
-                    sx={{ 
-                      borderRadius: 1.5,
-                      py: 1.5,
-                      textTransform: 'none'
-                    }}
-                  >
-                    Favorite
-                  </Button>
                 </Box>
               </Box>
             </Grid>
           </Grid>
+
+          {/* Review Summary Section */}
+          <Box sx={{ mt: 8 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <AutoAwesomeIcon color="primary" />
+              <Typography variant="h5" sx={{ fontWeight: 600 }}>
+                AI Review Summary
+              </Typography>
+            </Box>
+            <Divider sx={{ mb: 3 }} />
+            
+            {summaryLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : summaryError ? (
+              <Paper sx={{ p: 3, textAlign: 'center', bgcolor: 'error.light' }}>
+                <Typography color="error">{summaryError}</Typography>
+              </Paper>
+            ) : reviewSummary ? (
+              <Paper 
+                elevation={0}
+                sx={{ 
+                  p: 4, 
+                  borderRadius: 2,
+                  bgcolor: theme => alpha(theme.palette.background.paper, 0.6),
+                  border: '1px solid',
+                  borderColor: theme => alpha(theme.palette.divider, 0.1),
+                }}
+              >
+                {/* Summary Text */}
+                <Typography variant="body1" paragraph sx={{ fontStyle: 'italic', mb: 3 }}>
+                  {reviewSummary.summary}
+                </Typography>
+                
+                <Grid container spacing={3}>
+                  {/* Pros */}
+                  <Grid item xs={12} md={6}>
+                    <Paper 
+                      elevation={0}
+                      sx={{ 
+                        p: 3, 
+                        height: '100%',
+                        borderRadius: 2,
+                        bgcolor: alpha(theme.palette.success.main, 0.05),
+                        border: '1px solid',
+                        borderColor: alpha(theme.palette.success.main, 0.1),
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                        <ThumbUpIcon sx={{ color: 'success.main', mr: 1 }} />
+                        <Typography variant="h6" sx={{ fontWeight: 600, color: 'success.main' }}>
+                          Pros
+                        </Typography>
+                      </Box>
+                      <List dense disablePadding>
+                        {reviewSummary.pros.map((pro, index) => (
+                          <ListItem key={index} disableGutters sx={{ py: 0.5 }}>
+                            <ListItemText 
+                              primary={pro}
+                              primaryTypographyProps={{
+                                variant: 'body2'
+                              }}
+                            />
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Paper>
+                  </Grid>
+                  
+                  {/* Cons */}
+                  <Grid item xs={12} md={6}>
+                    <Paper 
+                      elevation={0}
+                      sx={{ 
+                        p: 3, 
+                        height: '100%',
+                        borderRadius: 2,
+                        bgcolor: alpha(theme.palette.error.main, 0.05),
+                        border: '1px solid',
+                        borderColor: alpha(theme.palette.error.main, 0.1),
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                        <ThumbDownIcon sx={{ color: 'error.main', mr: 1 }} />
+                        <Typography variant="h6" sx={{ fontWeight: 600, color: 'error.main' }}>
+                          Cons
+                        </Typography>
+                      </Box>
+                      <List dense disablePadding>
+                        {reviewSummary.cons.map((con, index) => (
+                          <ListItem key={index} disableGutters sx={{ py: 0.5 }}>
+                            <ListItemText 
+                              primary={con}
+                              primaryTypographyProps={{
+                                variant: 'body2'
+                              }}
+                            />
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Paper>
+            ) : (
+              <Paper 
+                sx={{ 
+                  p: 3, 
+                  textAlign: 'center',
+                  bgcolor: theme => alpha(theme.palette.background.paper, 0.6),
+                  borderRadius: 2
+                }}
+              >
+                <Typography color="text.secondary">No review summary available for this product.</Typography>
+              </Paper>
+            )}
+          </Box>
+
+          {/* Reviews Section */}
+          <Box sx={{ mt: 8 }}>
+            <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
+              Customer Reviews
+            </Typography>
+            <Divider sx={{ mb: 3 }} />
+            
+            {reviewsLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : reviewsError ? (
+              <Paper sx={{ p: 3, textAlign: 'center', bgcolor: 'error.light' }}>
+                <Typography color="error">{reviewsError}</Typography>
+              </Paper>
+            ) : reviews.length === 0 ? (
+              <Paper 
+                sx={{ 
+                  p: 3, 
+                  textAlign: 'center',
+                  bgcolor: theme => alpha(theme.palette.background.paper, 0.6),
+                  borderRadius: 2
+                }}
+              >
+                <Typography color="text.secondary">No reviews yet for this product.</Typography>
+              </Paper>
+            ) : (
+              <Stack spacing={2}>
+                {reviews.map((review) => (
+                  <ReviewCard key={review.id} review={review} />
+                ))}
+              </Stack>
+            )}
+          </Box>
         </Container>
+        
+        {/* Questions button and modal */}
+        <Fab
+          color="primary"
+          aria-label="questions"
+          ref={questionsButtonRef}
+          onClick={toggleQuestionsModal}
+          sx={{
+            position: 'fixed',
+            right: 30,
+            top: '30%',
+            transform: 'translateY(-50%)',
+            zIndex: 1200
+          }}
+        >
+          {questionsOpen ? <CloseIcon /> : <QuestionAnswerIcon />}
+        </Fab>
+        
+        <QuestionsModal />
         
         {/* Footer */}
         <Box 

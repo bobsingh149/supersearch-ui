@@ -28,6 +28,10 @@ import {
   SelectChangeEvent,
   Link,
   Stack,  
+  Modal,
+  TextField,
+  Alert,
+  Snackbar
 } from '@mui/material';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
@@ -44,6 +48,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { getTheme } from '../../theme/theme';
 import { useNavigate } from 'react-router-dom';
+import { useLeads } from '../../hooks/useLeads';
 
 // Drawer width
 const DRAWER_WIDTH = 280;
@@ -73,6 +78,17 @@ const DemoEcommerce: React.FC = () => {
 
   // Use the theme from theme.ts
   const theme = getTheme(mode);
+
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    business_email: '',
+    company_name: ''
+  });
+  const { submitLead, loading, error, success, reset } = useLeads();
+
+  // Add state to track favorited products
+  const [favoriteProducts, setFavoriteProducts] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     // Listen for system theme changes
@@ -161,6 +177,14 @@ const DemoEcommerce: React.FC = () => {
     navigate(`/demo_site/${productId}`);
   };
 
+  const handleToggleFavorite = (e: React.MouseEvent, productId: string) => {
+    e.stopPropagation();
+    setFavoriteProducts(prev => ({
+      ...prev,
+      [productId]: !prev[productId]
+    }));
+  };
+
   // Handle next page
   const handleNextPage = () => {
     if (hasMore || page * itemsPerPage < totalResults) {
@@ -174,6 +198,37 @@ const DemoEcommerce: React.FC = () => {
     if (page > 1) {
       setPage(page - 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleContactModalOpen = () => {
+    setContactModalOpen(true);
+    reset();
+  };
+
+  const handleContactModalClose = () => {
+    setContactModalOpen(false);
+    setFormData({
+      name: '',
+      business_email: '',
+      company_name: ''
+    });
+    reset();
+  };
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await submitLead(formData);
+    if (success) {
+      handleContactModalClose();
     }
   };
 
@@ -462,34 +517,29 @@ const DemoEcommerce: React.FC = () => {
             </Box>
             
             {/* Action Icons */}
-            <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto' }}>
-              <Tooltip title="Favorites">
-                <IconButton size="small" color="inherit" sx={{ ml: { xs: 0, md: 1 } }}>
-                  <FavoriteIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Cart">
-                <IconButton size="small" color="inherit" sx={{ ml: { xs: 0, md: 1 } }}>
-                  <Badge badgeContent={3} color="primary">
-                    <ShoppingCartIcon fontSize="small" />
-                  </Badge>
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Account">
-                <IconButton size="small" color="inherit" sx={{ ml: { xs: 0, md: 1 } }}>
-                  <PersonIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+            <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto', gap: 2 }}>
               <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
-                <IconButton size="small" onClick={toggleTheme} color="inherit" sx={{ ml: { xs: 0, md: 1 } }}>
+                <IconButton size="small" onClick={toggleTheme} color="inherit">
                   {mode === 'light' ? <DarkModeIcon fontSize="small" /> : <LightModeIcon fontSize="small" />}
                 </IconButton>
               </Tooltip>
-              <Tooltip title="Filters" sx={{ display: { sm: 'none' } }}>
-                <IconButton size="small" color="inherit" onClick={toggleMobileFilter} sx={{ ml: { xs: 0, md: 1 } }}>
-                  <FilterListIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+              <Button
+                variant="contained"
+                color="primary"
+                size="medium"
+                onClick={handleContactModalOpen}
+                sx={{ 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  px: 4,
+                  py: 1,
+                  fontSize: '0.95rem',
+                  minWidth: '140px'
+                }}
+              >
+                Contact Us
+              </Button>
             </Box>
           </Toolbar>
           
@@ -502,6 +552,132 @@ const DemoEcommerce: React.FC = () => {
             <AISearchBar setData={setSearchResults} />
           </Box>
         </AppBar>
+
+        {/* Contact Form Modal */}
+        <Modal
+          open={contactModalOpen}
+          onClose={handleContactModalClose}
+          aria-labelledby="contact-form-modal"
+        >
+          <Box sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: { xs: '90%', sm: 450 },
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            borderRadius: 3,
+            overflow: 'hidden'
+          }}>
+            <Box sx={{ 
+              bgcolor: 'primary.main', 
+              py: 2, 
+              px: 3,
+              color: 'white'
+            }}>
+              <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
+                Contact Us
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 0.5, opacity: 0.9 }}>
+                Tell us about your needs and we'll get back to you
+              </Typography>
+            </Box>
+            
+            <Box sx={{ p: 3 }}>
+              <form onSubmit={handleSubmit}>
+                <Stack spacing={3}>
+                  <TextField
+                    required
+                    fullWidth
+                    label="Name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleFormChange}
+                    variant="outlined"
+                    InputProps={{
+                      sx: { borderRadius: 1.5 }
+                    }}
+                  />
+                  <TextField
+                    required
+                    fullWidth
+                    label="Business Email"
+                    name="business_email"
+                    type="email"
+                    value={formData.business_email}
+                    onChange={handleFormChange}
+                    variant="outlined"
+                    InputProps={{
+                      sx: { borderRadius: 1.5 }
+                    }}
+                  />
+                  <TextField
+                    required
+                    fullWidth
+                    label="Company Name"
+                    name="company_name"
+                    value={formData.company_name}
+                    onChange={handleFormChange}
+                    variant="outlined"
+                    InputProps={{
+                      sx: { borderRadius: 1.5 }
+                    }}
+                  />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, mt: 2 }}>
+                    <Button
+                      variant="outlined"
+                      onClick={handleContactModalClose}
+                      sx={{ 
+                        flex: 1,
+                        py: 1.2,
+                        borderRadius: 1.5,
+                        textTransform: 'none',
+                        fontWeight: 500
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={loading}
+                      sx={{ 
+                        flex: 1,
+                        py: 1.2,
+                        borderRadius: 1.5,
+                        textTransform: 'none',
+                        fontWeight: 500
+                      }}
+                    >
+                      {loading ? <CircularProgress size={24} /> : 'Submit'}
+                    </Button>
+                  </Box>
+                </Stack>
+              </form>
+            </Box>
+          </Box>
+        </Modal>
+
+        {/* Success/Error Snackbar */}
+        <Snackbar
+          open={success || !!error}
+          autoHideDuration={6000}
+          onClose={() => {
+            if (success) {
+              handleContactModalClose();
+            } else {
+              reset();
+            }
+          }}
+        >
+          <Alert
+            severity={success ? "success" : "error"}
+            sx={{ width: '100%' }}
+          >
+            {success ? "Thank you for contacting us! We'll get back to you soon." : error}
+          </Alert>
+        </Snackbar>
 
         {/* Main Content */}
         <Box sx={{ 
@@ -757,20 +933,20 @@ const DemoEcommerce: React.FC = () => {
                               },
                               zIndex: 1
                             }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Handle favorite click
-                            }}
+                            onClick={(e) => handleToggleFavorite(e, product.id)}
                           >
-                            <FavoriteIcon fontSize="small" color="action" />
+                            <FavoriteIcon 
+                              fontSize="small" 
+                              sx={{ color: favoriteProducts[product.id] ? 'error.main' : 'action' }} 
+                            />
                           </IconButton>
                           
                           {/* Product Image */}
-                          {(product.image_url || product.custom_data?.image_url || product.custom_data?.Poster_Url) ? (
+                          {(product.image_url) ? (
                             <CardMedia
                               component="img"
                               height="200"
-                              image={product.image_url || product.custom_data?.image_url || product.custom_data?.Poster_Url}
+                              image={product.image_url}
                               alt={product.title}
                               sx={{ 
                                 objectFit: 'cover',
@@ -791,25 +967,8 @@ const DemoEcommerce: React.FC = () => {
                           )}
                           
                           <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                            {/* Category */}
-                            {product.custom_data?.category && (
-                              <Typography 
-                                variant="caption" 
-                                color="text.secondary" 
-                                sx={{ 
-                                  textTransform: 'uppercase',
-                                  letterSpacing: 0.5,
-                                  fontWeight: 500,
-                                  display: 'block',
-                                  mb: 1
-                                }}
-                              >
-                                {product.custom_data.category}
-                              </Typography>
-                            )}
-                            
                             {/* Genre for movies */}
-                            {product.custom_data?.Genre && (
+                            {product.custom_data?.genres && (
                               <Typography 
                                 variant="caption" 
                                 color="text.secondary" 
@@ -821,7 +980,7 @@ const DemoEcommerce: React.FC = () => {
                                   mb: 1
                                 }}
                               >
-                                {product.custom_data.Genre.split(',')[0]}
+                                {JSON.parse(product.custom_data.genres.replace(/'/g, '"'))[0]}
                               </Typography>
                             )}
                             
@@ -840,56 +999,30 @@ const DemoEcommerce: React.FC = () => {
                                 height: '3rem'
                               }}
                             >
-                              {product.title || product.custom_data?.Title}
+                              {product.title}
                             </Typography>
                             
                             {/* Rating */}
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                               <Rating 
-                                value={product.custom_data?.rating ? parseFloat(product.custom_data.rating) : 
-                                       product.custom_data?.Vote_Average ? parseFloat(product.custom_data.Vote_Average) / 2 : 4.5} 
+                                value={product.custom_data?.vote_average ? parseFloat(product.custom_data.vote_average) / 2 : 0} 
                                 precision={0.5} 
                                 size="small" 
                                 readOnly 
                               />
                               <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                                ({product.custom_data?.reviews || product.custom_data?.Vote_Count || '42'})
+                                ({product.custom_data?.vote_count || '0'})
                               </Typography>
                             </Box>
                             
-                            {/* Price or Release Date for movies */}
+                            {/* Release Date for movies */}
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                              {product.custom_data?.price && (
-                                <Typography 
-                                  variant="h6" 
-                                  color="primary" 
-                                  sx={{ 
-                                    fontWeight: 700
-                                  }}
-                                >
-                                  ${parseFloat(product.custom_data.price).toFixed(2)}
-                                </Typography>
-                              )}
-                              
-                              {product.custom_data?.original_price && (
-                                <Typography 
-                                  variant="body2" 
-                                  color="text.secondary" 
-                                  sx={{ 
-                                    ml: 1,
-                                    textDecoration: 'line-through'
-                                  }}
-                                >
-                                  ${parseFloat(product.custom_data.original_price).toFixed(2)}
-                                </Typography>
-                              )}
-                              
-                              {product.custom_data?.Release_Date && (
+                              {product.custom_data?.release_date && (
                                 <Typography 
                                   variant="body2" 
                                   color="text.secondary"
                                 >
-                                  Released: {new Date(product.custom_data.Release_Date).getFullYear()}
+                                  Released: {new Date(product.custom_data.release_date).getFullYear()}
                                 </Typography>
                               )}
                             </Box>

@@ -6,11 +6,30 @@ import config from '../config';
 export interface SearchResultItem {
   id: string;
   title: string;
-  custom_data: Record<string, any>;
+  custom_data: {
+    id: string;
+    adult: string;
+    title: string;
+    actors: string;
+    genres: string;
+    imdb_id: string;
+    runtime: string;
+    tagline: string;
+    director: string;
+    keywords: string;
+    overview: string;
+    popularity: string;
+    vote_count: string;
+    poster_path: string;
+    release_date: string;
+    vote_average: string;
+    backdrop_path: string;
+    original_language: string;
+  };
   searchable_content: string;
   score: number;
   search_type: string | null;
-  image_url?: string;
+  image_url: string;
 }
 
 // Response type for search results
@@ -75,7 +94,7 @@ export const useSearch = () => {
       const response = await fetch(
         `${config.apiBaseUrl}/search?${queryParams.toString()}`, 
         {
-          method: 'GET',
+          method: 'POST',
           headers: {
             'Accept': 'application/json',
             'Authorization': `Bearer ${token}`

@@ -349,7 +349,7 @@ export const BrowseTab = () => {
                   </Box>
                   
                   {/* Product Image (if available) */}
-                  {(product.image_url || product.custom_data?.image_url) && (
+                  {(product.image_url || product.custom_data?.poster_path) && (
                     <Box 
                       sx={{ 
                         width: 140, 
@@ -368,7 +368,7 @@ export const BrowseTab = () => {
                       }}
                     >
                       <img 
-                        src={product.image_url || product.custom_data?.image_url} 
+                        src={product.image_url || product.custom_data?.poster_path} 
                         alt={product.title}
                         style={{ 
                           width: '100%', 
@@ -393,7 +393,7 @@ export const BrowseTab = () => {
                           transition: 'opacity 0.3s ease',
                           cursor: 'pointer'
                         }}
-                        onClick={() => window.open(product.image_url || product.custom_data?.image_url, '_blank')}
+                        onClick={() => window.open(product.image_url || product.custom_data?.poster_path, '_blank')}
                       >
                         <VisibilityIcon sx={{ color: 'white' }} />
                       </Box>

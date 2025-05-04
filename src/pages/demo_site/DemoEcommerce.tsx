@@ -32,7 +32,8 @@ import {
   List,
   ListItem,
   ListItemText,
-  Fab
+  Fab,
+  Rating
 } from '@mui/material';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
@@ -850,23 +851,23 @@ const DemoEcommerce: React.FC = () => {
                     primary={
                       <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
                         <HelpIcon fontSize="small" sx={{ color: 'primary.main', mr: 1, mt: 0.3 }} />
-                        <Typography variant="body1">{question}</Typography>
+                        <Box>
+                          <Typography variant="body1">{question}</Typography>
+                          <Typography 
+                            variant="caption" 
+                            color="text.secondary"
+                            sx={{ 
+                              display: 'flex',
+                              alignItems: 'center',
+                              mt: 0.5,
+                              gap: 0.5 
+                            }}
+                          >
+                            <AutoAwesomeIcon fontSize="inherit" />
+                            Ask AI
+                          </Typography>
+                        </Box>
                       </Box>
-                    }
-                    secondary={
-                      <Typography 
-                        variant="caption" 
-                        color="text.secondary"
-                        sx={{ 
-                          display: 'flex',
-                          alignItems: 'center',
-                          mt: 0.5,
-                          gap: 0.5 
-                        }}
-                      >
-                        <AutoAwesomeIcon fontSize="inherit" />
-                        Click to ask
-                      </Typography>
                     }
                   />
                 </ListItem>
@@ -1388,6 +1389,24 @@ const DemoEcommerce: React.FC = () => {
                             >
                               {product.title}
                             </Typography>
+                            
+                            {/* Rating */}
+                            {product.custom_data?.vote_average && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                                <Rating 
+                                  value={parseFloat(product.custom_data.vote_average) / 2} 
+                                  precision={0.5} 
+                                  readOnly 
+                                  size="small"
+                                />
+                                <Typography variant="body2" sx={{ ml: 1, color: 'text.secondary' }}>
+                                  {(parseFloat(product.custom_data.vote_average) / 2).toFixed(1)}
+                                  {product.custom_data?.vote_count && (
+                                    <span> ({parseInt(product.custom_data.vote_count).toLocaleString()})</span>
+                                  )}
+                                </Typography>
+                              </Box>
+                            )}
                             
                             {/* Price */}
                             <Typography 

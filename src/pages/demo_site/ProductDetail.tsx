@@ -323,23 +323,23 @@ const ProductDetail: React.FC = () => {
                       primary={
                         <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
                           <HelpIcon fontSize="small" sx={{ color: 'primary.main', mr: 1, mt: 0.3 }} />
-                          <Typography variant="body1">{question}</Typography>
+                          <Box>
+                            <Typography variant="body1">{question}</Typography>
+                            <Typography 
+                              variant="caption" 
+                              color="text.secondary"
+                              sx={{ 
+                                display: 'flex',
+                                alignItems: 'center',
+                                mt: 0.5,
+                                gap: 0.5 
+                              }}
+                            >
+                              <AutoAwesomeIcon fontSize="inherit" />
+                              Ask AI
+                            </Typography>
+                          </Box>
                         </Box>
-                      }
-                      secondary={
-                        <Typography 
-                          variant="caption" 
-                          color="text.secondary"
-                          sx={{ 
-                            display: 'flex',
-                            alignItems: 'center',
-                            mt: 0.5,
-                            gap: 0.5 
-                          }}
-                        >
-                          <AutoAwesomeIcon fontSize="inherit" />
-                          Click to ask AI assistant
-                        </Typography>
                       }
                     />
                   </ListItem>

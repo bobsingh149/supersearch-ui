@@ -33,7 +33,9 @@ import {
   ListItem,
   ListItemText,
   Fab,
-  Rating
+  Rating,
+  Badge,
+  Chip
 } from '@mui/material';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
@@ -42,6 +44,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import CloseIcon from '@mui/icons-material/Close';
 import HelpIcon from '@mui/icons-material/Help';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import AISearchBar, { AISearchBarRef } from '../Products/ai_shopping/AISearchBar';
 import { useSearch, SearchResultItem} from '../../hooks/useSearch';
 import { ThemeProvider } from '@mui/material/styles';
@@ -99,6 +102,8 @@ const DemoEcommerce: React.FC = () => {
   // Extract search query from URL if present
   const queryParams = new URLSearchParams(location.search);
   const searchQuery = queryParams.get('q') || '';
+  // Add state to track the current search query
+  const [currentSearchQuery, setCurrentSearchQuery] = useState<string>(searchQuery);
   const shouldOpenContactModal = queryParams.get('contactUs') === 'true';
 
   // Filter states
@@ -144,6 +149,8 @@ const DemoEcommerce: React.FC = () => {
 
   // Add ref for AISearchBar
   const aiSearchBarRef = useRef<AISearchBarRef | null>(null);
+  // Add ref for mobile AISearchBar
+  const mobileSearchRef = useRef<AISearchBarRef | null>(null);
 
   // Add state for selected question
   const [_selectedQuestion, setSelectedQuestion] = useState('');
@@ -159,8 +166,15 @@ const DemoEcommerce: React.FC = () => {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
+  useEffect(() => {
+    // Set the current search query when URL param changes
+    if (searchQuery) {
+      setCurrentSearchQuery(searchQuery);
+    }
+  }, [searchQuery]);
+
   // Memoized fetch function to prevent recreation on each render
-  const fetchProducts = useCallback(async (currentPage: number, pageSize: number) => {
+  const fetchProducts = useCallback(async (currentPage: number, pageSize: number, query: string = currentSearchQuery) => {
     try {
       // Use current filter and sort selections
       const filterConditions: FilterCondition[] = [];
@@ -227,7 +241,7 @@ const DemoEcommerce: React.FC = () => {
       
       // Fetch products with current page
       searchProducts({
-        query: searchQuery,
+        query: query,
         page: currentPage,
         size: pageSize,
         filters: filtersPayload
@@ -242,34 +256,30 @@ const DemoEcommerce: React.FC = () => {
       console.error('Error fetching products:', error);
       // Error is handled via the apiError state from useSearch
     }
-  }, [searchProducts, priceRange, genre, sortBy, searchQuery]);
+  }, [searchProducts, priceRange, genre, sortBy, currentSearchQuery]);
 
-  // Initial load - runs only once
+  // Combined useEffect for initial load and page/pageSize changes
   useEffect(() => {
+    // When this is the initial render
     if (isInitialRender.current) {
+      console.log('Initial render');
       isInitialRender.current = false;
-      fetchProducts(page, itemsPerPage);
+      fetchProducts(page, itemsPerPage, searchQuery);
       
       // If there was a query parameter, let's update the URL to remove it 
       // after the initial search to keep it clean for subsequent navigation
       if (searchQuery) {
         window.history.replaceState(null, '', '/demo_site');
-    }
-    }
-  }, [fetchProducts, page, itemsPerPage, searchQuery]);
-
-  // Handle page or page size changes
-  useEffect(() => {
-    // Don't run on initial render
-    if (!isInitialRender.current) {
-      // Check if page or itemsPerPage actually changed to prevent unnecessary API calls
-      if (page !== previousPage.current || itemsPerPage !== previousItemsPerPage.current) {
-        fetchProducts(page, itemsPerPage);
-        previousPage.current = page;
-        previousItemsPerPage.current = itemsPerPage;
       }
+    } 
+    // When page or itemsPerPage changes (not on initial render)
+    else if (page !== previousPage.current || itemsPerPage !== previousItemsPerPage.current) {
+      console.log('Page or itemsPerPage changed');
+      fetchProducts(page, itemsPerPage, currentSearchQuery);
+      previousPage.current = page;
+      previousItemsPerPage.current = itemsPerPage;
     }
-  }, [page, itemsPerPage, fetchProducts]);
+  }, [page, itemsPerPage, fetchProducts, searchQuery, currentSearchQuery]);
 
   // Check for contactUs query parameter and open modal if needed
   useEffect(() => {
@@ -302,8 +312,6 @@ const DemoEcommerce: React.FC = () => {
     setItemsPerPage(newPageSize);
     setPage(newPage);
   };
-
-
 
   const handleSortChange = (event: SelectChangeEvent) => {
     const newSortBy = event.target.value;
@@ -421,7 +429,7 @@ const DemoEcommerce: React.FC = () => {
     
     // Fetch products with new filters
     searchProducts({
-      query: searchQuery, // Use the URL query param if available
+      query: currentSearchQuery, // Use the current search query
       page: 1, // Reset to page 1 when changing filters
       size: itemsPerPage,
       filters: filtersPayload
@@ -981,7 +989,7 @@ const DemoEcommerce: React.FC = () => {
                   fontSize: '1.1rem'
                 }}
               >
-                SuperShop
+                CogniDemo
               </Typography>
             </Box>
             
@@ -995,11 +1003,35 @@ const DemoEcommerce: React.FC = () => {
                 setData={setSearchResults}
                 initialQuery={searchQuery}
                 ref={aiSearchBarRef}
+                onSearch={() => {
+                  // Get search query directly from the AISearchBar
+                  const newQuery = aiSearchBarRef.current?.getSearchQuery() || '';
+                  if (newQuery) {
+                    setCurrentSearchQuery(newQuery);
+                    // Reset to page 1 when performing a new search
+                    setPage(1);
+                    // Fetch products with the new query
+                    fetchProducts(1, itemsPerPage, newQuery);
+                    // Update URL to reflect the search
+                    navigate(`/demo_site?q=${encodeURIComponent(newQuery)}`, { replace: true });
+                  }
+                }}
               />
             </Box>
             
             {/* Action Icons */}
             <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto', gap: 2 }}>
+              <Tooltip title="View Orders">
+                <IconButton 
+                  size="small" 
+                  color="inherit"
+                  onClick={() => navigate('/demo_site/orders')}
+                >
+                  <Badge color="primary">
+                    <ShoppingCartIcon fontSize="small" />
+                  </Badge>
+                </IconButton>
+              </Tooltip>
               <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
                 <IconButton size="small" onClick={toggleTheme} color="inherit">
                   {mode === 'light' ? <DarkModeIcon fontSize="small" /> : <LightModeIcon fontSize="small" />}
@@ -1034,7 +1066,20 @@ const DemoEcommerce: React.FC = () => {
             <AISearchBar 
               setData={setSearchResults}
               initialQuery={searchQuery}
-              ref={aiSearchBarRef}
+              ref={mobileSearchRef}
+              onSearch={() => {
+                // Get search query directly from the AISearchBar
+                const newQuery = mobileSearchRef.current?.getSearchQuery() || '';
+                if (newQuery) {
+                  setCurrentSearchQuery(newQuery);
+                  // Reset to page 1 when performing a new search
+                  setPage(1);
+                  // Fetch products with the new query
+                  fetchProducts(1, itemsPerPage, newQuery);
+                  // Update URL to reflect the search
+                  navigate(`/demo_site?q=${encodeURIComponent(newQuery)}`, { replace: true });
+                }
+              }}
             />
           </Box>
         </AppBar>
@@ -1226,13 +1271,33 @@ const DemoEcommerce: React.FC = () => {
                 justifyContent: 'space-between', 
                 alignItems: 'center',
               }}>
-                <Typography variant="h5" sx={{ fontWeight: 700, mb: 0 }}>
-                All Products
-              </Typography>
+                <Box>
+                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 0 }}>
+                    All Products
+                  </Typography>
+                  
+                  {/* Show search query message when there's a query */}
+                  {currentSearchQuery && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
+                        Results for:
+                      </Typography>
+                      <Chip 
+                        label={currentSearchQuery}
+                        size="small"
+                        color="primary"
+                        sx={{ 
+                          fontWeight: 500,
+                          height: 24,
+                          '& .MuiChip-label': { px: 1 }
+                        }}
+                      />
+                    </Box>
+                  )}
+                </Box>
               </Box>
               
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-  
                 
                 {/* Sort By - Mobile & Tablet */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

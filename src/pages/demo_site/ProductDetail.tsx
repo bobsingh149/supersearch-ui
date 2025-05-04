@@ -29,7 +29,8 @@ import {
   ClickAwayListener,
   Zoom,
   Alert,
-  Snackbar
+  Snackbar,
+  Badge
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -54,6 +55,7 @@ import { useReviews } from '../../hooks/useReviews';
 import { useReviewSummary } from '../../hooks/useReviewSummary';
 import { useProductQuestions } from '../../hooks/useProductQuestions';
 import { useSimilarProducts, SimilarProduct } from '../../hooks/useSimilarProducts';
+import { useOrders, OrderRequest } from '../../hooks/useOrders';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import AISearchBar, { AISearchBarRef } from '../Products/ai_shopping/AISearchBar';
 import { useLeads } from '../../hooks/useLeads';
@@ -67,6 +69,7 @@ const ProductDetail: React.FC = () => {
   const { summary: reviewSummary, loading: summaryLoading, error: summaryError, fetchReviewSummary } = useReviewSummary();
   const { similarProducts, loading: similarProductsLoading, error: similarProductsError, fetchSimilarProducts } = useSimilarProducts();
   const { questions, loading: questionsLoading, error: questionsError, fetchProductQuestions } = useProductQuestions();
+  const { loading: orderLoading, error: orderError, orderSuccess, createOrder, reset: resetOrder } = useOrders();
   const [product, setProduct] = useState<MovieProduct | null>(null);
   const [mode, setMode] = useState<'light' | 'dark'>(() => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -93,6 +96,66 @@ const ProductDetail: React.FC = () => {
   
   // Use the theme from theme.ts
   const theme = getTheme(mode);
+
+  // Handle Buy Now
+  const handleBuyNow = async () => {
+    if (!product || !productId) return;
+    
+    // Get price with fallback to default
+    const price = product.price || 9.99;
+    
+    // Create dummy order data
+    const orderData: OrderRequest = {
+      status: "pending",
+      total_amount: price,
+      items: [
+        {
+          product_id: productId,
+          quantity: 1,
+          price: price,
+          title: product.title || "Movie Title",
+          custom_data: {
+            // Include all product fields as custom data
+            ...product
+          }
+        }
+      ],
+      shipping_address: {
+        full_name: "John Doe",
+        address_line1: "123 Main Street",
+        address_line2: "Apt 4B",
+        city: "New York",
+        state: "NY",
+        postal_code: "10001",
+        country: "USA",
+        phone: "+1-555-123-4567"
+      },
+      billing_address: {
+        full_name: "John Doe",
+        address_line1: "123 Main Street",
+        address_line2: "Apt 4B",
+        city: "New York",
+        state: "NY",
+        postal_code: "10001",
+        country: "USA",
+        phone: "+1-555-123-4567"
+      },
+      payment_info: {
+        payment_method: "credit_card",
+        transaction_id: `txn_${Date.now()}`,
+        payment_status: "completed",
+        amount_paid: price,
+        currency: "USD"
+      },
+      notes: "This is a demo purchase."
+    };
+    
+    try {
+      await createOrder(orderData);
+    } catch (error) {
+      console.error("Error creating order:", error);
+    }
+  };
 
   // Function to handle regular search by redirecting to DemoEcommerce page
   const handleSearch = () => {
@@ -887,8 +950,10 @@ const ProductDetail: React.FC = () => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   mr: 2,
-                  color: 'white'
+                  color: 'white',
+                  cursor: 'pointer'
                 }}
+                onClick={() => navigate('/demo_site')}
               >
                 <ShoppingBagIcon fontSize="small" />
               </Box>
@@ -899,10 +964,12 @@ const ProductDetail: React.FC = () => {
                   fontWeight: 700,
                   color: 'primary.main',
                   display: { xs: 'none', sm: 'block' },
-                  fontSize: '1.1rem'
+                  fontSize: '1.1rem',
+                  cursor: 'pointer'
                 }}
+                onClick={() => navigate('/demo_site')}
               >
-                SuperShop
+                CogniDemo
               </Typography>
             </Box>
             
@@ -920,6 +987,17 @@ const ProductDetail: React.FC = () => {
             
             {/* Action Icons */}
             <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto', gap: 2 }}>
+              <Tooltip title="View Orders">
+                <IconButton 
+                  size="small" 
+                  color="inherit"
+                  onClick={() => navigate('/demo_site/orders')}
+                >
+                  <Badge color="primary">
+                    <ShoppingCartIcon fontSize="small" />
+                  </Badge>
+                </IconButton>
+              </Tooltip>
               <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
                 <IconButton size="small" onClick={toggleTheme} color="inherit">
                   {mode === 'light' ? <DarkModeIcon fontSize="small" /> : <LightModeIcon fontSize="small" />}
@@ -967,21 +1045,30 @@ const ProductDetail: React.FC = () => {
 
         {/* Success/Error Snackbar */}
         <Snackbar
-          open={leadSuccess || !!leadError}
+          open={leadSuccess || !!leadError || orderSuccess || !!orderError}
           autoHideDuration={6000}
           onClose={() => {
             if (leadSuccess) {
               handleContactModalClose();
-            } else {
+            } else if (orderSuccess) {
+              resetOrder();
+            } else if (leadError) {
               resetLead();
+            } else if (orderError) {
+              resetOrder();
             }
           }}
         >
           <Alert
-            severity={leadSuccess ? "success" : "error"}
+            severity={leadSuccess || orderSuccess ? "success" : "error"}
             sx={{ width: '100%' }}
           >
-            {leadSuccess ? "Thank you for contacting us! We'll get back to you soon." : leadError}
+            {leadSuccess 
+              ? "Thank you for contacting us! We'll get back to you soon."
+              : orderSuccess 
+                ? "Order placed successfully! Thank you for your purchase."
+                : orderError || leadError
+            }
           </Alert>
         </Snackbar>
         
@@ -1188,12 +1275,14 @@ const ProductDetail: React.FC = () => {
                 
                 <Divider sx={{ my: 3 }} />
                 
-                {/* Add to Cart */}
+                {/* Add to Cart Button (replaced with Buy Now) */}
                 <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
                   <Button
                     variant="contained"
                     size="large"
-                    startIcon={<ShoppingCartIcon />}
+                    startIcon={<ShoppingBagIcon />}
+                    onClick={handleBuyNow}
+                    disabled={orderLoading}
                     sx={{ 
                       borderRadius: 1.5,
                       py: 1.5,
@@ -1201,7 +1290,14 @@ const ProductDetail: React.FC = () => {
                       flex: 1
                     }}
                   >
-                    Add to Cart
+                    {orderLoading ? (
+                      <>
+                        <CircularProgress size={20} sx={{ mr: 1 }} color="inherit" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Buy Now'
+                    )}
                   </Button>
                 </Box>
               </Box>

@@ -21,7 +21,9 @@ const config = {
     reviews: '/reviews',
     productQuestions: '/products/{product_id}/questions',
     autocomplete: '/search/autocomplete',
-    similarProducts: '/recommend/similar/{product_id}'
+    similarProducts: '/recommend/similar/{product_id}',
+    orders: '/orders',
+    getOrders: '/orders'
   }
 };
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Box, 
   TextField, 
@@ -26,8 +27,8 @@ import {
   Button,
   Chip,
   Divider,
-  Popper,
-  ClickAwayListener
+  ClickAwayListener,
+  Avatar
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -40,21 +41,7 @@ import { useAuth } from '@clerk/clerk-react';
 import ReactMarkdown from 'react-markdown';
 import config from '../../../config';
 
-// Animation for the magic wand icon
-const sparkle = keyframes`
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 0.8;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-`;
+
 
 // Animation for gradient border
 const gradientAnimation = keyframes`
@@ -79,7 +66,7 @@ const PREDEFINED_PROMPTS = [
 ];
 
 // Types for streaming responses
-type StreamingResponseType = 'products' | 'content' | 'questions';
+// type StreamingResponseType = 'products' | 'content' | 'questions';
 
 interface ProductSearchResult {
   id: string;
@@ -91,11 +78,19 @@ interface ProductSearchResult {
   image_url?: string;
 }
 
-interface StreamingResponse {
-  type: StreamingResponseType;
-  conversation_id: string;
-  content: string | ProductSearchResult[] | string[];
+// New interface for selected products with additional UI data
+interface SelectedProduct {
+  id: string;
+  title?: string;
+  image_url?: string;
+  custom_data?: Record<string, any>;
 }
+
+// interface StreamingResponse {
+//   type: StreamingResponseType;
+//   conversation_id: string;
+//   content: string | ProductSearchResult[] | string[];
+// }
 
 // Message interface for chat
 interface Message {
@@ -106,6 +101,7 @@ interface Message {
   isTyping?: boolean;
   suggestedProducts?: ProductSearchResult[];
   suggestedQuestions?: string[];
+  includedProducts?: SelectedProduct[];
 }
 
 // Types for autocomplete
@@ -134,25 +130,27 @@ const generateConversationId = () => `c${Date.now()}`;
 
 // Define the ref interface that will be exposed
 export interface AISearchBarRef {
-  openAiChat: () => void;
+  openAiChat: (productIds?: string[]) => void;
   setCurrentMessage: (message: string) => void;
-  sendMessage: () => void;
-  openAiChatWithMessage: (message: string) => void;
+  sendMessage: (productIds?: string[]) => void;
+  openAiChatWithMessage: (message: string, productIds?: string[]) => void;
+  getSearchQuery: () => string;
 }
 
 interface AISearchBarProps {
-  setData: (data: SearchResultItem[]) => void;
+  setData?: (data: SearchResultItem[]) => void;
+  onSearch?: () => void;
+  initialQuery?: string;
 }
 
-const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, ref) => {
+const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onSearch, initialQuery = '' }, ref) => {
   const theme = useTheme();
   const { getToken } = useAuth();
   const {searchProducts} = useSearch();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentMessage, setCurrentMessage] = useState('');
-  const [isHovering, setIsHovering] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [conversationId, setConversationId] = useState(generateConversationId());
@@ -164,6 +162,12 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
   const searchInputRef = useRef<HTMLDivElement>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Add state for selected products
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+
+  const navigate = useNavigate();
 
   // Debounce function
   const debounce = <T extends (...args: any[]) => any>(
@@ -183,12 +187,25 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
     if (searchQuery.trim()) {
       try {
         setIsSearching(true);
+        
+        // If onSearch callback is provided, use it for redirection
+        if (onSearch) {
+          onSearch();
+          setIsSearching(false);
+          return;
+        }
+        
+        // Otherwise do the normal search
         const response = await searchProducts({
           query: searchQuery,
           page: 1,
           size: 10
         });
+        
+        // Only call setData if it's provided
+        if (setData) {
         setData(response.results);
+        }
       } catch (error) {
         console.error('Error performing search:', error);
       } finally {
@@ -245,12 +262,18 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
     debouncedFetchAutocomplete(searchQuery);
   }, [searchQuery, debouncedFetchAutocomplete]);
 
+  // Automatically perform search when initialQuery is provided
+  useEffect(() => {
+    if (initialQuery && initialQuery.trim() !== '') {
+      handleSearch();
+    }
+  }, [initialQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Handle selecting an autocomplete suggestion
   const handleAutocompleteSelect = (result: AutocompleteResult) => {
-    setSearchQuery(result.data.title);
+    // Navigate to product detail page instead of performing search
+    navigate(`/demo_site/${result.data.id}`);
     setShowAutocomplete(false);
-    // Optionally perform search immediately after selection
-    setTimeout(() => handleSearch(), 100);
   };
 
   // Close autocomplete dropdown when clicking away
@@ -276,14 +299,75 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
     scrollToBottom();
   }, [messages]);
 
-  // Open AI chat modal
-  const openAiChat = () => {
+  // Function to fetch product details by ID
+  const fetchProductDetails = async (productId: string): Promise<SelectedProduct | null> => {
+    try {
+      setIsLoadingProducts(true);
+      const token = await getToken();
+      
+      const response = await fetch(
+        `${config.apiBaseUrl}/products/${productId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        id: data.id,
+        title: data.title || data.custom_data?.Title || 'Unknown Product',
+        image_url: data.image_url || data.poster_path || data.custom_data?.Poster_Url || data.custom_data?.image_url,
+        custom_data: data.custom_data
+      };
+    } catch (error) {
+      console.error('Error fetching product details:', error);
+      return null;
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  };
+
+  // Load product details when productIds are passed
+  const loadSelectedProducts = async (productIds: string[]) => {
+    if (!productIds || productIds.length === 0) return;
+    
+    // Filter out products that are already loaded
+    const newProductIds = productIds.filter(id => 
+      !selectedProducts.some(product => product.id === id)
+    );
+    
+    if (newProductIds.length === 0) return;
+    
+    const productPromises = newProductIds.map(id => fetchProductDetails(id));
+    const products = await Promise.all(productPromises);
+    
+    // Filter out null results and add new products
+    const validProducts = products.filter(product => product !== null) as SelectedProduct[];
+    if (validProducts.length > 0) {
+      setSelectedProducts(prev => [...prev, ...validProducts]);
+    }
+  };
+
+  // Remove a product from the selected products
+  const removeProduct = (productId: string) => {
+    setSelectedProducts(prev => prev.filter(product => product.id !== productId));
+  };
+
+  // Open AI chat modal with product IDs
+  const openAiChat = (productIds: string[] = []) => {
     if (searchQuery.trim()) {
       setCurrentMessage(searchQuery);
-      setIsChatOpen(true);
-    } else {
-      setIsChatOpen(true);
     }
+    // Load the product details when opening chat
+    loadSelectedProducts(productIds);
+    setIsChatOpen(true);
   };
 
   // Close AI chat modal
@@ -299,13 +383,14 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
   };
 
   // Send message to shopping assistant API
-  const sendMessage = async () => {
+  const sendMessage = async (productIds: string[] = []) => {
     if (currentMessage.trim()) {
       const newUserMessage: Message = {
         id: Date.now(),
         text: currentMessage.trim(),
         sender: 'user',
-        timestamp: new Date()
+        timestamp: new Date(),
+        includedProducts: [...selectedProducts]
       };
       
       const messageText = currentMessage.trim();
@@ -330,11 +415,17 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
         // Get the authentication token
         const token = await getToken();
         
+        // Combine passed productIds with any already in the selectedProducts state
+        const allProductIds = [...new Set([
+          ...productIds,
+          ...selectedProducts.map(p => p.id)
+        ])];
+        
         // Create the request payload
         const payload = {
           query: messageText,
           conversation_id: conversationId,
-          product_ids: [],
+          product_ids: allProductIds,
           stream: false // Set stream to false to get a complete response
         };
         
@@ -368,7 +459,8 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
               timestamp: new Date(),
               isTyping: false,
               suggestedProducts: data.products || [],
-              suggestedQuestions: data.follow_up_questions || []
+              suggestedQuestions: data.follow_up_questions || [],
+              includedProducts: data.products || []
             };
           }
           
@@ -386,12 +478,13 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
           if (aiMessageIndex !== -1) {
             updatedMessages[aiMessageIndex] = {
               id: Date.now(),
-              text: '**Error connecting to shopping assistant. Please try again later.**',
+              text: "**You've reached your free usage limit.** Contact us to start using CogniShop for your store!",
               sender: 'ai',
               timestamp: new Date(),
               isTyping: false,
               suggestedProducts: [],
-              suggestedQuestions: []
+              suggestedQuestions: [],
+              includedProducts: []
             };
           }
           
@@ -404,7 +497,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
   };
 
   // Use predefined prompt
-  const usePrompt = (prompt: string) => {
+  const usePrompt = (prompt: string, productIds: string[] = []) => {
     // Store the prompt text in a variable
     const messageToSend = prompt.trim();
 
@@ -416,7 +509,8 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
       id: Date.now(),
       text: messageToSend,
       sender: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
+      includedProducts: [...selectedProducts]
     };
     
     // Add a loading message
@@ -445,11 +539,17 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
         // Get the authentication token
         const token = await getToken();
         
+        // Combine passed productIds with any already in the selectedProducts state
+        const allProductIds = [...new Set([
+          ...productIds,
+          ...selectedProducts.map(p => p.id)
+        ])];
+        
         // Create the request payload
         const payload = {
           query: messageToSend,
           conversation_id: conversationId,
-          product_ids: [],
+          product_ids: allProductIds,
           stream: false
         };
         
@@ -483,7 +583,8 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
               timestamp: new Date(),
               isTyping: false,
               suggestedProducts: data.products || [],
-              suggestedQuestions: data.follow_up_questions || []
+              suggestedQuestions: data.follow_up_questions || [],
+              includedProducts: data.products || []
             };
           }
           
@@ -501,12 +602,13 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
           if (aiMessageIndex !== -1) {
             updatedMessages[aiMessageIndex] = {
               id: Date.now(),
-              text: '**Error connecting to shopping assistant. Please try again later.**',
+              text: "**You've reached your free usage limit.** Contact us to start using CogniShop for your store!",
               sender: 'ai',
               timestamp: new Date(),
               isTyping: false,
               suggestedProducts: [],
-              suggestedQuestions: []
+              suggestedQuestions: [],
+              includedProducts: []
             };
           }
           
@@ -532,7 +634,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
       // Check for Ctrl+K
       if (e.ctrlKey && e.key === 'k') {
         e.preventDefault();
-        openAiChat();
+        openAiChat([]);
       }
     };
 
@@ -608,128 +710,151 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
 
   // Expose methods through ref
   useImperativeHandle(ref, () => ({
-    openAiChat,
+    openAiChat: (productIds: string[] = []) => {
+      if (searchQuery.trim()) {
+        setCurrentMessage(searchQuery);
+      }
+      // Load product details if IDs are provided
+      loadSelectedProducts(productIds);
+      setIsChatOpen(true);
+    },
     setCurrentMessage,
     sendMessage,
-    openAiChatWithMessage: (message: string) => {
+    openAiChatWithMessage: (message: string, productIds: string[] = []) => {
       // Store the message text in a variable so we can use it after state updates
       const messageToSend = message.trim();
-      
-      // Set the message in the input field
-      setCurrentMessage(messageToSend);
       
       // Open the chat
       setIsChatOpen(true);
       
-      // Create and add the user message directly
-      const newUserMessage: Message = {
-        id: Date.now(),
-        text: messageToSend,
-        sender: 'user',
-        timestamp: new Date()
-      };
-      
-      // Add a loading message right away
-      const loadingMessage: Message = {
-        id: Date.now() + 1,
-        text: '',
-        sender: 'ai',
-        timestamp: new Date(),
-        isTyping: true,
-        suggestedProducts: [],
-        suggestedQuestions: []
-      };
-      
-      // Update state and add both messages
-      setTimeout(() => {
-        // Add the user message and AI loading message
-        setMessages(prev => [...prev, newUserMessage, loadingMessage]);
-        
-        // Clear the input field
-        setCurrentMessage('');
-        
-        // Set loading state
-        setIsChatLoading(true);
-        
-        // Send the API request
-        (async () => {
-          try {
-            // Get the authentication token
-            const token = await getToken();
+      // First load product details and immediately execute API call
+      (async () => {
+        try {
+          // Set loading state for products
+          setIsLoadingProducts(true);
+          
+          // Fetch product details if IDs are provided
+          let productDetails: SelectedProduct[] = [];
+          if (productIds && productIds.length > 0) {
+            const productPromises = productIds.map(id => fetchProductDetails(id));
+            const products = await Promise.all(productPromises);
+            // Filter out null results
+            productDetails = products.filter(product => product !== null) as SelectedProduct[];
             
-            // Create the request payload
-            const payload = {
-              query: messageToSend,
-              conversation_id: conversationId,
-              product_ids: [],
-              stream: false
-            };
-            
-            const response = await fetch(API_ENDPOINT, {
-              method: 'POST',
-              headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify(payload)
+            // Add products to selected state
+            setSelectedProducts(prev => {
+              const newProducts = productDetails.filter(
+                newProduct => !prev.some(p => p.id === newProduct.id)
+              );
+              return [...prev, ...newProducts];
             });
+          }
+          
+          // Create user message with product context
+          const newUserMessage: Message = {
+            id: Date.now(),
+            text: messageToSend,
+            sender: 'user',
+            timestamp: new Date(),
+            includedProducts: productDetails
+          };
+          
+          // Add a loading message right away
+          const loadingMessage: Message = {
+            id: Date.now() + 1,
+            text: '',
+            sender: 'ai',
+            timestamp: new Date(),
+            isTyping: true,
+            suggestedProducts: [],
+            suggestedQuestions: []
+          };
+          
+          // Add the user message and AI loading message
+          setMessages(prev => [...prev, newUserMessage, loadingMessage]);
+          
+          // Set loading state
+          setIsChatLoading(true);
+          
+          // Get the authentication token
+          const token = await getToken();
+          
+          // Create the request payload with all product IDs
+          const payload = {
+            query: messageToSend,
+            conversation_id: conversationId,
+            product_ids: productIds,
+            stream: false
+          };
+          
+          const response = await fetch(API_ENDPOINT, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
+          // Parse the JSON response
+          const data = await response.json();
+          
+          // Update the AI message with the complete response
+          setMessages(prev => {
+            const updatedMessages = [...prev];
+            const aiMessageIndex = updatedMessages.findIndex(msg => msg.isTyping);
             
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
+            if (aiMessageIndex !== -1) {
+              updatedMessages[aiMessageIndex] = {
+                id: Date.now() + 1,
+                text: data.response || '',
+                sender: 'ai',
+                timestamp: new Date(),
+                isTyping: false,
+                suggestedProducts: data.products || [],
+                suggestedQuestions: data.follow_up_questions || [],
+                includedProducts: data.products || []
+              };
             }
             
-            // Parse the JSON response
-            const data = await response.json();
+            return updatedMessages;
+          });
+          
+        } catch (error) {
+          console.error('Fetch error:', error);
+          
+          // Update with error message
+          setMessages(prev => {
+            const updatedMessages = [...prev];
+            const aiMessageIndex = updatedMessages.findIndex(msg => msg.isTyping);
             
-            // Update the AI message with the complete response
-            setMessages(prev => {
-              const updatedMessages = [...prev];
-              const aiMessageIndex = updatedMessages.findIndex(msg => msg.isTyping);
-              
-              if (aiMessageIndex !== -1) {
-                updatedMessages[aiMessageIndex] = {
-                  id: Date.now() + 1,
-                  text: data.response || '',
-                  sender: 'ai',
-                  timestamp: new Date(),
-                  isTyping: false,
-                  suggestedProducts: data.products || [],
-                  suggestedQuestions: data.follow_up_questions || []
-                };
-              }
-              
-              return updatedMessages;
-            });
+            if (aiMessageIndex !== -1) {
+              updatedMessages[aiMessageIndex] = {
+                id: Date.now(),
+                text: "**You've reached your free usage limit.** Contact us to start using CogniShop for your store!",
+                sender: 'ai',
+                timestamp: new Date(),
+                isTyping: false,
+                suggestedProducts: [],
+                suggestedQuestions: [],
+                includedProducts: []
+              };
+            }
             
-          } catch (error) {
-            console.error('Fetch error:', error);
-            
-            // Update with error message
-            setMessages(prev => {
-              const updatedMessages = [...prev];
-              const aiMessageIndex = updatedMessages.findIndex(msg => msg.isTyping);
-              
-              if (aiMessageIndex !== -1) {
-                updatedMessages[aiMessageIndex] = {
-                  id: Date.now(),
-                  text: '**Error connecting to shopping assistant. Please try again later.**',
-                  sender: 'ai',
-                  timestamp: new Date(),
-                  isTyping: false,
-                  suggestedProducts: [],
-                  suggestedQuestions: []
-                };
-              }
-              
-              return updatedMessages;
-            });
-          } finally {
-            setIsChatLoading(false);
-          }
-        })();
-      }, 100);
-    }
+            return updatedMessages;
+          });
+        } finally {
+          setIsChatLoading(false);
+          setIsLoadingProducts(false);
+        }
+      })();
+    },
+    getSearchQuery: () => searchQuery
   }));
 
   return (
@@ -808,7 +933,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
                       <Button
                         variant="text"
                         size="small"
-                        onClick={openAiChat}
+                        onClick={() => openAiChat([])}
                         startIcon={<AutoAwesomeIcon sx={{ fontSize: '1.1rem' }} />}
                         sx={{
                           px: 1.5,
@@ -1145,6 +1270,43 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
                             }}
                           >
                             <Typography variant="body1">{message.text}</Typography>
+                            
+                            {/* Add product context chips to the message bubble */}
+                            {message.includedProducts && message.includedProducts.length > 0 && (
+                              <Box sx={{ 
+                                display: 'flex', 
+                                flexWrap: 'wrap', 
+                                gap: 0.5, 
+                                mt: 1.5,
+                                pt: 1.5,
+                                borderTop: '1px solid',
+                                borderColor: 'rgba(255,255,255,0.2)'
+                              }}>
+                                {message.includedProducts.map(product => (
+                                  <Chip
+                                    key={product.id}
+                                    size="small"
+                                    avatar={
+                                      <Avatar 
+                                        alt={product.title} 
+                                        src={product.image_url || `https://picsum.photos/40/40?random=${product.id}`}
+                                      />
+                                    }
+                                    label={product.title || 'Unknown Product'}
+                                    variant="outlined"
+                                    sx={{ 
+                                      borderRadius: 1.5,
+                                      height: 28,
+                                      border: '1px solid rgba(255,255,255,0.3)',
+                                      color: '#fff',
+                                      '& .MuiChip-avatar': {
+                                        ml: 0.5
+                                      }
+                                    }}
+                                  />
+                                ))}
+                              </Box>
+                            )}
                           </Paper>
                         </Box>
                       )}
@@ -1338,7 +1500,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
                                                   {children}
                                                 </Typography>
                                               ),
-                                              a: ({ node, href, children }) => (
+                                              a: ({ href, children }) => (
                                                 <Typography
                                                   component="a"
                                                   href={href}
@@ -1366,7 +1528,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
                                         </Box>
                                       }
                                       clickable
-                                      onClick={() => usePrompt(plainTextQuestion)}
+                                      onClick={() => usePrompt(plainTextQuestion, [])}
                                       color="primary"
                                       variant="outlined"
                                       sx={{
@@ -1399,44 +1561,90 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
                 <div ref={messagesEndRef} />
               </Box>
               
-              {/* Chat input area */}
+              {/* Chat input area with Selected Products Display moved ABOVE it */}
               <Box sx={{ 
-                p: 2, 
                 borderTop: '1px solid',
                 borderColor: 'divider',
-                display: 'flex',
-                alignItems: 'center'
               }}>
-                <TextField
-                  fullWidth
-                  placeholder="Ask about movies, genres, directors..."
-                  value={currentMessage}
-                  onChange={(e) => setCurrentMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  multiline
-                  maxRows={4}
-                  variant="outlined"
-                  sx={{ mr: 1 }}
-                />
-                <IconButton 
-                  color="primary" 
-                  onClick={sendMessage}
-                  disabled={!currentMessage.trim() || isChatLoading}
-                  sx={{ 
-                    p: 1.5,
-                    bgcolor: 'primary.main',
-                    color: 'white',
-                    '&:hover': {
-                      bgcolor: 'primary.dark',
-                    },
-                    '&.Mui-disabled': {
-                      bgcolor: 'action.disabledBackground',
-                      color: 'action.disabled'
-                    }
-                  }}
-                >
-                  {isChatLoading ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
-                </IconButton>
+                {/* Text input and send button */}
+                <Box sx={{ 
+                  p: 2, 
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
+                  <TextField
+                    fullWidth
+                    placeholder="Ask about movies, genres, directors..."
+                    value={currentMessage}
+                    onChange={(e) => setCurrentMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    multiline
+                    maxRows={4}
+                    variant="outlined"
+                    sx={{ mr: 1 }}
+                    InputProps={{
+                      startAdornment: selectedProducts.length > 0 && (
+                        <Box sx={{ 
+                          display: 'flex', 
+                          flexWrap: 'wrap', 
+                          gap: 0.5, 
+                          p: 0.5,
+                          alignItems: 'center'
+                        }}>
+                          {isLoadingProducts ? (
+                            <CircularProgress size={20} />
+                          ) : (
+                            selectedProducts.map(product => (
+                              <Chip
+                                key={product.id}
+                                size="small"
+                                avatar={
+                                  <Avatar 
+                                    alt={product.title} 
+                                    src={product.image_url || `https://picsum.photos/40/40?random=${product.id}`}
+                                    sx={{ width: 28, height: 28 }}
+                                  />
+                                }
+                                label={product.title || 'Unknown Product'}
+                                onDelete={() => removeProduct(product.id)}
+                                deleteIcon={<CloseIcon fontSize="small" />}
+                                variant="outlined"
+                                sx={{ 
+                                  borderRadius: 1.5,
+                                  height: 32,
+                                  '& .MuiChip-avatar': {
+                                    width: 28,
+                                    height: 28,
+                                    ml: 0.5
+                                  }
+                                }}
+                              />
+                            ))
+                          )}
+                        </Box>
+                      )
+                    }}
+                  />
+                  <IconButton 
+                    color="primary" 
+                    onClick={() => sendMessage()}
+                    disabled={!currentMessage.trim() || isChatLoading}
+                    sx={{ 
+                      p: 1.5,
+                      bgcolor: 'primary.main',
+                      color: 'white',
+                      '&:hover': {
+                        bgcolor: 'primary.dark',
+                      },
+                      '&.Mui-disabled': {
+                        bgcolor: 'action.disabledBackground',
+                        color: 'action.disabled'
+                      }
+                    }}
+                  >
+                    {isChatLoading ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
+                  </IconButton>
+                </Box>
               </Box>
             </Box>
             
@@ -1457,7 +1665,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData }, r
                 {PREDEFINED_PROMPTS.map((prompt, index) => (
                   <ListItem key={index} disablePadding sx={{ mb: 1 }}>
                     <ListItemButton 
-                      onClick={() => usePrompt(prompt)}
+                      onClick={() => usePrompt(prompt, [])}
                       sx={{ 
                         borderRadius: 1,
                         py: 1.5,

@@ -25,6 +25,7 @@ export interface SearchResultItem {
     vote_average: string;
     backdrop_path: string;
     original_language: string;
+    price: number;
   };
   searchable_content: string;
   score: number;
@@ -72,33 +73,41 @@ export const useSearch = () => {
       // Get authentication token
       const token = await getToken();
       
-      // Build query parameters
+      // Build query parameters for pagination
       const queryParams = new URLSearchParams();
-      // For empty queries, use a special parameter or just omit it
-      if (query.trim()) {
-        queryParams.append('query', query);
-      } else {
-        // Either omit the query parameter for a default search
-        // or use a special value that your backend recognizes as "get all"
-        queryParams.append('query', '');
-      }
       queryParams.append('page', page.toString());
       queryParams.append('size', size.toString());
+      if (query.trim()) {
+        queryParams.append('query', query);
+      }
       
-      // Add any filters as query parameters
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          queryParams.append(key, value.toString());
-        }
-      });
+      // Create request body with filters and sort
+      const requestBody: Record<string, any> = {};
+      
+      // If we have a query, include it in the request body as well
+      if (query.trim()) {
+        requestBody.query = query;
+      }
+      
+      // Add filters and sort to request body if provided
+      if (filters.filters) {
+        requestBody.filters = filters.filters;
+      }
+      
+      if (filters.sort) {
+        requestBody.sort = filters.sort;
+      }
+      
       const response = await fetch(
         `${config.apiBaseUrl}/search?${queryParams.toString()}`, 
         {
           method: 'POST',
           headers: {
             'Accept': 'application/json',
+            'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
+          body: JSON.stringify(requestBody)
         }
       );
       

@@ -22,6 +22,7 @@ export interface MovieProduct {
   vote_average: string;
   backdrop_path: string;
   original_language: string;
+  price: number;
 }
 
 // Generic product type that can handle any fields

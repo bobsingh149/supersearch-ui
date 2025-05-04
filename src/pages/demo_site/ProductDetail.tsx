@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -24,12 +24,12 @@ import {
   ListItem,
   ListItemText,
   Avatar,
-  Collapse,
   Stack,
   Fab,
-  Modal,
   ClickAwayListener,
-  Zoom
+  Zoom,
+  Alert,
+  Snackbar
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -55,9 +55,9 @@ import { useReviewSummary } from '../../hooks/useReviewSummary';
 import { useProductQuestions } from '../../hooks/useProductQuestions';
 import { useSimilarProducts, SimilarProduct } from '../../hooks/useSimilarProducts';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import random_name from 'node-random-name';
 import AISearchBar, { AISearchBarRef } from '../Products/ai_shopping/AISearchBar';
-import { useSearch } from '../../hooks/useSearch';
+import { useLeads } from '../../hooks/useLeads';
+import ContactUsModal from './components/ContactUsModal';
 
 const ProductDetail: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -65,25 +65,44 @@ const ProductDetail: React.FC = () => {
   const { loading: apiLoading, getProductById } = useProductById();
   const { reviews, loading: reviewsLoading, error: reviewsError, fetchReviews } = useReviews();
   const { summary: reviewSummary, loading: summaryLoading, error: summaryError, fetchReviewSummary } = useReviewSummary();
-  const { questions, loading: questionsLoading, error: questionsError, fetchProductQuestions } = useProductQuestions();
   const { similarProducts, loading: similarProductsLoading, error: similarProductsError, fetchSimilarProducts } = useSimilarProducts();
+  const { questions, loading: questionsLoading, error: questionsError, fetchProductQuestions } = useProductQuestions();
   const [product, setProduct] = useState<MovieProduct | null>(null);
   const [mode, setMode] = useState<'light' | 'dark'>(() => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
-  const { searchProducts } = useSearch();
-  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [questionsOpen, setQuestionsOpen] = useState(true);
+  const [questionsOpen, setQuestionsOpen] = useState(false);
   const questionsButtonRef = useRef<HTMLButtonElement>(null);
-  const [selectedQuestion, setSelectedQuestion] = useState<string>('');
+  const [_selectedQuestion, setSelectedQuestion] = useState<string>('');
+  
+  // Open questions modal when questions finish loading
+  useEffect(() => {
+    if (!questionsLoading && questions.length > 0 && product) {
+      setQuestionsOpen(true);
+    }
+  }, [questionsLoading, questions, product]);
   
   // Updated refs with proper typing
   const desktopSearchRef = useRef<AISearchBarRef>(null);
   const mobileSearchRef = useRef<AISearchBarRef>(null);
 
+  // Contact modal states
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const { loading: _leadLoading, error: leadError, success: leadSuccess, reset: resetLead } = useLeads();
+  
   // Use the theme from theme.ts
   const theme = getTheme(mode);
+
+  // Function to handle regular search by redirecting to DemoEcommerce page
+  const handleSearch = () => {
+    // Get the search query from the AISearchBar
+    const searchQuery = desktopSearchRef.current?.getSearchQuery() || 
+                        mobileSearchRef.current?.getSearchQuery() || '';
+                        
+    // Redirect to DemoEcommerce with the search query as a URL parameter
+    navigate(`/demo_site?q=${encodeURIComponent(searchQuery)}`);
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -92,14 +111,14 @@ const ProductDetail: React.FC = () => {
           // Fetch product by ID using the hook
           const response = await getProductById(productId);
           setProduct(response as MovieProduct);
-          // Fetch reviews when product is loaded
-          await fetchReviews(productId);
-          // Fetch review summary
-          await fetchReviewSummary(productId);
-          // Fetch product questions
-          await fetchProductQuestions(productId);
-          // Fetch similar products
-          await fetchSimilarProducts(productId);
+          
+          // Execute all other API calls in parallel
+          await Promise.all([
+            fetchReviews(productId),
+            fetchReviewSummary(productId),
+            fetchProductQuestions(productId),
+            fetchSimilarProducts(productId)
+          ]);
         }
       } catch (error) {
         console.error('Error fetching product:', error);
@@ -118,7 +137,13 @@ const ProductDetail: React.FC = () => {
   };
 
   const handleContactModalOpen = () => {
-    // Will be implemented if needed
+    setContactModalOpen(true);
+    resetLead();
+  };
+
+  const handleContactModalClose = () => {
+    setContactModalOpen(false);
+    resetLead();
   };
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
@@ -144,14 +169,10 @@ const ProductDetail: React.FC = () => {
     // Get a reference to the AI search bar (desktop or mobile)
     const aiSearchBar = desktopSearchRef.current || mobileSearchRef.current;
     
-    // If we have access to the AI search bar, send the question directly
-    if (aiSearchBar) {
-      // This will: 
-      // 1. Open the AI chat
-      // 2. Set the question in the input field
-      // 3. Send the message immediately
-      // 4. Process the response
-      aiSearchBar.openAiChatWithMessage(question);
+    // If we have access to the AI search bar, send the question directly with the current product ID
+    if (aiSearchBar && productId) {
+      // Call the openAiChatWithMessage method that directly sends the message with product context
+      aiSearchBar.openAiChatWithMessage(question, [productId]);
     }
   };
 
@@ -161,7 +182,16 @@ const ProductDetail: React.FC = () => {
     
     return (
       <ClickAwayListener onClickAway={() => setQuestionsOpen(false)}>
-        <Zoom in={questionsOpen}>
+        <Zoom 
+          in={questionsOpen} 
+          timeout={{
+            enter: 500, // slightly faster entry for better UX
+            exit: 400
+          }}
+          style={{
+            transitionDelay: questionsOpen ? '100ms' : '0ms'
+          }}
+        >
           <Paper
             elevation={4}
             sx={{
@@ -175,13 +205,22 @@ const ProductDetail: React.FC = () => {
               maxHeight: '80vh',
               overflowY: 'auto',
               borderRadius: 2,
-              p: 3
+              p: 3,
+              boxShadow: theme => `0 8px 32px ${alpha(theme.palette.common.black, 0.15)}`,
+              animation: 'fadeIn 0.3s ease-out',
+              '@keyframes fadeIn': {
+                '0%': { opacity: 0, transform: { xs: 'translate(50%, -45%)', md: 'translateY(-45%)' } },
+                '100%': { opacity: 1, transform: { xs: 'translate(50%, -50%)', md: 'translateY(-50%)' } }
+              }
             }}
           >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <QuestionAnswerIcon color="primary" fontSize="small" />
                 Frequently Asked Questions
+                {questionsLoading && (
+                  <CircularProgress size={16} sx={{ ml: 1 }} />
+                )}
               </Typography>
               <IconButton size="small" onClick={toggleQuestionsModal}>
                 <CloseIcon fontSize="small" />
@@ -191,11 +230,61 @@ const ProductDetail: React.FC = () => {
             <Divider sx={{ mb: 2 }} />
             
             {questionsLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-                <CircularProgress size={24} />
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 4 }}>
+                <CircularProgress size={40} sx={{ mb: 2 }} />
+                <Typography variant="body2" color="text.secondary">
+                  Loading questions...
+                </Typography>
               </Box>
             ) : questionsError ? (
-              <Typography color="error">{questionsError}</Typography>
+              <Box sx={{ p: 1 }}>
+                <Box 
+                  sx={{ 
+                    bgcolor: alpha(theme.palette.primary.main, 0.08),
+                    p: 2,
+                    borderRadius: 2,
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <Box sx={{ 
+                    position: 'absolute', 
+                    top: -15, 
+                    right: -15, 
+                    opacity: 0.07,
+                    transform: 'rotate(10deg)'
+                  }}>
+                    <AutoAwesomeIcon sx={{ fontSize: 100, color: theme.palette.primary.main }} />
+                  </Box>
+                  
+                  <Stack spacing={2} sx={{ position: 'relative', zIndex: 1 }}>
+                    <Typography variant="subtitle1" color="primary.main" gutterBottom fontWeight={700}>
+                      Integrate CogniShop AI
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                      Unlock full access to CogniShop AI features and transform your customer experience.
+                    </Typography>
+                    <Button 
+                      variant="contained" 
+                      color="primary"
+                      fullWidth
+                      sx={{ 
+                        mt: 1,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        borderRadius: 1.5,
+                        background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                      }}
+                      onClick={() => {
+                        handleContactModalOpen();
+                        setQuestionsOpen(false);
+                      }}
+                    >
+                      Contact Us
+                    </Button>
+                  </Stack>
+                </Box>
+              </Box>
             ) : questions.length === 0 ? (
               <Typography color="text.secondary">No questions available for this product.</Typography>
             ) : (
@@ -212,6 +301,20 @@ const ProductDetail: React.FC = () => {
                       '&:hover': {
                         bgcolor: alpha(theme.palette.primary.main, 0.1),
                         cursor: 'pointer'
+                      },
+                      animation: `fadeInUp 0.5s ease forwards`,
+                      animationDelay: `${200 + index * 100}ms`,
+                      opacity: 0,
+                      transform: 'translateY(10px)',
+                      '@keyframes fadeInUp': {
+                        '0%': {
+                          opacity: 0,
+                          transform: 'translateY(10px)'
+                        },
+                        '100%': {
+                          opacity: 1,
+                          transform: 'translateY(0)'
+                        }
                       }
                     }}
                     onClick={() => handleQuestionClick(question)}
@@ -223,9 +326,60 @@ const ProductDetail: React.FC = () => {
                           <Typography variant="body1">{question}</Typography>
                         </Box>
                       }
+                      secondary={
+                        <Typography 
+                          variant="caption" 
+                          color="text.secondary"
+                          sx={{ 
+                            display: 'flex',
+                            alignItems: 'center',
+                            mt: 0.5,
+                            gap: 0.5 
+                          }}
+                        >
+                          <AutoAwesomeIcon fontSize="inherit" />
+                          Click to ask AI assistant
+                        </Typography>
+                      }
                     />
                   </ListItem>
                 ))}
+                {/* Ask AI Button */}
+                <ListItem 
+                  sx={{ 
+                    py: 1.5, 
+                    px: 2,
+                    borderRadius: 1,
+                    mt: 2,
+                    bgcolor: 'primary.main',
+                    color: 'white',
+                    '&:hover': {
+                      bgcolor: 'primary.dark',
+                      cursor: 'pointer'
+                    },
+                    opacity: 1,
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                  onClick={() => {
+                    const aiSearchBar = desktopSearchRef.current || mobileSearchRef.current;
+                    if (aiSearchBar && productId) {
+                      aiSearchBar.openAiChat([productId]);
+                      setQuestionsOpen(false);
+                    }
+                  }}
+                >
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <AutoAwesomeIcon sx={{ color: 'inherit' }} fontSize="small" />
+                        <Typography variant="body1" sx={{ fontWeight: 500, color: 'inherit' }}>
+                          Ask AI Shopping Assistant
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </ListItem>
               </List>
             )}
           </Paper>
@@ -252,7 +406,7 @@ const ProductDetail: React.FC = () => {
             cursor: 'pointer'
           }
         }}
-        onClick={() => navigate(`/demo_site/product/${product.id}`)}
+        onClick={() => navigate(`/demo_site/${product.id}`)}
       >
         <Box sx={{ position: 'relative', paddingTop: '150%' }}>
           <CardMedia
@@ -324,6 +478,99 @@ const ProductDetail: React.FC = () => {
     );
   };
 
+  // Function to handle API errors
+  const handleApiError = (_error: string) => {
+    return (
+      <Paper 
+        elevation={3}
+        sx={{
+          p: 0,
+          borderRadius: 3,
+          overflow: 'hidden',
+          boxShadow: theme.shadows[3],
+          border: '1px solid',
+          borderColor: alpha(theme.palette.primary.main, 0.2),
+          width: '100%',
+          mb: 3
+        }}
+      >
+        <Box 
+          sx={{ 
+            bgcolor: alpha(theme.palette.primary.main, 0.08),
+            p: 3,
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+        >
+          {/* Decorative elements */}
+          <Box sx={{ 
+            position: 'absolute', 
+            top: -20, 
+            right: -20, 
+            opacity: 0.07
+          }}>
+            <AutoAwesomeIcon sx={{ fontSize: 160, color: theme.palette.primary.main }} />
+          </Box>
+          
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems={{ xs: 'center', sm: 'flex-start' }} sx={{ position: 'relative', zIndex: 1 }}>
+            <Box 
+              sx={{ 
+                width: 60, 
+                height: 60, 
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '50%',
+                background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
+                flexShrink: 0,
+                boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`
+              }}
+            >
+              <AutoAwesomeIcon sx={{ fontSize: 32, color: 'white' }} />
+            </Box>
+            
+            <Box sx={{ textAlign: { xs: 'center', sm: 'left' }, width: '100%' }}>
+              <Typography variant="h5" color="primary.main" gutterBottom fontWeight={700}>
+                Integrate CogniShop AI
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 2, color: 'text.primary', fontWeight: 500 }}>
+                You've reached the free usage limit of CogniShop AI
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Our AI-powered search can transform your site's user experience, increasing conversions and customer satisfaction. Connect with our team to implement this technology on your own platform.
+              </Typography>
+              
+              <Button 
+                variant="contained" 
+                color="primary"
+                size="large"
+                onClick={() => {
+                  navigate('/demo_site?contactUs=true');
+                }}
+                sx={{ 
+                  px: 3,
+                  py: 1.2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                  boxShadow: theme.shadows[3],
+                  '&:hover': {
+                    boxShadow: theme.shadows[5],
+                    transform: 'translateY(-2px)'
+                  },
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                Contact Us to Integrate CogniShop
+              </Button>
+            </Box>
+          </Stack>
+        </Box>
+      </Paper>
+    );
+  };
+
   if (apiLoading) {
     return (
       <ThemeProvider theme={theme}>
@@ -369,24 +616,74 @@ const ProductDetail: React.FC = () => {
         >
           <Paper 
             sx={{ 
-              p: 4, 
+              p: { xs: 3, sm: 5 }, 
               textAlign: 'center',
-              borderRadius: 2,
-              maxWidth: 500,
-              width: '90%'
+              borderRadius: 4,
+              maxWidth: 600,
+              width: '90%',
+              backgroundImage: `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.1)} 0%, ${alpha(theme.palette.primary.main, 0.15)} 100%)`,
+              boxShadow: theme.shadows[10],
+              border: '1px solid',
+              borderColor: alpha(theme.palette.primary.main, 0.2),
+              overflow: 'hidden',
+              position: 'relative'
             }}
           >
-            <Typography variant="h5" gutterBottom>Product Not Found</Typography>
-            <Typography variant="body1" paragraph>
-              We couldn't find the product you're looking for.
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<ArrowBackIcon />}
-              onClick={handleGoBack}
-            >
-              Go Back
-            </Button>
+            <Box sx={{ position: 'absolute', top: -20, right: -20, opacity: 0.08, transform: 'rotate(20deg)' }}>
+              <AutoAwesomeIcon sx={{ fontSize: 180, color: theme.palette.primary.main }} />
+            </Box>
+            
+            <Box sx={{ position: 'relative', zIndex: 1 }}>
+              <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: 'primary.main' }}>
+                Upgrade Your Experience
+              </Typography>
+              <Typography variant="h6" sx={{ mb: 3, fontWeight: 500, color: 'text.secondary' }}>
+                You've reached the free usage limit
+              </Typography>
+              <Typography variant="body1" paragraph sx={{ mb: 4, maxWidth: '80%', mx: 'auto' }}>
+                Thank you for exploring CogniShop AI. To continue enjoying our premium AI-powered search features, 
+                connect with our team to implement this technology on your own site.
+              </Typography>
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={<AutoAwesomeIcon />}
+                onClick={() => {
+                  navigate('/demo_site?contactUs=true');
+                }}
+                sx={{
+                  borderRadius: 2.5,
+                  px: 4,
+                  py: 1.5,
+                  textTransform: 'none',
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  boxShadow: theme.shadows[4],
+                  background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                  '&:hover': {
+                    boxShadow: theme.shadows[6],
+                    transform: 'translateY(-2px)'
+                  },
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                Contact Us to Integrate CogniShop
+              </Button>
+              <Button
+                startIcon={<ArrowBackIcon />}
+                onClick={handleGoBack}
+                sx={{ 
+                  mt: 3, 
+                  color: 'text.secondary', 
+                  '&:hover': { 
+                    backgroundColor: 'transparent', 
+                    color: 'primary.main' 
+                  }
+                }}
+              >
+                Return to Homepage
+              </Button>
+            </Box>
           </Paper>
         </Box>
       </ThemeProvider>
@@ -432,8 +729,6 @@ const ProductDetail: React.FC = () => {
   // Review component
   const ReviewCard = ({ review }: { review: any }) => {
     const [expanded, setExpanded] = useState(false);
-    // Use useMemo to create a stable random name that won't change on re-renders
-    const reviewAuthor = useMemo(() => random_name(), []);
     const maxPreviewLength = 150;
     const shouldShowExpand = review.content.length > maxPreviewLength;
     const previewText = shouldShowExpand ? review.content.slice(0, maxPreviewLength) + '...' : review.content;
@@ -484,7 +779,7 @@ const ProductDetail: React.FC = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Avatar 
               sx={{ 
-                bgcolor: getAvatarColor(reviewAuthor),
+                bgcolor: getAvatarColor(review.author),
                 width: 40,
                 height: 40,
                 fontSize: '1rem',
@@ -492,11 +787,11 @@ const ProductDetail: React.FC = () => {
                 color: 'white'
               }}
             >
-              {reviewAuthor.charAt(0).toUpperCase()}
+              {review.author.charAt(0).toUpperCase()}
             </Avatar>
             <Box>
               <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                {reviewAuthor}
+                @{review.author}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
                 <AccessTimeIcon sx={{ fontSize: 16, mr: 0.5 }} />
@@ -618,7 +913,7 @@ const ProductDetail: React.FC = () => {
               display: { xs: 'none', md: 'block' } 
             }}>
               <AISearchBar 
-                setData={setSearchResults} 
+                onSearch={handleSearch}
                 ref={desktopSearchRef}
               />
             </Box>
@@ -658,12 +953,38 @@ const ProductDetail: React.FC = () => {
             display: { xs: 'block', md: 'none' } 
           }}>
             <AISearchBar 
-              setData={setSearchResults} 
+              onSearch={handleSearch}
               ref={mobileSearchRef}
             />
           </Box>
         </AppBar>
 
+        {/* Contact Form Modal */}
+        <ContactUsModal
+          open={contactModalOpen}
+          onClose={handleContactModalClose}
+        />
+
+        {/* Success/Error Snackbar */}
+        <Snackbar
+          open={leadSuccess || !!leadError}
+          autoHideDuration={6000}
+          onClose={() => {
+            if (leadSuccess) {
+              handleContactModalClose();
+            } else {
+              resetLead();
+            }
+          }}
+        >
+          <Alert
+            severity={leadSuccess ? "success" : "error"}
+            sx={{ width: '100%' }}
+          >
+            {leadSuccess ? "Thank you for contacting us! We'll get back to you soon." : leadError}
+          </Alert>
+        </Snackbar>
+        
         {/* Main Content */}
         <Container maxWidth="lg" sx={{ pt: 10, pb: 8 }}>
           {/* Breadcrumbs */}
@@ -677,24 +998,11 @@ const ProductDetail: React.FC = () => {
               }}
               sx={{ 
                 textDecoration: 'none',
-                '&:hover': { textDecoration: 'underline' }
+                '&:hover': { textDecoration: 'underline', color: 'primary.main' }
               }}
             >
               Home
             </Link>
-            {genres.length > 0 && (
-              <Link 
-                color="inherit" 
-                href="#" 
-                onClick={(e) => e.preventDefault()}
-                sx={{ 
-                  textDecoration: 'none',
-                  '&:hover': { textDecoration: 'underline' }
-                }}
-              >
-                Movies
-              </Link>
-            )}
             <Typography color="text.primary">{title}</Typography>
           </Breadcrumbs>
 
@@ -871,17 +1179,12 @@ const ProductDetail: React.FC = () => {
                   {product.overview || "No description available for this product."}
                 </Typography>
                 
-                {/* Popularity for Movies */}
-                {product.popularity && (
-                  <Box sx={{ mt: 3 }}>
-                    <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
-                      Popularity Score
-                    </Typography>
-                    <Typography variant="body2">
-                      {parseFloat(product.popularity).toFixed(1)}
-                    </Typography>
-                  </Box>
-                )}
+                {/* Price */}
+                <Box sx={{ mt: 3, mb: 2 }}>
+                  <Typography variant="h4" color="primary.main" sx={{ fontWeight: 700 }}>
+                    ${product.price ? product.price.toFixed(2) : '9.99'}
+                  </Typography>
+                </Box>
                 
                 <Divider sx={{ my: 3 }} />
                 
@@ -917,9 +1220,7 @@ const ProductDetail: React.FC = () => {
                 <CircularProgress />
               </Box>
             ) : similarProductsError ? (
-              <Paper sx={{ p: 3, textAlign: 'center', bgcolor: 'error.light' }}>
-                <Typography color="error">{similarProductsError}</Typography>
-              </Paper>
+              handleApiError(similarProductsError)
             ) : similarProducts.length === 0 ? (
               <Paper 
                 sx={{ 
@@ -957,9 +1258,7 @@ const ProductDetail: React.FC = () => {
                 <CircularProgress />
               </Box>
             ) : summaryError ? (
-              <Paper sx={{ p: 3, textAlign: 'center', bgcolor: 'error.light' }}>
-                <Typography color="error">{summaryError}</Typography>
-              </Paper>
+              handleApiError(summaryError)
             ) : reviewSummary ? (
               <Paper 
                 elevation={0}
@@ -1072,9 +1371,7 @@ const ProductDetail: React.FC = () => {
                 <CircularProgress />
               </Box>
             ) : reviewsError ? (
-              <Paper sx={{ p: 3, textAlign: 'center', bgcolor: 'error.light' }}>
-                <Typography color="error">{reviewsError}</Typography>
-              </Paper>
+              handleApiError(reviewsError)
             ) : reviews.length === 0 ? (
               <Paper 
                 sx={{ 
@@ -1107,7 +1404,28 @@ const ProductDetail: React.FC = () => {
             right: 30,
             top: '30%',
             transform: 'translateY(-50%)',
-            zIndex: 1200
+            zIndex: 1200,
+            transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            animation: questionsOpen ? 'none' : 'bounce 1s ease infinite',
+            animationDelay: '3s',
+            boxShadow: theme => questionsOpen 
+              ? `0 0 0 4px ${alpha(theme.palette.primary.main, 0.2)}` 
+              : `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+            '&:hover': {
+              transform: 'translateY(-50%) scale(1.05)',
+              boxShadow: theme => `0 6px 16px ${alpha(theme.palette.primary.main, 0.4)}`
+            },
+            '@keyframes bounce': {
+              '0%, 20%, 50%, 80%, 100%': {
+                transform: 'translateY(-50%)'
+              },
+              '40%': {
+                transform: 'translateY(-60%)'
+              },
+              '60%': {
+                transform: 'translateY(-55%)'
+              }
+            }
           }}
         >
           {questionsOpen ? <CloseIcon /> : <QuestionAnswerIcon />}

@@ -2341,7 +2341,7 @@ export default function DataSources() {
                       alignItems: 'center',
                     }
                   }}
-                  getRowId={(row) => row.product_id || row.id || Math.random().toString()}
+                  getRowId={(row) =>  row.id || Math.random().toString()}
                 />
               </Paper>
             </Box>

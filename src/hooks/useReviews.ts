@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState} from 'react';
 import config from '../config';
 
 interface Review {
   id: string;
   product_id: string;
+  author: string;
   content: string;
   created_at: string;
   updated_at: string;

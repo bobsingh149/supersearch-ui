@@ -13,50 +13,73 @@ import {
   Tooltip,
   Drawer,
   Divider,
-  Slider,
   FormControl,
   RadioGroup,
   FormControlLabel,
   Radio,
   Select,
   MenuItem,
-  Badge,
   Button,
   CircularProgress,
   Paper,
-  Rating,
   SelectChangeEvent,
   Link,
   Stack,  
-  Modal,
-  TextField,
   Alert,
-  Snackbar
+  Snackbar,
+  ClickAwayListener,
+  Zoom,
+  List,
+  ListItem,
+  ListItemText,
+  Fab
 } from '@mui/material';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import PersonIcon from '@mui/icons-material/Person';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import FilterListIcon from '@mui/icons-material/FilterList';
 import CloseIcon from '@mui/icons-material/Close';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import AISearchBar from '../Products/ai_shopping/AISearchBar';
+import HelpIcon from '@mui/icons-material/Help';
+import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
+import AISearchBar, { AISearchBarRef } from '../Products/ai_shopping/AISearchBar';
 import { useSearch, SearchResultItem} from '../../hooks/useSearch';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { getTheme } from '../../theme/theme';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useLeads } from '../../hooks/useLeads';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import ContactUsModal from './components/ContactUsModal';
 
 // Drawer width
 const DRAWER_WIDTH = 280;
 
+// Define filter and sort interfaces
+interface FilterCondition {
+  field: string;
+  value: any;
+  operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in';
+}
+
+interface FilterOptions {
+  conditions: FilterCondition[];
+  filter_type: 'AND' | 'OR';
+}
+
+interface SortOptions {
+  field: string;
+  direction: 'asc' | 'desc';
+}
+
+interface SearchFilters {
+  filters?: FilterOptions;
+  sort?: SortOptions;
+}
+
 const DemoEcommerce: React.FC = () => {
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
   const [page, setPage] = useState(1);
-  const { loading: apiLoading, searchProducts, error: apiError, errorStatusCode } = useSearch();
+  const { loading: apiLoading, searchProducts, error: apiError} = useSearch();
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(12);
   const [totalResults, setTotalResults] = useState(0);
@@ -66,29 +89,63 @@ const DemoEcommerce: React.FC = () => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
   const navigate = useNavigate();
+  const location = useLocation();
   const isInitialRender = useRef(true);
   const previousPage = useRef(page);
   const previousItemsPerPage = useRef(itemsPerPage);
+  const questionsButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Extract search query from URL if present
+  const queryParams = new URLSearchParams(location.search);
+  const searchQuery = queryParams.get('q') || '';
+  const shouldOpenContactModal = queryParams.get('contactUs') === 'true';
 
   // Filter states
-  const [priceRange, setPriceRange] = useState<number[]>([0, 10]);
+  const [priceRange, _setPriceRange] = useState<number[]>([0, 10]);
   const [sortBy, setSortBy] = useState('relevance');
   const [genre, setGenre] = useState('all');
-  const [releaseYear, setReleaseYear] = useState<number[]>([1970, 2023]);
+  const [_searchFilters, setSearchFilters] = useState<SearchFilters>({});
+  // Add state for expanded genres
+  const [showAllGenres, setShowAllGenres] = useState(false);
+
+  // Define popular genres for initial display
+  const popularGenres = ['Action', 'Comedy', 'Drama', 'Horror', 'Romance', 'Thriller'];
+  const allGenres = [
+    'Action', 'Adventure', 'Animation', 'Comedy', 'Crime',
+    'Documentary', 'Drama', 'Family', 'Fantasy', 'Horror',
+    'Mystery', 'Romance', 'Sci-Fi', 'Thriller'
+  ];
+  
+  // Get genres to display based on showAllGenres state
+  const displayedGenres = showAllGenres ? allGenres : popularGenres;
 
   // Use the theme from theme.ts
   const theme = getTheme(mode);
 
   const [contactModalOpen, setContactModalOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    business_email: '',
-    company_name: ''
-  });
-  const { submitLead, loading, error, success, reset } = useLeads();
+  const { error: leadError, success: leadSuccess, reset: resetLead } = useLeads();
 
   // Add state to track favorited products
   const [favoriteProducts, setFavoriteProducts] = useState<Record<string, boolean>>({});
+  
+  // FAQ modal state
+  const [faqModalOpen, setFaqModalOpen] = useState(false);
+  
+  // Sample frequently asked questions about movies
+  const faqs = [
+    "What are the highest rated action movies?",
+    "Can you recommend movies similar to Inception?",
+    "Which movies have won the most Oscars?",
+    "What are some must-watch sci-fi movies?",
+    "Can you suggest movies with great plot twists?",
+    "What are the best movies from the 90s?"
+  ];
+
+  // Add ref for AISearchBar
+  const aiSearchBarRef = useRef<AISearchBarRef | null>(null);
+
+  // Add state for selected question
+  const [_selectedQuestion, setSelectedQuestion] = useState('');
 
   useEffect(() => {
     // Listen for system theme changes
@@ -104,27 +161,101 @@ const DemoEcommerce: React.FC = () => {
   // Memoized fetch function to prevent recreation on each render
   const fetchProducts = useCallback(async (currentPage: number, pageSize: number) => {
     try {
-      const response = await searchProducts({
-        query: '',
+      // Use current filter and sort selections
+      const filterConditions: FilterCondition[] = [];
+      
+      // Add vote_average (rating) filter
+      if (priceRange[0] > 0 || priceRange[1] < 10) {
+        filterConditions.push({
+          field: 'vote_average',
+          value: priceRange[0],
+          operator: 'gte'
+        });
+        filterConditions.push({
+          field: 'vote_average',
+          value: priceRange[1],
+          operator: 'lte'
+        });
+      }
+      
+      // Add genre filter - using 'in' operator to check if the genre exists in the array
+      if (genre !== 'all') {
+        filterConditions.push({
+          field: 'genres',
+          // Using a partial string match approach
+          value: genre,
+          operator: 'in'
+        });
+      }
+      
+      // Create the filters object
+      const filters: FilterOptions | undefined = filterConditions.length > 0 
+        ? { conditions: filterConditions, filter_type: 'AND' } 
+        : undefined;
+      
+      // Create the sort object
+      let sort: SortOptions | undefined;
+      
+      switch (sortBy) {
+        case 'popularity_high':
+          sort = { field: 'popularity', direction: 'desc' };
+          break;
+        case 'popularity_low':
+          sort = { field: 'popularity', direction: 'asc' };
+          break;
+        case 'year_new':
+          sort = { field: 'release_date', direction: 'desc' };
+          break;
+        case 'year_old':
+          sort = { field: 'release_date', direction: 'asc' };
+          break;
+        case 'rating_high':
+          sort = { field: 'vote_average', direction: 'desc' };
+          break;
+        case 'rating_low':
+          sort = { field: 'vote_average', direction: 'asc' };
+          break;
+        default:
+          // For 'relevance', either leave undefined or use a specific field
+          sort = undefined;
+      }
+      
+      // Set the filters to state for debugging/transparency
+      const filtersPayload = { filters, sort };
+      setSearchFilters(filtersPayload);
+      
+      // Fetch products with current page
+      searchProducts({
+        query: searchQuery,
         page: currentPage,
-        size: pageSize
+        size: pageSize,
+        filters: filtersPayload
+      }).then(response => {
+        setSearchResults(response.results);
+        setTotalResults(response.total || response.results.length);
+        setHasMore(response.has_more || false);
+      }).catch(error => {
+        console.error('Error fetching products:', error);
       });
-      setSearchResults(response.results);
-      setTotalResults(response.total || response.results.length);
-      setHasMore(response.has_more || false);
     } catch (error) {
       console.error('Error fetching products:', error);
       // Error is handled via the apiError state from useSearch
     }
-  }, [searchProducts]);
+  }, [searchProducts, priceRange, genre, sortBy, searchQuery]);
 
   // Initial load - runs only once
   useEffect(() => {
     if (isInitialRender.current) {
       isInitialRender.current = false;
       fetchProducts(page, itemsPerPage);
+      
+      // If there was a query parameter, let's update the URL to remove it 
+      // after the initial search to keep it clean for subsequent navigation
+      if (searchQuery) {
+        window.history.replaceState(null, '', '/demo_site');
     }
-  }, [fetchProducts, page, itemsPerPage]);
+    }
+  }, [fetchProducts, page, itemsPerPage, searchQuery]);
 
   // Handle page or page size changes
   useEffect(() => {
@@ -138,6 +269,24 @@ const DemoEcommerce: React.FC = () => {
       }
     }
   }, [page, itemsPerPage, fetchProducts]);
+
+  // Check for contactUs query parameter and open modal if needed
+  useEffect(() => {
+    if (shouldOpenContactModal) {
+      setContactModalOpen(true);
+      // Update URL to remove the parameter after opening to prevent reopening on refresh
+      navigate('/demo_site', { replace: true });
+    }
+  }, [shouldOpenContactModal, navigate]);
+
+  // Auto open FAQ modal after delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFaqModalOpen(true);
+    }, 1500); // 3 seconds delay
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   const toggleTheme = () => {
     setMode(prev => prev === 'light' ? 'dark' : 'light');
@@ -153,20 +302,20 @@ const DemoEcommerce: React.FC = () => {
     setPage(newPage);
   };
 
-  const handlePriceChange = (_event: Event, newValue: number | number[]) => {
-    setPriceRange(newValue as number[]);
-  };
+
 
   const handleSortChange = (event: SelectChangeEvent) => {
-    setSortBy(event.target.value);
+    const newSortBy = event.target.value;
+    setSortBy(newSortBy);
+    // Using the new value directly to ensure latest data
+    applyFilters(priceRange, genre, newSortBy);
   };
 
   const handleGenreChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setGenre(event.target.value);
-  };
-
-  const handleReleaseYearChange = (_event: Event, newValue: number | number[]) => {
-    setReleaseYear(newValue as number[]);
+    const newGenre = event.target.value;
+    setGenre(newGenre);
+    // Using the new value directly to ensure latest data
+    applyFilters(priceRange, newGenre, sortBy);
   };
 
   const toggleMobileFilter = () => {
@@ -201,36 +350,182 @@ const DemoEcommerce: React.FC = () => {
     }
   };
 
-  const handleContactModalOpen = () => {
-    setContactModalOpen(true);
-    reset();
-  };
-
-  const handleContactModalClose = () => {
-    setContactModalOpen(false);
-    setFormData({
-      name: '',
-      business_email: '',
-      company_name: ''
-    });
-    reset();
-  };
-
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await submitLead(formData);
-    if (success) {
-      handleContactModalClose();
+  // Unified function to apply filters with current values
+  const applyFilters = (currentPriceRange: number[], currentGenre: string, currentSortBy: string) => {
+    // Build filter conditions based on current filter state
+    const filterConditions: FilterCondition[] = [];
+    
+    // Add vote_average (rating) filter
+    if (currentPriceRange[0] > 0 || currentPriceRange[1] < 10) {
+      filterConditions.push({
+        field: 'vote_average',
+        value: currentPriceRange[0],
+        operator: 'gte'
+      });
+      filterConditions.push({
+        field: 'vote_average',
+        value: currentPriceRange[1],
+        operator: 'lte'
+      });
     }
+    
+    // Add genre filter - using 'in' operator to check if the genre exists in the array
+    if (currentGenre !== 'all') {
+      filterConditions.push({
+        field: 'genres',
+        // Using a partial string match approach
+        value: currentGenre,
+        operator: 'in'
+      });
+    }
+    
+    // Create the filters object
+    const filters: FilterOptions | undefined = filterConditions.length > 0 
+      ? { conditions: filterConditions, filter_type: 'AND' } 
+      : undefined;
+    
+    // Create the sort object
+    let sort: SortOptions | undefined;
+    
+    switch (currentSortBy) {
+      case 'popularity_high':
+        sort = { field: 'popularity', direction: 'desc' };
+        break;
+      case 'popularity_low':
+        sort = { field: 'popularity', direction: 'asc' };
+        break;
+      case 'year_new':
+        sort = { field: 'release_date', direction: 'desc' };
+        break;
+      case 'year_old':
+        sort = { field: 'release_date', direction: 'asc' };
+        break;
+      case 'rating_high':
+        sort = { field: 'vote_average', direction: 'desc' };
+        break;
+      case 'rating_low':
+        sort = { field: 'vote_average', direction: 'asc' };
+        break;
+      default:
+        // For 'relevance', either leave undefined or use a specific field
+        sort = undefined;
+    }
+    
+    // Set the filters to state for debugging/transparency
+    const filtersPayload = { filters, sort };
+    setSearchFilters(filtersPayload);
+    
+    // Log the filter payload for debugging
+    console.log('Applying filters:', filtersPayload);
+    
+    // Fetch products with new filters
+    searchProducts({
+      query: searchQuery, // Use the URL query param if available
+      page: 1, // Reset to page 1 when changing filters
+      size: itemsPerPage,
+      filters: filtersPayload
+    }).then(response => {
+      setSearchResults(response.results);
+      setTotalResults(response.total || response.results.length);
+      setHasMore(response.has_more || false);
+      setPage(1); // Reset page to 1
+    }).catch(error => {
+      console.error('Error fetching products:', error);
+    });
   };
+
+  // Genre Filter section
+  const genreFilterSection = (
+    <Box sx={{ mt: 1.5 }}>
+      <FormControl component="fieldset" sx={{ width: '100%' }}>
+        <RadioGroup value={genre} onChange={handleGenreChange}>
+          <Box sx={{ display: 'grid', gap: 1 }}>
+            <FormControlLabel 
+              value="all" 
+              control={
+                <Radio 
+                  size="small" 
+                  sx={{ 
+                    '&.Mui-checked': {
+                      color: 'primary.main'
+                    }
+                  }}
+                />
+              } 
+              label={
+                <Typography variant="body2" sx={{ fontWeight: genre === 'all' ? 600 : 400 }}>
+                  All Genres
+                </Typography>
+              }
+              sx={{ mr: 0 }}
+            />
+            {displayedGenres.map(genreOption => (
+              <FormControlLabel 
+                key={genreOption}
+                value={genreOption} 
+                control={
+                  <Radio 
+                    size="small" 
+                    sx={{ 
+                      '&.Mui-checked': {
+                        color: 'primary.main'
+                      }
+                    }}
+                  />
+                } 
+                label={
+                  <Typography variant="body2" sx={{ fontWeight: genre === genreOption ? 600 : 400 }}>
+                    {genreOption}
+                  </Typography>
+                }
+                sx={{ mr: 0 }}
+              />
+            ))}
+          </Box>
+        </RadioGroup>
+      </FormControl>
+      
+      {!showAllGenres && allGenres.length > popularGenres.length && (
+        <Button 
+          onClick={() => setShowAllGenres(true)}
+          sx={{ 
+            mt: 1,
+            fontSize: '0.75rem',
+            color: 'primary.main',
+            '&:hover': {
+              backgroundColor: 'transparent',
+              textDecoration: 'underline'
+            },
+            pl: 0.5,
+            minWidth: 'auto',
+            textTransform: 'none'
+          }}
+        >
+          + Show more genres
+        </Button>
+      )}
+      
+      {showAllGenres && (
+        <Button 
+          onClick={() => setShowAllGenres(false)}
+          sx={{ 
+            mt: 1,
+            fontSize: '0.75rem',
+            color: 'primary.main',
+            '&:hover': {
+              backgroundColor: 'transparent',
+              textDecoration: 'underline'
+            },
+            pl: 0.5,
+            minWidth: 'auto',
+            textTransform: 'none'
+          }}
+        >
+          - Show less
+        </Button>
+      )}
+    </Box>
+  );
 
   // Filter content component
   const filterContent = (
@@ -254,109 +549,101 @@ const DemoEcommerce: React.FC = () => {
         background: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
       },
     }}>
-      <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+      <Typography variant="h6" gutterBottom sx={{ 
+        fontWeight: 700, 
+        mb: 3, 
+        borderBottom: '2px solid', 
+        borderColor: 'primary.main', 
+        pb: 1,
+        display: 'inline-block'
+      }}>
         Filters
       </Typography>
-      <Divider sx={{ mb: 3 }} />
-      
-      {/* Rating Filter */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
-          Rating Range
-        </Typography>
-        <Box sx={{ px: 1 }}>
-          <Slider
-            value={priceRange}
-            onChange={handlePriceChange}
-            valueLabelDisplay="auto"
-            min={0}
-            max={10}
-            step={0.5}
-          />
-        </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            {priceRange[0]}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {priceRange[1]}
-          </Typography>
-        </Box>
-      </Box>
-      
-      {/* Release Year Filter */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
-          Release Year
-        </Typography>
-        <Box sx={{ px: 1 }}>
-          <Slider
-            value={releaseYear}
-            onChange={handleReleaseYearChange}
-            valueLabelDisplay="auto"
-            min={1970}
-            max={2023}
-            step={1}
-          />
-        </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            {releaseYear[0]}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {releaseYear[1]}
-          </Typography>
-        </Box>
-      </Box>
       
       {/* Genre Filter */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
+        <Typography variant="subtitle2" gutterBottom sx={{ 
+          fontWeight: 600, 
+          color: 'primary.main',
+          display: 'flex',
+          alignItems: 'center',
+          '&:before': {
+            content: '""',
+            display: 'inline-block',
+            width: 12,
+            height: 12,
+            borderRadius: '50%',
+            bgcolor: 'primary.main',
+            mr: 1,
+            opacity: 0.7
+          }
+        }}>
           Genre
         </Typography>
-        <FormControl component="fieldset">
-          <RadioGroup value={genre} onChange={handleGenreChange}>
-            <FormControlLabel value="all" control={<Radio size="small" />} label="All Genres" />
-            <FormControlLabel value="action" control={<Radio size="small" />} label="Action" />
-            <FormControlLabel value="comedy" control={<Radio size="small" />} label="Comedy" />
-            <FormControlLabel value="drama" control={<Radio size="small" />} label="Drama" />
-            <FormControlLabel value="sci-fi" control={<Radio size="small" />} label="Sci-Fi" />
-            <FormControlLabel value="horror" control={<Radio size="small" />} label="Horror" />
-          </RadioGroup>
-        </FormControl>
+        {genreFilterSection}
       </Box>
       
       {/* Sort By */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
+        <Typography variant="subtitle2" gutterBottom sx={{ 
+          fontWeight: 600, 
+          color: 'primary.main',
+          display: 'flex',
+          alignItems: 'center',
+          '&:before': {
+            content: '""',
+            display: 'inline-block',
+            width: 12,
+            height: 12,
+            borderRadius: '50%',
+            bgcolor: 'primary.main',
+            mr: 1,
+            opacity: 0.7
+          }
+        }}>
           Sort By
         </Typography>
-        <FormControl fullWidth size="small">
+        <FormControl fullWidth size="small" sx={{ mt: 2 }}>
           <Select
             value={sortBy}
             onChange={handleSortChange}
             displayEmpty
-            sx={{ borderRadius: 1 }}
+            sx={{ 
+              borderRadius: 2,
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: alpha(theme.palette.divider, 0.8)
+              }
+            }}
           >
-            <MenuItem value="relevance">Relevance</MenuItem>
-            <MenuItem value="rating_high">Rating: High to Low</MenuItem>
-            <MenuItem value="rating_low">Rating: Low to High</MenuItem>
-            <MenuItem value="year_new">Newest First</MenuItem>
-            <MenuItem value="year_old">Oldest First</MenuItem>
+            <MenuItem value="relevance" sx={{ fontWeight: 'medium' }}>Relevance</MenuItem>
+            
+            <MenuItem disabled sx={{ 
+              opacity: 1, 
+              color: 'text.primary', 
+              fontWeight: 600,
+              pointerEvents: 'none',
+              bgcolor: alpha(theme.palette.primary.main, 0.04),
+              '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) } 
+            }}>
+              By Popularity
+            </MenuItem>
+            <MenuItem value="popularity_high" sx={{ pl: 3 }}>High to Low</MenuItem>
+            <MenuItem value="popularity_low" sx={{ pl: 3 }}>Low to High</MenuItem>
+            
+            <MenuItem disabled sx={{ 
+              opacity: 1, 
+              color: 'text.primary', 
+              fontWeight: 600,
+              pointerEvents: 'none',
+              bgcolor: alpha(theme.palette.primary.main, 0.04),
+              '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) } 
+            }}>
+              By Rating
+            </MenuItem>
+            <MenuItem value="rating_high" sx={{ pl: 3 }}>High to Low</MenuItem>
+            <MenuItem value="rating_low" sx={{ pl: 3 }}>Low to High</MenuItem>
           </Select>
         </FormControl>
-      </Box>
-      
-      {/* Apply Filters Button (Mobile Only) */}
-      <Box sx={{ display: { sm: 'none' } }}>
-        <Button 
-          variant="contained" 
-          fullWidth 
-          onClick={toggleMobileFilter}
-          sx={{ mt: 2 }}
-        >
-          Apply Filters
-        </Button>
       </Box>
     </Box>
   );
@@ -364,76 +651,266 @@ const DemoEcommerce: React.FC = () => {
   // Render error message based on status code
   const renderErrorMessage = () => {
     if (!apiError) return null;
-
-
-    console.log('errorStatusCode');
-    console.log(errorStatusCode);
-    
-    const errorSeverity = errorStatusCode === 429 ? 'warning' : 'error';
     
     return (
       <Box sx={{ mt: 4, mb: 4 }}>
         <Paper 
-          elevation={0}
+          elevation={3}
           sx={{
-            p: 3,
-            borderRadius: 2,
-            bgcolor: theme.palette.mode === 'dark' 
-              ? alpha(theme.palette.error.dark, 0.15)
-              : alpha(theme.palette.error.light, 0.15),
+            p: 0,
+            borderRadius: 3,
+            overflow: 'hidden',
+            boxShadow: theme.shadows[3],
             border: '1px solid',
-            borderColor: errorSeverity === 'warning'
-              ? theme.palette.warning.main
-              : theme.palette.error.main,
+            borderColor: alpha(theme.palette.primary.main, 0.2)
           }}
         >
-          <Stack direction="row" spacing={2} alignItems="flex-start">
-            <ErrorOutlineIcon 
-              color={errorSeverity} 
-              sx={{ mt: 0.5, fontSize: 24 }} 
-            />
-            <Box>
-              {errorStatusCode === 429 ? (
-                <>
-                  <Typography variant="h6" color="text.primary" gutterBottom fontWeight={600}>
-                    Search Limit Reached
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" paragraph>
-                    You've exceeded your free quota. Contact us to use our AI-powered search for your site and transform your customer experience.
-                  </Typography>
+          <Box 
+            sx={{ 
+              bgcolor: alpha(theme.palette.primary.main, 0.08),
+              p: 3,
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Decorative elements */}
+            <Box sx={{ 
+              position: 'absolute', 
+              top: -20, 
+              right: -20, 
+              opacity: 0.07
+            }}>
+              <AutoAwesomeIcon sx={{ fontSize: 160, color: theme.palette.primary.main }} />
+            </Box>
+            
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems={{ xs: 'center', sm: 'flex-start' }} sx={{ position: 'relative', zIndex: 1 }}>
+              <Box 
+                sx={{ 
+                  width: 60, 
+                  height: 60, 
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
+                  flexShrink: 0,
+                  boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`
+                }}
+              >
+                <AutoAwesomeIcon sx={{ fontSize: 32, color: 'white' }} />
+              </Box>
+              
+              <Box sx={{ textAlign: { xs: 'center', sm: 'left' }, width: '100%' }}>
+                <Typography variant="h5" color="primary.main" gutterBottom fontWeight={700}>
+                  Integrate CogniShop AI
+                </Typography>
+                <Typography variant="body1" sx={{ mb: 2, color: 'text.primary', fontWeight: 500 }}>
+                  You've reached the free usage limit of CogniShop AI
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  Our AI-powered search can transform your site's user experience, increasing conversions and customer satisfaction. Connect with our team to implement this technology on your own platform.
+                </Typography>
+                
+                <Stack 
+                  direction={{ xs: 'column', sm: 'row' }}
+                  spacing={2}
+                  sx={{ mt: 3 }}
+                  justifyContent={{ xs: 'center', sm: 'flex-start' }}
+                >
                   <Button 
                     variant="contained" 
                     color="primary"
-                    size="medium"
-                    sx={{ mt: 1, borderRadius: 1.5, textTransform: 'none', fontWeight: 500 }}
-                    onClick={() => window.open('mailto:sales@supersearch.ai', '_blank')}
+                    size="large"
+                    onClick={() => setContactModalOpen(true)}
+                    sx={{ 
+                      px: 3,
+                      py: 1.2,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      borderRadius: 2,
+                      background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                      boxShadow: theme.shadows[3],
+                      '&:hover': {
+                        boxShadow: theme.shadows[5],
+                        transform: 'translateY(-2px)'
+                      },
+                      transition: 'all 0.3s ease'
+                    }}
                   >
-                    Contact Us to Supercharge Your Search
+                    Contact Us to Integrate CogniShop
                   </Button>
-                </>
-              ) : (
-                <>
-                  <Typography variant="h6" color="text.primary" gutterBottom fontWeight={600}>
-                    Something went wrong
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    We couldn't complete your search request. Please try again later.
-                  </Typography>
-                  <Button 
-                    variant="outlined" 
-                    color="primary"
-                    size="small"
-                    sx={{ mt: 2, borderRadius: 1.5, textTransform: 'none' }}
-                    onClick={() => fetchProducts(page, itemsPerPage)}
-                  >
-                    Try Again
-                  </Button>
-                </>
-              )}
-            </Box>
-          </Stack>
+                </Stack>
+              </Box>
+            </Stack>
+          </Box>
         </Paper>
       </Box>
+    );
+  };
+
+  // Handle question click to send to chatbot
+  const handleQuestionClick = (question: string) => {
+    // Store the selected question
+    setSelectedQuestion(question);
+    
+    // Close the questions modal
+    setFaqModalOpen(false);
+    
+    // Get a reference to the AI search bar
+    if (aiSearchBarRef.current) {
+      // Call the openAiChatWithMessage method that directly sends the message
+      aiSearchBarRef.current.openAiChatWithMessage(question);
+    } else {
+      console.error("AI Search Bar reference not available");
+    }
+  };
+
+  // FAQ modal component
+  const FaqModal = () => {
+    if (!faqModalOpen) return null;
+    
+    return (
+      <ClickAwayListener onClickAway={() => setFaqModalOpen(false)}>
+        <Zoom 
+          in={faqModalOpen} 
+          timeout={{
+            enter: 500,
+            exit: 400
+          }}
+          style={{
+            transitionDelay: faqModalOpen ? '100ms' : '0ms'
+          }}
+        >
+          <Paper
+            elevation={4}
+            sx={{
+              position: 'fixed',
+              right: { xs: '50%', md: 100 },
+              top: { xs: '50%', md: questionsButtonRef.current?.getBoundingClientRect().top || 250 },
+              transform: { xs: 'translate(50%, -50%)', md: 'translateY(-50%)' },
+              zIndex: 1300,
+              width: { xs: '90%', sm: 400 },
+              height: { xs: 'auto', sm: 'auto' },
+              maxHeight: { xs: '70vh', sm: '400px' },
+              overflowY: 'auto',
+              borderRadius: 2,
+              p: 3,
+              boxShadow: theme => `0 8px 32px ${alpha(theme.palette.common.black, 0.15)}`,
+              animation: 'fadeIn 0.3s ease-out',
+              '@keyframes fadeIn': {
+                '0%': { opacity: 0, transform: { xs: 'translate(50%, -45%)', md: 'translateY(-45%)' } },
+                '100%': { opacity: 1, transform: { xs: 'translate(50%, -50%)', md: 'translateY(-50%)' } }
+              }
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <QuestionAnswerIcon color="primary" fontSize="small" />
+                Frequently Asked Questions
+              </Typography>
+              <IconButton size="small" onClick={() => setFaqModalOpen(false)}>
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+            
+            <Divider sx={{ mb: 2 }} />
+            
+            <List>
+              {faqs.map((question, index) => (
+                <ListItem 
+                  key={index} 
+                  sx={{ 
+                    py: 1.5, 
+                    px: 2,
+                    borderRadius: 1,
+                    mb: 1,
+                    bgcolor: alpha(theme.palette.primary.main, 0.05),
+                    '&:hover': {
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      cursor: 'pointer'
+                    },
+                    animation: `fadeInUp 0.5s ease forwards`,
+                    animationDelay: `${200 + index * 100}ms`,
+                    opacity: 0,
+                    transform: 'translateY(10px)',
+                    '@keyframes fadeInUp': {
+                      '0%': {
+                        opacity: 0,
+                        transform: 'translateY(10px)'
+                      },
+                      '100%': {
+                        opacity: 1,
+                        transform: 'translateY(0)'
+                      }
+                    }
+                  }}
+                  onClick={() => handleQuestionClick(question)}
+                >
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                        <HelpIcon fontSize="small" sx={{ color: 'primary.main', mr: 1, mt: 0.3 }} />
+                        <Typography variant="body1">{question}</Typography>
+                      </Box>
+                    }
+                    secondary={
+                      <Typography 
+                        variant="caption" 
+                        color="text.secondary"
+                        sx={{ 
+                          display: 'flex',
+                          alignItems: 'center',
+                          mt: 0.5,
+                          gap: 0.5 
+                        }}
+                      >
+                        <AutoAwesomeIcon fontSize="inherit" />
+                        Click to ask
+                      </Typography>
+                    }
+                  />
+                </ListItem>
+              ))}
+              
+              {/* Ask AI Button */}
+              <ListItem 
+                sx={{ 
+                  py: 1.5, 
+                  px: 2,
+                  borderRadius: 1,
+                  mt: 2,
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  '&:hover': {
+                    bgcolor: 'primary.dark',
+                    cursor: 'pointer'
+                  },
+                  opacity: 1,
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+                onClick={() => {
+                  setFaqModalOpen(false);
+                  if (aiSearchBarRef.current) {
+                    aiSearchBarRef.current.openAiChat();
+                  }
+                }}
+              >
+                <ListItemText
+                  primary={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <AutoAwesomeIcon sx={{ color: 'inherit' }} fontSize="small" />
+                      <Typography variant="body1" sx={{ fontWeight: 500, color: 'inherit' }}>
+                        Ask AI Shopping Assistant
+                      </Typography>
+                    </Box>
+                  }
+                />
+              </ListItem>
+            </List>
+          </Paper>
+        </Zoom>
+      </ClickAwayListener>
     );
   };
 
@@ -513,7 +990,11 @@ const DemoEcommerce: React.FC = () => {
               mx: 2, 
               display: { xs: 'none', md: 'block' } 
             }}>
-              <AISearchBar setData={setSearchResults} />
+              <AISearchBar 
+                setData={setSearchResults}
+                initialQuery={searchQuery}
+                ref={aiSearchBarRef}
+              />
             </Box>
             
             {/* Action Icons */}
@@ -527,7 +1008,7 @@ const DemoEcommerce: React.FC = () => {
                 variant="contained"
                 color="primary"
                 size="medium"
-                onClick={handleContactModalOpen}
+                onClick={() => setContactModalOpen(true)}
                 sx={{ 
                   borderRadius: 2,
                   textTransform: 'none',
@@ -549,133 +1030,40 @@ const DemoEcommerce: React.FC = () => {
             pb: 1, 
             display: { xs: 'block', md: 'none' } 
           }}>
-            <AISearchBar setData={setSearchResults} />
+            <AISearchBar 
+              setData={setSearchResults}
+              initialQuery={searchQuery}
+              ref={aiSearchBarRef}
+            />
           </Box>
         </AppBar>
 
         {/* Contact Form Modal */}
-        <Modal
+        <ContactUsModal
           open={contactModalOpen}
-          onClose={handleContactModalClose}
-          aria-labelledby="contact-form-modal"
-        >
-          <Box sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: { xs: '90%', sm: 450 },
-            bgcolor: 'background.paper',
-            boxShadow: 24,
-            borderRadius: 3,
-            overflow: 'hidden'
-          }}>
-            <Box sx={{ 
-              bgcolor: 'primary.main', 
-              py: 2, 
-              px: 3,
-              color: 'white'
-            }}>
-              <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
-                Contact Us
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 0.5, opacity: 0.9 }}>
-                Tell us about your needs and we'll get back to you
-              </Typography>
-            </Box>
-            
-            <Box sx={{ p: 3 }}>
-              <form onSubmit={handleSubmit}>
-                <Stack spacing={3}>
-                  <TextField
-                    required
-                    fullWidth
-                    label="Name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleFormChange}
-                    variant="outlined"
-                    InputProps={{
-                      sx: { borderRadius: 1.5 }
-                    }}
-                  />
-                  <TextField
-                    required
-                    fullWidth
-                    label="Business Email"
-                    name="business_email"
-                    type="email"
-                    value={formData.business_email}
-                    onChange={handleFormChange}
-                    variant="outlined"
-                    InputProps={{
-                      sx: { borderRadius: 1.5 }
-                    }}
-                  />
-                  <TextField
-                    required
-                    fullWidth
-                    label="Company Name"
-                    name="company_name"
-                    value={formData.company_name}
-                    onChange={handleFormChange}
-                    variant="outlined"
-                    InputProps={{
-                      sx: { borderRadius: 1.5 }
-                    }}
-                  />
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, mt: 2 }}>
-                    <Button
-                      variant="outlined"
-                      onClick={handleContactModalClose}
-                      sx={{ 
-                        flex: 1,
-                        py: 1.2,
-                        borderRadius: 1.5,
-                        textTransform: 'none',
-                        fontWeight: 500
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={loading}
-                      sx={{ 
-                        flex: 1,
-                        py: 1.2,
-                        borderRadius: 1.5,
-                        textTransform: 'none',
-                        fontWeight: 500
-                      }}
-                    >
-                      {loading ? <CircularProgress size={24} /> : 'Submit'}
-                    </Button>
-                  </Box>
-                </Stack>
-              </form>
-            </Box>
-          </Box>
-        </Modal>
+          onClose={() => {
+            setContactModalOpen(false);
+            resetLead();
+          }}
+        />
 
         {/* Success/Error Snackbar */}
         <Snackbar
-          open={success || !!error}
+          open={leadSuccess || !!leadError}
           autoHideDuration={6000}
           onClose={() => {
-            if (success) {
-              handleContactModalClose();
+            if (leadSuccess) {
+              setContactModalOpen(false);
             } else {
-              reset();
+              resetLead();
             }
           }}
         >
           <Alert
-            severity={success ? "success" : "error"}
+            severity={leadSuccess ? "success" : "error"}
             sx={{ width: '100%' }}
           >
-            {success ? "Thank you for contacting us! We'll get back to you soon." : error}
+            {leadSuccess ? "Thank you for contacting us! We'll get back to you soon." : leadError}
           </Alert>
         </Snackbar>
 
@@ -875,9 +1263,8 @@ const DemoEcommerce: React.FC = () => {
                       sx={{ borderRadius: 1 }}
                     >
                       <MenuItem value="relevance">Sort: Relevance</MenuItem>
-                        <MenuItem value="rating_low">Sort: Rating Low-High</MenuItem>
-                        <MenuItem value="rating_high">Sort: Rating High-Low</MenuItem>
-                        <MenuItem value="year_new">Sort: Newest</MenuItem>
+                      <MenuItem value="year_new">Sort: Newest</MenuItem>
+                      <MenuItem value="rating_high">Sort: Highest Rating</MenuItem>
                     </Select>
                   </FormControl>
                   </Box>
@@ -1002,18 +1389,19 @@ const DemoEcommerce: React.FC = () => {
                               {product.title}
                             </Typography>
                             
-                            {/* Rating */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                              <Rating 
-                                value={product.custom_data?.vote_average ? parseFloat(product.custom_data.vote_average) / 2 : 0} 
-                                precision={0.5} 
-                                size="small" 
-                                readOnly 
-                              />
-                              <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                                ({product.custom_data?.vote_count || '0'})
-                              </Typography>
-                            </Box>
+                            {/* Price */}
+                            <Typography 
+                              variant="h6" 
+                              color="primary.main" 
+                              sx={{ 
+                                mb: 1.5, 
+                                fontWeight: 700,
+                                display: 'flex',
+                                alignItems: 'center' 
+                              }}
+                            >
+                              ${product.custom_data?.price ? product.custom_data.price.toFixed(2) : '9.99'}
+                            </Typography>
                             
                             {/* Release Date for movies */}
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -1165,6 +1553,47 @@ const DemoEcommerce: React.FC = () => {
           </Box>
         </Box>
       </Box>
+      
+      {/* FAQ floating button */}
+      <Fab
+        color="primary"
+        aria-label="questions"
+        ref={questionsButtonRef}
+        onClick={() => setFaqModalOpen(!faqModalOpen)}
+        sx={{
+          position: 'fixed',
+          right: 30,
+          top: '30%',
+          transform: 'translateY(-50%)',
+          zIndex: 1200,
+          transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          animation: faqModalOpen ? 'none' : 'bounce 1s ease infinite',
+          animationDelay: '3s',
+          boxShadow: theme => faqModalOpen 
+            ? `0 0 0 4px ${alpha(theme.palette.primary.main, 0.2)}` 
+            : `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+          '&:hover': {
+            transform: 'translateY(-50%) scale(1.05)',
+            boxShadow: theme => `0 6px 16px ${alpha(theme.palette.primary.main, 0.4)}`
+          },
+          '@keyframes bounce': {
+            '0%, 20%, 50%, 80%, 100%': {
+              transform: 'translateY(-50%)'
+            },
+            '40%': {
+              transform: 'translateY(-60%)'
+            },
+            '60%': {
+              transform: 'translateY(-55%)'
+            }
+          }
+        }}
+      >
+        {faqModalOpen ? <CloseIcon /> : <QuestionAnswerIcon />}
+      </Fab>
+      
+      {/* FAQ Modal */}
+      <FaqModal />
     </ThemeProvider>
   );
 };

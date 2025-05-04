@@ -56,9 +56,6 @@ importers:
       lucide-react:
         specifier: 0.474.0
         version: 0.474.0(react@19.0.0)
-      node-random-name:
-        specifier: ^1.0.1
-        version: 1.0.1
       papaparse:
         specifier: 5.5.2
         version: 5.5.2
@@ -1460,9 +1457,6 @@ packages:
   ajv@6.12.6:
     resolution: {integrity: sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==}
 
-  alea@0.0.9:
-    resolution: {integrity: sha512-7GrAOnIHGlKtOmZm09dHL+n5tXlao4uBGeXUPRX+I5PAyZqa95CaSFC9bXpkFJpT6j5N3+UKoxDfPmmwBedg7A==}
-
   ansi-regex@5.0.1:
     resolution: {integrity: sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==}
     engines: {node: '>=8'}
@@ -2305,9 +2299,6 @@ packages:
         optional: true
       sass:
         optional: true
-
-  node-random-name@1.0.1:
-    resolution: {integrity: sha512-7+IpyBRtbHvTWXjdZxjxyaafdggIvA3IpNf2W3ZRe+ok3UyE32Qb8PCb4fKKPdZCCjoAk358yQZWywAimw8KCw==}
 
   node-releases@2.0.19:
     resolution: {integrity: sha512-xxOWJsBKtzAq7DY0J+DTzuz58K8e7sJbdgwkbMWQe8UYB6ekmsQ45q0M/tJDsGaZmbC+l7n57UV8Hl5tHxO9uw==}
@@ -4281,8 +4272,6 @@ snapshots:
       json-schema-traverse: 0.4.1
       uri-js: 4.4.1
 
-  alea@0.0.9: {}
-
   ansi-regex@5.0.1: {}
 
   ansi-styles@4.3.0:
@@ -5276,10 +5265,6 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
     optional: true
-
-  node-random-name@1.0.1:
-    dependencies:
-      alea: 0.0.9
 
   node-releases@2.0.19: {}
 

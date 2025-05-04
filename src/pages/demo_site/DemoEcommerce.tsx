@@ -1232,9 +1232,7 @@ const DemoEcommerce: React.FC = () => {
               </Box>
               
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  {totalResults} products found
-                </Typography>
+  
                 
                 {/* Sort By - Mobile & Tablet */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

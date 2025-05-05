@@ -6,8 +6,6 @@ import {
   Container,
   Grid,
   Button,
-  Breadcrumbs,
-  Link,
   Rating,
   Divider,
   Card,

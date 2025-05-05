@@ -56,7 +56,6 @@ import { useSimilarProducts, SimilarProduct } from '../../hooks/useSimilarProduc
 import { useOrders, OrderRequest } from '../../hooks/useOrders';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import AISearchBar, { AISearchBarRef } from '../Products/ai_shopping/AISearchBar';
-import { useLeads } from '../../hooks/useLeads';
 import ContactUsModal from './components/ContactUsModal';
 
 const ProductDetail: React.FC = () => {
@@ -90,7 +89,6 @@ const ProductDetail: React.FC = () => {
 
   // Contact modal states
   const [contactModalOpen, setContactModalOpen] = useState(false);
-  const { loading: _leadLoading, error: leadError, success: leadSuccess, reset: resetLead } = useLeads();
   
   // Use the theme from theme.ts
   const theme = getTheme(mode);
@@ -199,12 +197,10 @@ const ProductDetail: React.FC = () => {
 
   const handleContactModalOpen = () => {
     setContactModalOpen(true);
-    resetLead();
   };
 
   const handleContactModalClose = () => {
     setContactModalOpen(false);
-    resetLead();
   };
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
@@ -1030,33 +1026,15 @@ const ProductDetail: React.FC = () => {
               <Button
                 variant="contained"
                 color="primary"
-                size="medium"
                 onClick={handleContactModalOpen}
                 sx={{ 
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600,
-                  px: 4,
-                  py: 1,
-                  fontSize: '0.95rem',
-                  minWidth: '140px',
-                  display: { xs: 'none', sm: 'block' }
-                }}
-              >
-                Contact Us
-              </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                size="small"
-                onClick={handleContactModalOpen}
-                sx={{ 
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  minWidth: 'auto',
-                  px: 2,
-                  display: { xs: 'block', sm: 'none' }
+                  px: { xs: 2, sm: 4 },
+                  py: { xs: 0.75, sm: 1 },
+                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                  minWidth: { xs: 'auto', sm: '140px' }
                 }}
               >
                 Contact Us
@@ -1083,31 +1061,25 @@ const ProductDetail: React.FC = () => {
           onClose={handleContactModalClose}
         />
 
-        {/* Success/Error Snackbar */}
+        {/* Success/Error Snackbar - For order status only now */}
         <Snackbar
-          open={leadSuccess || !!leadError || orderSuccess || !!orderError}
+          open={orderSuccess || !!orderError}
           autoHideDuration={6000}
           onClose={() => {
-            if (leadSuccess) {
-              handleContactModalClose();
-            } else if (orderSuccess) {
+            if (orderSuccess) {
               resetOrder();
-            } else if (leadError) {
-              resetLead();
             } else if (orderError) {
               resetOrder();
             }
           }}
         >
           <Alert
-            severity={leadSuccess || orderSuccess ? "success" : "error"}
+            severity={orderSuccess ? "success" : "error"}
             sx={{ width: '100%' }}
           >
-            {leadSuccess 
-              ? "Thank you for contacting us! We'll get back to you soon."
-              : orderSuccess 
-                ? "Order placed successfully! Thank you for your purchase."
-                : orderError || leadError
+            {orderSuccess 
+              ? "Order placed successfully! Thank you for your purchase."
+              : orderError
             }
           </Alert>
         </Snackbar>

@@ -609,33 +609,15 @@ const DemoOrders: React.FC = () => {
               <Button
                 variant="contained"
                 color="primary"
-                size="medium"
                 onClick={handleContactModalOpen}
                 sx={{ 
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600,
-                  px: 4,
-                  py: 1,
-                  fontSize: '0.95rem',
-                  minWidth: '140px',
-                  display: { xs: 'none', sm: 'block' }
-                }}
-              >
-                Contact Us
-              </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                size="small"
-                onClick={handleContactModalOpen}
-                sx={{ 
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  minWidth: 'auto',
-                  px: 2,
-                  display: { xs: 'block', sm: 'none' }
+                  px: { xs: 2, sm: 4 },
+                  py: { xs: 0.75, sm: 1 },
+                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                  minWidth: { xs: 'auto', sm: '140px' }
                 }}
               >
                 Contact Us

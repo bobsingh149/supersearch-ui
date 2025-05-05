@@ -25,8 +25,6 @@ import {
   SelectChangeEvent,
   Link,
   Stack,  
-  Alert,
-  Snackbar,
   ClickAwayListener,
   Zoom,
   List,
@@ -51,7 +49,6 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { getTheme } from '../../theme/theme';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useLeads } from '../../hooks/useLeads';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ContactUsModal from './components/ContactUsModal';
 
@@ -129,7 +126,6 @@ const DemoEcommerce: React.FC = () => {
   const theme = getTheme(mode);
 
   const [contactModalOpen, setContactModalOpen] = useState(false);
-  const { error: leadError, success: leadSuccess, reset: resetLead } = useLeads();
 
   // Add state to track favorited products
   const [favoriteProducts, setFavoriteProducts] = useState<Record<string, boolean>>({});
@@ -1066,33 +1062,15 @@ const DemoEcommerce: React.FC = () => {
               <Button
                 variant="contained"
                 color="primary"
-                size="medium"
                 onClick={() => setContactModalOpen(true)}
                 sx={{ 
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600,
-                  px: 4,
-                  py: 1,
-                  fontSize: '0.95rem',
-                  minWidth: '140px',
-                  display: { xs: 'none', sm: 'block' }
-                }}
-              >
-                Contact Us
-              </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                size="small"
-                onClick={() => setContactModalOpen(true)}
-                sx={{ 
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  minWidth: 'auto',
-                  px: 2,
-                  display: { xs: 'block', sm: 'none' }
+                  px: { xs: 2, sm: 4 },
+                  py: { xs: 0.75, sm: 1 },
+                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                  minWidth: { xs: 'auto', sm: '140px' }
                 }}
               >
                 Contact Us
@@ -1132,29 +1110,8 @@ const DemoEcommerce: React.FC = () => {
           open={contactModalOpen}
           onClose={() => {
             setContactModalOpen(false);
-            resetLead();
           }}
         />
-
-        {/* Success/Error Snackbar */}
-        <Snackbar
-          open={leadSuccess || !!leadError}
-          autoHideDuration={6000}
-          onClose={() => {
-            if (leadSuccess) {
-              setContactModalOpen(false);
-            } else {
-              resetLead();
-            }
-          }}
-        >
-          <Alert
-            severity={leadSuccess ? "success" : "error"}
-            sx={{ width: '100%' }}
-          >
-            {leadSuccess ? "Thank you for contacting us! We'll get back to you soon." : leadError}
-          </Alert>
-        </Snackbar>
 
         {/* Main Content */}
         <Box sx={{ 

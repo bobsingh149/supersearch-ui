@@ -1640,7 +1640,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                 }}>
                   <TextField
                     fullWidth
-                    placeholder="Ask about movies, genres, directors..."
+                    placeholder="Ask about movies..."
                     value={currentMessage}
                     onChange={(e) => setCurrentMessage(e.target.value)}
                     onKeyPress={handleKeyPress}

@@ -952,7 +952,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                       onClick={() => openAiChat([])}
                       startIcon={<AutoAwesomeIcon sx={{ fontSize: '1.1rem' }} />}
                       sx={{
-                        px: 1.5,
+                        px: isMobile ? 0.75 : 1.5,
                         py: 0.5,
                         ml: 0.5,
                         mr: 0.5,
@@ -961,31 +961,37 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                         textTransform: 'none',
                         borderRadius: 1.5,
                         fontWeight: 500,
+                        minWidth: isMobile ? 'auto' : undefined,
                         '&:hover': {
                           bgcolor: alpha(theme.palette.secondary.main, 0.1),
                           color: 'secondary.main'
                         },
                         '& .MuiButton-startIcon': {
-                          mr: 0.5 // Adjust icon margin
+                          mr: isMobile ? 0 : 0.5 // No margin on mobile
+                        },
+                        '& .MuiButton-endIcon': {
+                          ml: 0
                         }
                       }}
                     >
-                      Assistant
+                      {!isMobile && "Assistant"}
                     </Button>
                   </Tooltip>
-                  <Chip 
-                    label="Ctrl + K"
-                    size="small"
-                    variant="outlined"
-                    sx={{ 
-                      height: 24,
-                      fontSize: '0.7rem',
-                      letterSpacing: '0.5px',
-                      color: 'text.secondary',
-                      borderColor: 'divider',
-                      mr: 1
-                    }}
-                  />
+                  {!isMobile && (
+                    <Chip 
+                      label="Ctrl + K"
+                      size="small"
+                      variant="outlined"
+                      sx={{ 
+                        height: 24,
+                        fontSize: '0.7rem',
+                        letterSpacing: '0.5px',
+                        color: 'text.secondary',
+                        borderColor: 'divider',
+                        mr: 1
+                      }}
+                    />
+                  )}
                 </InputAdornment>
               )
             }}

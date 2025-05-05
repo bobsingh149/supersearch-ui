@@ -259,26 +259,52 @@ const ProductDetail: React.FC = () => {
             elevation={4}
             sx={{
               position: 'fixed',
-              right: { xs: '50%', md: 100 },
-              top: { xs: '50%', md: questionsButtonRef.current?.getBoundingClientRect().top || 250 },
-              transform: { xs: 'translate(50%, -50%)', md: 'translateY(-50%)' },
+              right: { xs: 16, sm: 32, md: 100 },
+              left: { xs: 16, sm: 'auto' },
+              top: { xs: '12%', sm: '20%', md: questionsButtonRef.current?.getBoundingClientRect().top || 250 },
+              transform: { xs: 'none', md: 'translateY(-50%)' },
               zIndex: 1300,
-              width: { xs: '90%', sm: 400 },
-              height: { xs: 'auto', sm: 450 },
-              maxHeight: '80vh',
+              width: { xs: 'calc(100% - 32px)', sm: 400 },
+              height: { xs: '400px', sm: 'auto' },
+              maxHeight: { xs: '400px', sm: '450px' },
               overflowY: 'auto',
-              borderRadius: 2,
-              p: 3,
+              borderRadius: { xs: 3, sm: 2 },
+              p: { xs: 2, sm: 3 },
               boxShadow: theme => `0 8px 32px ${alpha(theme.palette.common.black, 0.15)}`,
               animation: 'fadeIn 0.3s ease-out',
               '@keyframes fadeIn': {
-                '0%': { opacity: 0, transform: { xs: 'translate(50%, -45%)', md: 'translateY(-45%)' } },
-                '100%': { opacity: 1, transform: { xs: 'translate(50%, -50%)', md: 'translateY(-50%)' } }
+                '0%': { 
+                  opacity: 0, 
+                  transform: { 
+                    xs: 'translateY(-10px)', 
+                    md: 'translateY(-45%)' 
+                  } 
+                },
+                '100%': { 
+                  opacity: 1, 
+                  transform: { 
+                    xs: 'none', 
+                    md: 'translateY(-50%)' 
+                  } 
+                }
+              },
+              '&::-webkit-scrollbar': {
+                width: '6px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'transparent',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                borderRadius: '3px',
+              },
+              '&::-webkit-scrollbar-thumb:hover': {
+                background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
               }
             }}
           >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                 <QuestionAnswerIcon color="primary" fontSize="small" />
                 Frequently Asked Questions
                 {questionsLoading && (
@@ -351,7 +377,7 @@ const ProductDetail: React.FC = () => {
             ) : questions.length === 0 ? (
               <Typography color="text.secondary">No questions available for this product.</Typography>
             ) : (
-              <List>
+              <List sx={{ px: 0 }}>
                 {questions.map((question, index) => (
                   <ListItem 
                     key={index} 
@@ -387,7 +413,7 @@ const ProductDetail: React.FC = () => {
                         <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
                           <HelpIcon fontSize="small" sx={{ color: 'primary.main', mr: 1, mt: 0.3 }} />
                           <Box>
-                            <Typography variant="body1">{question}</Typography>
+                            <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>{question}</Typography>
                             <Typography 
                               variant="caption" 
                               color="text.secondary"
@@ -925,7 +951,8 @@ const ProductDetail: React.FC = () => {
             width: '100vw',
             left: 0,
             right: 0,
-            margin: 0
+            margin: 0,
+            height: { xs: 'auto', md: '64px' }
           }}
         >
           <Toolbar sx={{ 
@@ -963,8 +990,7 @@ const ProductDetail: React.FC = () => {
                 sx={{ 
                   fontWeight: 700,
                   color: 'primary.main',
-                  display: { xs: 'none', sm: 'block' },
-                  fontSize: '1.1rem',
+                  fontSize: { xs: '0.9rem', sm: '1.1rem' },
                   cursor: 'pointer'
                 }}
                 onClick={() => navigate('/demo_site')}
@@ -1021,6 +1047,22 @@ const ProductDetail: React.FC = () => {
               >
                 Contact Us
               </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                onClick={handleContactModalOpen}
+                sx={{ 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  minWidth: 'auto',
+                  px: 2,
+                  display: { xs: 'block', sm: 'none' }
+                }}
+              >
+                Contact Us
+              </Button>
             </Box>
           </Toolbar>
           
@@ -1073,30 +1115,11 @@ const ProductDetail: React.FC = () => {
         </Snackbar>
         
         {/* Main Content */}
-        <Container maxWidth="lg" sx={{ pt: 10, pb: 8 }}>
-          {/* Breadcrumbs */}
-          <Breadcrumbs sx={{ mb: 3, mt: 2 }}>
-            <Link 
-              color="inherit" 
-              href="#" 
-              onClick={(e) => {
-                e.preventDefault();
-                navigate('/demo_site');
-              }}
-              sx={{ 
-                textDecoration: 'none',
-                '&:hover': { textDecoration: 'underline', color: 'primary.main' }
-              }}
-            >
-              Home
-            </Link>
-            <Typography color="text.primary">{title}</Typography>
-          </Breadcrumbs>
-
+        <Container maxWidth="lg" sx={{ pt: { xs: 20, md: 10 }, pb: 8 }}>
           <Button
             startIcon={<ArrowBackIcon />}
             onClick={handleGoBack}
-            sx={{ mb: 4 }}
+            sx={{ mb: 2, mt: 0 }}
           >
             Back
           </Button>
@@ -1127,7 +1150,7 @@ const ProductDetail: React.FC = () => {
                       alt={title}
                       sx={{ 
                         width: '100%',
-                        maxWidth: { xs: '70%', sm: '60%', md: '100%' },
+                        maxWidth: { xs: '100%', sm: '80%', md: '100%' },
                         aspectRatio: '2/3',
                         objectFit: 'contain',
                         borderRadius: 2,
@@ -1142,7 +1165,7 @@ const ProductDetail: React.FC = () => {
                     alt={title}
                     sx={{ 
                       width: '100%',
-                      maxWidth: { xs: '70%', sm: '60%', md: '100%' },
+                      maxWidth: { xs: '100%', sm: '80%', md: '100%' },
                       aspectRatio: '2/3',
                       objectFit: 'contain',
                       borderRadius: 2,
@@ -1155,10 +1178,11 @@ const ProductDetail: React.FC = () => {
                 <Box sx={{ 
                   position: 'absolute',
                   top: 10,
-                  right: 10,
+                  right: { xs: '5%', sm: '12%', md: 10 },
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 1
+                  gap: 1,
+                  zIndex: 2
                 }}>
                   <IconButton 
                     size="small"
@@ -1497,9 +1521,9 @@ const ProductDetail: React.FC = () => {
           onClick={toggleQuestionsModal}
           sx={{
             position: 'fixed',
-            right: 30,
-            top: '30%',
-            transform: 'translateY(-50%)',
+            right: { xs: 16, sm: 30 },
+            top: { xs: '35%', sm: '30%' },
+            transform: { xs: 'translateY(0)', sm: 'translateY(-50%)' },
             zIndex: 1200,
             transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
             animation: questionsOpen ? 'none' : 'bounce 1s ease infinite',
@@ -1508,18 +1532,18 @@ const ProductDetail: React.FC = () => {
               ? `0 0 0 4px ${alpha(theme.palette.primary.main, 0.2)}` 
               : `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
             '&:hover': {
-              transform: 'translateY(-50%) scale(1.05)',
+              transform: { xs: 'translateY(0) scale(1.05)', sm: 'translateY(-50%) scale(1.05)' },
               boxShadow: theme => `0 6px 16px ${alpha(theme.palette.primary.main, 0.4)}`
             },
             '@keyframes bounce': {
               '0%, 20%, 50%, 80%, 100%': {
-                transform: 'translateY(-50%)'
+                transform: { xs: 'translateY(0)', sm: 'translateY(-50%)' }
               },
               '40%': {
-                transform: 'translateY(-60%)'
+                transform: { xs: 'translateY(-10px)', sm: 'translateY(-60%)' }
               },
               '60%': {
-                transform: 'translateY(-55%)'
+                transform: { xs: 'translateY(-5px)', sm: 'translateY(-55%)' }
               }
             }
           }}

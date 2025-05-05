@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, useRef, useMemo, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Box, 
@@ -28,7 +28,8 @@ import {
   Chip,
   Divider,
   ClickAwayListener,
-  Avatar
+  Avatar,
+  useMediaQuery
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -55,15 +56,6 @@ const gradientAnimation = keyframes`
     background-position: 0% 50%;
   }
 `;
-
-// Predefined shopping-related chat prompts
-const PREDEFINED_PROMPTS = [
-  "Find me sci-fi movies with high ratings",
-  "What are the best action movies from the 90s?",
-  "Show me movies directed by Christopher Nolan",
-  "Recommend family-friendly animated movies",
-  "What's that movie where a guy catches the robber who steals paintings?"
-];
 
 // Types for streaming responses
 // type StreamingResponseType = 'products' | 'content' | 'questions';
@@ -155,6 +147,9 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [conversationId, setConversationId] = useState(generateConversationId());
   
+  // Use MediaQuery for responsive design
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
   // Autocomplete states
   const [autocompleteResults, setAutocompleteResults] = useState<AutocompleteResult[]>([]);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
@@ -168,6 +163,13 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
 
   const navigate = useNavigate();
+
+  // Predefined FAQs to show when starting a new chat
+  const faqs = [
+    "Summarize The Dark Knight's reviews",
+    "Can you recommend movies similar to Inception?",
+    "What's the update on my latest order?",
+  ];
 
   // Debounce function
   const debounce = <T extends (...args: any[]) => any>(
@@ -187,6 +189,8 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
     if (searchQuery.trim()) {
       try {
         setIsSearching(true);
+        // Close autocomplete dropdown when search is performed
+        setShowAutocomplete(false);
         
         // If onSearch callback is provided, use it for redirection
         if (onSearch) {
@@ -204,7 +208,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
         
         // Only call setData if it's provided
         if (setData) {
-        setData(response.results);
+          setData(response.results);
         }
       } catch (error) {
         console.error('Error performing search:', error);
@@ -379,6 +383,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
   const startNewChat = () => {
     setMessages([]);
     setCurrentMessage('');
+    setSelectedProducts([]);
     setConversationId(generateConversationId());
   };
 
@@ -628,23 +633,23 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
     }
   };
 
-  // Add keyboard shortcut (Ctrl+K) to open chat
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Check for Ctrl+K
-      if (e.ctrlKey && e.key === 'k') {
-        e.preventDefault();
-        openAiChat([]);
-      }
-    };
+  // Add keyboard shortcut (Ctrl+K) to open chat with useCallback
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // Check for Ctrl+K
+    if (e.ctrlKey && e.key === 'k') {
+      e.preventDefault();
+      openAiChat([]);
+    }
+  }, [searchQuery]); // Include searchQuery as dependency to ensure current value is used
 
+  useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     
     // Cleanup
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [searchQuery]); // Include searchQuery as dependency to ensure current value is used
+  }, [handleKeyDown]);
 
   // Typing indicator component
   const TypingIndicator = () => (
@@ -857,275 +862,288 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
     getSearchQuery: () => searchQuery
   }));
 
+  // Reset state when query changes (from URL parameters when navigating)
+  useEffect(() => {
+    if (initialQuery !== searchQuery && initialQuery) {
+      setSearchQuery(initialQuery);
+      setShowAutocomplete(false); // Close autocomplete when query changes due to navigation
+    }
+  }, [initialQuery]);
+
   return (
     <ClickAwayListener onClickAway={handleClickAway}>
-      <Box sx={{ width: '100%', position: 'relative' }}>
-          {/* Animated gradient border wrapper */}
-          <Box 
+      <Box sx={{
+        position: 'relative',
+        width: '100%',
+        my: { xs: 2.5, sm: 2 }, // Increased vertical margin for mobile (from 2 to 2.5)
+        zIndex: 10,
+      }}>
+        {/* Animated gradient border wrapper */}
+        <Box 
+          sx={{
+            position: 'absolute',
+            top: -2,
+            left: -2,
+            right: -2,
+            bottom: -2,
+            borderRadius: '12px',
+            background: theme => `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main}, ${theme.palette.primary.main})`,
+            backgroundSize: '200% 200%',
+            animation: `${gradientAnimation} 3s ease infinite`,
+            zIndex: 0,
+            opacity: 0.8,
+          }}
+        />
+        <Box ref={searchInputRef}>
+          <TextField
+            fullWidth
+            placeholder="Search for movies..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={handleSearchKeyPress}
+            onFocus={() => {
+              if (autocompleteResults.length > 0) {
+                setShowAutocomplete(true);
+              }
+            }}
+            variant="outlined"
             sx={{
-              position: 'absolute',
-              top: -2,
-              left: -2,
-              right: -2,
-              bottom: -2,
-              borderRadius: '12px',
-              background: theme => `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main}, ${theme.palette.primary.main})`,
-              backgroundSize: '200% 200%',
-              animation: `${gradientAnimation} 3s ease infinite`,
-              zIndex: 0,
-              opacity: 0.8,
+              position: 'relative',
+              zIndex: 1,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                height: 46,
+                transition: 'all 0.3s',
+                backgroundColor: theme => theme.palette.background.paper,
+                '& fieldset': {
+                  border: 'none'
+                }
+              },
+              '& .MuiInputBase-input': {
+                padding: '12px 14px'
+              }
+            }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end" sx={{ height: '100%', alignItems: 'center' }}>
+                  <Tooltip title="Search" arrow>
+                    <IconButton 
+                      onClick={handleSearch} 
+                      edge="end"
+                      disabled={isSearching}
+                      aria-label="Search products"
+                      size="small"
+                      sx={{ mx: 0.5 }}
+                    >
+                      {isSearching ? (
+                        <CircularProgress size={20} color="inherit" />
+                      ) : (
+                        <SearchIcon fontSize="small" />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                  <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                  <Tooltip 
+                    title="Ask the CogniShop AI Assistant" 
+                    arrow
+                    TransitionComponent={Zoom}
+                  >
+                    <Button
+                      variant="text"
+                      size="small"
+                      onClick={() => openAiChat([])}
+                      startIcon={<AutoAwesomeIcon sx={{ fontSize: '1.1rem' }} />}
+                      sx={{
+                        px: 1.5,
+                        py: 0.5,
+                        ml: 0.5,
+                        mr: 0.5,
+                        color: 'text.secondary',
+                        bgcolor: 'transparent',
+                        textTransform: 'none',
+                        borderRadius: 1.5,
+                        fontWeight: 500,
+                        '&:hover': {
+                          bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                          color: 'secondary.main'
+                        },
+                        '& .MuiButton-startIcon': {
+                          mr: 0.5 // Adjust icon margin
+                        }
+                      }}
+                    >
+                      Assistant
+                    </Button>
+                  </Tooltip>
+                  <Chip 
+                    label="Ctrl + K"
+                    size="small"
+                    variant="outlined"
+                    sx={{ 
+                      height: 24,
+                      fontSize: '0.7rem',
+                      letterSpacing: '0.5px',
+                      color: 'text.secondary',
+                      borderColor: 'divider',
+                      mr: 1
+                    }}
+                  />
+                </InputAdornment>
+              )
             }}
           />
-          <Box ref={searchInputRef}>
-            <TextField
-              fullWidth
-              placeholder="Search for movies..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={handleSearchKeyPress}
-              onFocus={() => {
-                if (autocompleteResults.length > 0) {
-                  setShowAutocomplete(true);
-                }
-              }}
-              variant="outlined"
-              sx={{
-                position: 'relative',
-                zIndex: 1,
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  height: 46,
-                  transition: 'all 0.3s',
-                  backgroundColor: theme => theme.palette.background.paper,
-                  '& fieldset': {
-                    border: 'none'
+        </Box>
+
+        {/* Autocomplete dropdown */}
+        {showAutocomplete && (
+          <Paper
+            elevation={3}
+            sx={{
+              position: 'absolute',
+              zIndex: 10,
+              width: '100%',
+              mt: 0.5,
+              borderRadius: 1,
+              maxHeight: '400px',
+              overflow: 'hidden',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            {isLoadingAutocomplete ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : (
+              <>
+                <Box sx={{ 
+                  flexGrow: 1,
+                  overflow: 'auto',
+                  '&::-webkit-scrollbar': {
+                    width: '6px',
+                  },
+                  '&::-webkit-scrollbar-track': {
+                    background: 'transparent',
+                  },
+                  '&::-webkit-scrollbar-thumb': {
+                    background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                    borderRadius: '3px',
+                  },
+                  '&::-webkit-scrollbar-thumb:hover': {
+                    background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
                   }
-                },
-                '& .MuiInputBase-input': {
-                  padding: '12px 14px'
-                }
-              }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end" sx={{ height: '100%', alignItems: 'center' }}>
-                    <Tooltip title="Search" arrow>
-                      <IconButton 
-                        onClick={handleSearch} 
-                        edge="end"
-                        disabled={isSearching}
-                        aria-label="Search products"
-                        size="small"
-                        sx={{ mx: 0.5 }}
-                      >
-                        {isSearching ? (
-                          <CircularProgress size={20} color="inherit" />
-                        ) : (
-                          <SearchIcon fontSize="small" />
-                        )}
-                      </IconButton>
-                    </Tooltip>
-                    <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
-                    <Tooltip 
-                      title="Ask the AI MovieFinder Assistant" 
-                      arrow
-                      TransitionComponent={Zoom}
-                    >
-                      <Button
-                        variant="text"
-                        size="small"
-                        onClick={() => openAiChat([])}
-                        startIcon={<AutoAwesomeIcon sx={{ fontSize: '1.1rem' }} />}
+                }}>
+                  <List disablePadding>
+                    {autocompleteResults.map((result) => (
+                      <ListItemButton
+                        key={result.data.id}
+                        onClick={() => handleAutocompleteSelect(result)}
                         sx={{
-                          px: 1.5,
-                          py: 0.5,
-                          ml: 0.5,
-                          mr: 0.5,
-                          color: 'text.secondary',
-                          bgcolor: 'transparent',
-                          textTransform: 'none',
-                          borderRadius: 1.5,
-                          fontWeight: 500,
+                          display: 'flex',
+                          py: 1.5,
+                          borderBottom: '1px solid',
+                          borderColor: 'divider',
+                          transition: 'all 0.2s',
                           '&:hover': {
-                            bgcolor: alpha(theme.palette.secondary.main, 0.1),
-                            color: 'secondary.main'
+                            bgcolor: alpha(theme.palette.primary.main, 0.08),
                           },
-                          '& .MuiButton-startIcon': {
-                            mr: 0.5 // Adjust icon margin
-                          }
                         }}
                       >
-                        Assistant
-                      </Button>
-                    </Tooltip>
-                    <Chip 
-                      label="Ctrl + K"
-                      size="small"
-                      variant="outlined"
-                      sx={{ 
-                        height: 24,
-                        fontSize: '0.7rem',
-                        letterSpacing: '0.5px',
-                        color: 'text.secondary',
-                        borderColor: 'divider',
-                        mr: 1
-                      }}
-                    />
-                  </InputAdornment>
-                )
-              }}
-            />
-          </Box>
+                        <Box sx={{ display: 'flex', width: '100%' }}>
+                          {/* Movie poster */}
+                          <Box sx={{ flexShrink: 0, width: 60, height: 90, mr: 2 }}>
+                            <img
+                              src={result.data.poster_path || `https://picsum.photos/60/90?random=${result.data.id}`}
+                              alt={result.data.title}
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                borderRadius: 4,
+                              }}
+                            />
+                          </Box>
 
-          {/* Autocomplete dropdown */}
-          {showAutocomplete && (
-            <Paper
-              elevation={3}
-              sx={{
-                position: 'absolute',
-                zIndex: 10,
-                width: '100%',
-                mt: 0.5,
-                borderRadius: 1,
-                maxHeight: '400px',
-                overflow: 'hidden',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                display: 'flex',
-                flexDirection: 'column'
-              }}
-            >
-              {isLoadingAutocomplete ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-                  <CircularProgress size={24} />
-                </Box>
-              ) : (
-                <>
-                  <Box sx={{ 
-                    flexGrow: 1,
-                    overflow: 'auto',
-                    '&::-webkit-scrollbar': {
-                      width: '6px',
-                    },
-                    '&::-webkit-scrollbar-track': {
-                      background: 'transparent',
-                    },
-                    '&::-webkit-scrollbar-thumb': {
-                      background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
-                      borderRadius: '3px',
-                    },
-                    '&::-webkit-scrollbar-thumb:hover': {
-                      background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
-                    }
-                  }}>
-                    <List disablePadding>
-                      {autocompleteResults.map((result) => (
-                        <ListItemButton
-                          key={result.data.id}
-                          onClick={() => handleAutocompleteSelect(result)}
-                          sx={{
-                            display: 'flex',
-                            py: 1.5,
-                            borderBottom: '1px solid',
-                            borderColor: 'divider',
-                            transition: 'all 0.2s',
-                            '&:hover': {
-                              bgcolor: alpha(theme.palette.primary.main, 0.08),
-                            },
-                          }}
-                        >
-                          <Box sx={{ display: 'flex', width: '100%' }}>
-                            {/* Movie poster */}
-                            <Box sx={{ flexShrink: 0, width: 60, height: 90, mr: 2 }}>
-                              <img
-                                src={result.data.poster_path || `https://picsum.photos/60/90?random=${result.data.id}`}
-                                alt={result.data.title}
-                                style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'cover',
-                                  borderRadius: 4,
-                                }}
-                              />
-                            </Box>
+                          {/* Movie details */}
+                          <Box sx={{ flexGrow: 1 }}>
+                            <Typography variant="subtitle1" fontWeight="medium" noWrap>
+                              {result.data.title}
+                            </Typography>
 
-                            {/* Movie details */}
-                            <Box sx={{ flexGrow: 1 }}>
-                              <Typography variant="subtitle1" fontWeight="medium" noWrap>
-                                {result.data.title}
-                              </Typography>
-
-                              <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-                                {result.data.release_date && (
-                                  <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>
-                                    {new Date(result.data.release_date).getFullYear()}
-                                  </Typography>
-                                )}
-                                
-                                {result.data.vote_average && (
-                                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                    <Rating
-                                      value={parseFloat(result.data.vote_average) / 2}
-                                      readOnly
-                                      size="small"
-                                      precision={0.5}
-                                    />
-                                    <Typography variant="caption" fontWeight="medium" sx={{ ml: 0.5 }}>
-                                      {result.data.vote_average}
-                                    </Typography>
-                                  </Box>
-                                )}
-                              </Box>
-
-                              {result.data.genres && (
-                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                                  {typeof result.data.genres === 'string' 
-                                    ? result.data.genres.replace(/[\[\]']/g, '').split(',')[0]
-                                    : result.data.genres[0]}
+                            <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+                              {result.data.release_date && (
+                                <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>
+                                  {new Date(result.data.release_date).getFullYear()}
                                 </Typography>
                               )}
+                              
+                              {result.data.vote_average && (
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <Rating
+                                    value={parseFloat(result.data.vote_average) / 2}
+                                    readOnly
+                                    size="small"
+                                    precision={0.5}
+                                  />
+                                  <Typography variant="caption" fontWeight="medium" sx={{ ml: 0.5 }}>
+                                    {result.data.vote_average}
+                                  </Typography>
+                                </Box>
+                              )}
                             </Box>
-                          </Box>
-                        </ListItemButton>
-                      ))}
-                    </List>
-                  </Box>
 
-                  {/* Ask AI button - Fixed at bottom */}
-                  {searchQuery.trim() && (
-                    <Box sx={{ 
-                      p: 1.5, 
-                      borderTop: '1px solid',
-                      borderColor: 'divider',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      bgcolor: 'background.paper',
-                      position: 'sticky',
-                      bottom: 0,
-                      zIndex: 1,
-                      boxShadow: '0 -2px 10px rgba(0,0,0,0.05)'
-                    }}>
-                      <Button
-                        variant="contained"
-                        startIcon={<AutoAwesomeIcon />}
-                        onClick={openAiChatWithQuery}
-                        sx={{
-                          textTransform: 'none',
-                          borderRadius: 2,
-                          px: 2,
-                          py: 1,
-                          bgcolor: 'secondary.main',
-                          '&:hover': {
-                            bgcolor: 'secondary.dark',
-                          }
-                        }}
-                      >
-                        Ask AI about "{searchQuery}"
-                      </Button>
-                    </Box>
-                  )}
-                </>
-              )}
-            </Paper>
-          )}
+                            {result.data.genres && (
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                                {typeof result.data.genres === 'string' 
+                                  ? result.data.genres.replace(/[\[\]']/g, '').split(',')[0]
+                                  : result.data.genres[0]}
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+                      </ListItemButton>
+                    ))}
+                  </List>
+                </Box>
+
+                {/* Ask AI button - Fixed at bottom */}
+                {searchQuery.trim() && (
+                  <Box sx={{ 
+                    p: 1.5, 
+                    borderTop: '1px solid',
+                    borderColor: 'divider',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    bgcolor: 'background.paper',
+                    position: 'sticky',
+                    bottom: 0,
+                    zIndex: 1,
+                    boxShadow: '0 -2px 10px rgba(0,0,0,0.05)'
+                  }}>
+                    <Button
+                      variant="contained"
+                      startIcon={<AutoAwesomeIcon />}
+                      onClick={openAiChatWithQuery}
+                      sx={{
+                        textTransform: 'none',
+                        borderRadius: 2,
+                        px: 2,
+                        py: 1,
+                        bgcolor: 'secondary.main',
+                        '&:hover': {
+                          bgcolor: 'secondary.dark',
+                        }
+                      }}
+                    >
+                      Ask AI about "{searchQuery}"
+                    </Button>
+                  </Box>
+                )}
+              </>
+            )}
+          </Paper>
+        )}
 
         {/* AI Chat Dialog */}
         <Dialog 
@@ -1139,11 +1157,12 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
           fullWidth
           maxWidth="xl"
           disableEscapeKeyDown
+          fullScreen={isMobile}
           PaperProps={{
             sx: {
-              borderRadius: 2,
-              height: '95vh',
-              width: '95%',
+              borderRadius: { xs: 0, md: 2 },
+              height: { xs: '100%', md: '95vh' },
+              width: { xs: '100%', md: '95%' },
               maxWidth: '1800px',
               display: 'flex',
               flexDirection: 'column',
@@ -1157,7 +1176,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
             alignItems: 'center',
             borderBottom: '1px solid',
             borderColor: 'divider',
-            p: 2
+            p: { xs: 1.5, sm: 2 }
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Tooltip title="Start a new chat session">
@@ -1170,8 +1189,10 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                   <AddCommentIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
-              <Typography variant="h6">MovieFinder Assistant</Typography>
-              <Typography variant="caption" sx={{ ml: 2, color: 'text.secondary' }}>
+              <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                CogniShop Assistant
+              </Typography>
+              <Typography variant="caption" sx={{ ml: 2, color: 'text.secondary', display: { xs: 'none', sm: 'block' } }}>
                 Session: {conversationId}
               </Typography>
             </Box>
@@ -1187,7 +1208,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
             overflow: 'hidden'
           }}>
             <Box sx={{ 
-              width: '70%', 
+              width: '100%', // Full width now that we removed the sidebar
               display: 'flex', 
               flexDirection: 'column',
               height: '100%'
@@ -1195,7 +1216,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
               {/* Chat messages area */}
               <Box sx={{ 
                 flexGrow: 1, 
-                p: 2, 
+                p: { xs: 1.5, sm: 2 }, 
                 overflowY: 'auto',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1221,16 +1242,57 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                     alignItems: 'center', 
                     justifyContent: 'center',
                     height: '100%',
-                    opacity: 0.7
+                    textAlign: 'center',
+                    px: 2
                   }}>
                     <AutoAwesomeIcon sx={{ fontSize: 48, mb: 2, color: 'secondary.main' }} />
-                    <Typography variant="h6">
-                      Welcome to MovieFinder Assistant!
+                    <Typography variant="h6" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                      Welcome to CogniShop Assistant!
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
+                    <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1, mb: 3 }}>
                       This demo uses the Kaggle Movies Dataset to showcase our powerful AI search capabilities. 
                       Ask about genres, directors, actors, or describe the type of movie you're looking for!
                     </Typography>
+                    
+                    {/* Frequently Asked Questions */}
+                    <Box sx={{ width: '100%', maxWidth: 600 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+                        Try asking:
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        {faqs.map((question, index) => (
+                          <Paper
+                            key={index}
+                            elevation={1}
+                            onClick={() => usePrompt(question)}
+                            sx={{
+                              p: 2,
+                              borderRadius: 2,
+                              cursor: 'pointer',
+                              bgcolor: alpha(theme.palette.primary.main, 0.04),
+                              transition: 'all 0.2s ease',
+                              '&:hover': {
+                                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                transform: 'translateY(-2px)'
+                              },
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
+                            <Box sx={{ mr: 1.5, color: 'primary.main' }}>
+                              <AutoAwesomeIcon fontSize="small" />
+                            </Box>
+                            <Typography 
+                              variant="body1" 
+                              align="left" 
+                              sx={{ fontWeight: 500 }}
+                            >
+                              {question}
+                            </Typography>
+                          </Paper>
+                        ))}
+                      </Box>
+                    </Box>
                   </Box>
                 ) : (
                   messages.map((message) => (
@@ -1247,8 +1309,8 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                           <Paper
                             elevation={0}
                             sx={{
-                              p: 2,
-                              maxWidth: '80%',
+                              p: { xs: 1.5, sm: 2 },
+                              maxWidth: { xs: '90%', sm: '80%' },
                               borderRadius: '18px 18px 4px 18px',
                               bgcolor: 'primary.main',
                               color: '#fff',
@@ -1325,8 +1387,8 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                             <Paper
                               elevation={1}
                               sx={{
-                                p: 2,
-                                maxWidth: '80%',
+                                p: { xs: 1.5, sm: 2 },
+                                maxWidth: { xs: '90%', sm: '80%' },
                                 borderRadius: '18px 18px 18px 4px',
                                 bgcolor: theme.palette.mode === 'dark' 
                                   ? 'rgba(255,255,255,0.08)' 
@@ -1364,13 +1426,13 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
 
                           {/* Suggested Products - Render Second */}
                           {message.suggestedProducts && message.suggestedProducts.length > 0 && (
-                            <Box sx={{ mt: 1, mb: 3, pl: 2 }}>
+                            <Box sx={{ mt: 1, mb: 3, pl: { xs: 0, sm: 2 } }}>
                               <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
                                 Referenced Items:
                               </Typography>
                               <Grid container spacing={2}>
                                 {message.suggestedProducts.map((product) => (
-                                  <Grid item xs={12} sm={6} key={product.id}>
+                                  <Grid item xs={12} sm={6} md={4} key={product.id}>
                                     <Card sx={{ 
                                       display: 'flex',
                                       flexDirection: 'column',
@@ -1448,7 +1510,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
 
                           {/* Suggested Follow-up Questions */}
                           {message.suggestedQuestions && message.suggestedQuestions.length > 0 && (
-                            <Box sx={{ mt: 1, mb: 3, pl: 2 }}>
+                            <Box sx={{ mt: 1, mb: 3, pl: { xs: 0, sm: 2 } }}>
                               <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
                                 Suggested Follow-up:
                               </Typography>
@@ -1568,7 +1630,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
               }}>
                 {/* Text input and send button */}
                 <Box sx={{ 
-                  p: 2, 
+                  p: { xs: 1.5, sm: 2 }, 
                   display: 'flex',
                   alignItems: 'center'
                 }}>
@@ -1645,55 +1707,6 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                     {isChatLoading ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
                   </IconButton>
                 </Box>
-              </Box>
-            </Box>
-            
-            {/* Suggestions sidebar */}
-            <Box sx={{ 
-              width: '30%', 
-              borderLeft: '1px solid',
-              borderColor: 'divider',
-              p: 2,
-              display: 'flex',
-              flexDirection: 'column',
-              bgcolor: 'background.default'
-            }}>
-              <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'bold' }}>
-                Try These Movie Queries
-              </Typography>
-              <List dense disablePadding>
-                {PREDEFINED_PROMPTS.map((prompt, index) => (
-                  <ListItem key={index} disablePadding sx={{ mb: 1 }}>
-                    <ListItemButton 
-                      onClick={() => usePrompt(prompt, [])}
-                      sx={{ 
-                        borderRadius: 1,
-                        py: 1.5,
-                        px: 2,
-                        '&:hover': {
-                          bgcolor: 'action.hover'
-                        }
-                      }}
-                    >
-                      <ListItemText 
-                        primary={prompt} 
-                        primaryTypographyProps={{ 
-                          variant: 'body2',
-                          sx: { 
-                            whiteSpace: 'normal',
-                            wordBreak: 'break-word'
-                          }
-                        }} 
-                      />
-                    </ListItemButton>
-                  </ListItem>
-                ))}
-              </List>
-              
-              <Box sx={{ mt: 'auto', pt: 2 }}>
-                <Typography variant="caption" color="text.secondary">
-                  Try asking about specific genres, directors, actors, or describe movie plots you'd enjoy.
-                </Typography>
               </Box>
             </Box>
           </DialogContent>

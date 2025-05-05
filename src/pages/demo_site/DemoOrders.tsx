@@ -539,7 +539,8 @@ const DemoOrders: React.FC = () => {
             width: '100vw',
             left: 0,
             right: 0,
-            margin: 0
+            margin: 0,
+            height: { xs: 'auto', md: '64px' }
           }}
         >
           <Toolbar sx={{ 
@@ -577,8 +578,7 @@ const DemoOrders: React.FC = () => {
                 sx={{ 
                   fontWeight: 700,
                   color: 'primary.main',
-                  display: { xs: 'none', sm: 'block' },
-                  fontSize: '1.1rem',
+                  fontSize: { xs: '0.9rem', sm: '1.1rem' },
                   cursor: 'pointer'
                 }}
                 onClick={() => navigate('/demo_site')}
@@ -624,6 +624,22 @@ const DemoOrders: React.FC = () => {
               >
                 Contact Us
               </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                onClick={handleContactModalOpen}
+                sx={{ 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  minWidth: 'auto',
+                  px: 2,
+                  display: { xs: 'block', sm: 'none' }
+                }}
+              >
+                Contact Us
+              </Button>
             </Box>
           </Toolbar>
           
@@ -651,7 +667,7 @@ const DemoOrders: React.FC = () => {
           maxWidth={false} 
           disableGutters 
           sx={{ 
-            pt: 10, 
+            pt: { xs: 20, md: 10 },
             pb: 4, 
             px: { xs: 1, sm: 2, md: 3 },
             maxWidth: '1600px', 

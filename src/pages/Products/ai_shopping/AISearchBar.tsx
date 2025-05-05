@@ -1366,7 +1366,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                           {message.suggestedProducts && message.suggestedProducts.length > 0 && (
                             <Box sx={{ mt: 1, mb: 3, pl: 2 }}>
                               <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
-                                Referenced Products:
+                                Referenced Items:
                               </Typography>
                               <Grid container spacing={2}>
                                 {message.suggestedProducts.map((product) => (
@@ -1450,7 +1450,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                           {message.suggestedQuestions && message.suggestedQuestions.length > 0 && (
                             <Box sx={{ mt: 1, mb: 3, pl: 2 }}>
                               <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
-                                Follow-up Questions:
+                                Suggested Follow-up:
                               </Typography>
                               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                 {message.suggestedQuestions.map((question, index) => {

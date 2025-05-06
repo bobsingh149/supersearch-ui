@@ -36,7 +36,6 @@ import CloseIcon from '@mui/icons-material/Close';
 import AddCommentIcon from '@mui/icons-material/AddComment';
 import { keyframes } from '@mui/material/styles';
 import { useSearch, SearchResultItem } from '../../../hooks/useSearch';
-import { useAuth } from '@clerk/clerk-react';
 import ReactMarkdown from 'react-markdown';
 import config from '../../../config';
 
@@ -135,7 +134,6 @@ interface AISearchBarProps {
 
 const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onSearch, initialQuery = '' }, ref) => {
   const theme = useTheme();
-  const { getToken } = useAuth();
   const {searchProducts} = useSearch();
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -226,7 +224,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
 
     try {
       setIsLoadingAutocomplete(true);
-      const token = await getToken();
+      const token = 'dummy-auth-token';
 
       const response = await fetch(
         `${config.apiBaseUrl}${config.apiEndpoints.autocomplete}?query=${encodeURIComponent(query)}`,
@@ -305,7 +303,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
   const fetchProductDetails = async (productId: string): Promise<SelectedProduct | null> => {
     try {
       setIsLoadingProducts(true);
-      const token = await getToken();
+      const token = 'dummy-auth-token';
       
       const response = await fetch(
         `${config.apiBaseUrl}/products/${productId}`,
@@ -416,7 +414,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
       
       try {
         // Get the authentication token
-        const token = await getToken();
+        const token = 'dummy-auth-token';
         
         // Combine passed productIds with any already in the selectedProducts state
         const allProductIds = [...new Set([
@@ -540,7 +538,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
     (async () => {
       try {
         // Get the authentication token
-        const token = await getToken();
+        const token = 'dummy-auth-token';
         
         // Combine passed productIds with any already in the selectedProducts state
         const allProductIds = [...new Set([
@@ -780,7 +778,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
           setIsChatLoading(true);
           
           // Get the authentication token
-          const token = await getToken();
+          const token = 'dummy-auth-token';
           
           // Create the request payload with all product IDs
           const payload = {

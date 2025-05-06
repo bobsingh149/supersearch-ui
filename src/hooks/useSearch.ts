@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useAuth } from '@clerk/clerk-react';
 import config from '../config';
 
 // Type for search result item
@@ -56,7 +55,6 @@ export interface SearchError extends Error {
 }
 
 export const useSearch = () => {
-  const { getToken } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<SearchError | null>(null);
   const [errorStatusCode, setErrorStatusCode] = useState<number | null>(null);
@@ -71,7 +69,7 @@ export const useSearch = () => {
       const { query, page = 1, size = 10, filters = {} } = params;
       
       // Get authentication token
-      const token = await getToken();
+      const token = 'dummy-auth-token';
       
       // Build query parameters for pagination
       const queryParams = new URLSearchParams();

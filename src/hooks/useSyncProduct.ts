@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useAuth } from '@clerk/clerk-react';
 import config from '../config';
 
 // Enums matching the backend
@@ -132,7 +131,6 @@ export interface SyncHistoryResponse {
 }
 
 export const useSyncProduct = () => {
-  const { getToken } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -143,7 +141,7 @@ export const useSyncProduct = () => {
       setError(null);
       
       // Get authentication token
-      const token = await getToken();
+      const token = 'dummy-auth-token';
       
       const response = await fetch(`${config.apiBaseUrl}/sync-products`, {
         method: 'POST',
@@ -176,7 +174,7 @@ export const useSyncProduct = () => {
       setError(null);
       
       // Get authentication token
-      const token = await getToken();
+      const token = 'dummy-auth-token';
       
       const response = await fetch(`${config.apiBaseUrl}/sync-history?page=${page}&size=${size}`, {
         method: 'GET',

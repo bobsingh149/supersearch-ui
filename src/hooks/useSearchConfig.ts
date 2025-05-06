@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useAuth } from '@clerk/clerk-react';
 import config from '../config';
 
 // Interface for search configuration
@@ -26,7 +25,6 @@ export interface SettingsResponse {
 
 // Custom hook for managing search configuration
 export const useSearchConfig = () => {
-  const { getToken } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -39,7 +37,7 @@ export const useSearchConfig = () => {
       setConfigError(null);
       
       // Get authentication token
-      const token = await getToken();
+      const token = 'dummy-auth-token';
       
       // Get configuration from the settings API
       const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.settings}/SEARCH_CONFIG`, {
@@ -102,7 +100,7 @@ export const useSearchConfig = () => {
       setSaveError(null);
       
       // Get authentication token
-      const token = await getToken();
+      const token = 'dummy-auth-token';
       
       // Save configuration using the search config API
       const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.searchConfig}`, {

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useAuth } from '@clerk/clerk-react';
 import config from '../config';
 
 // Movie product interface
@@ -105,7 +104,6 @@ export const formatCellValue = (value: any): string => {
 
 // Hook for getting products with pagination
 export const useProducts = () => {
-  const { getToken } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -116,7 +114,7 @@ export const useProducts = () => {
       setError(null);
       
       // Get authentication token
-      const token = await getToken();
+      const token = 'dummy-auth-token';
       
       const response = await fetch(`${config.apiBaseUrl}/products?page=${page}&size=${size}`, {
         method: 'GET',
@@ -149,7 +147,6 @@ export const useProducts = () => {
 
 // Hook for getting a single product by ID
 export const useProductById = () => {
-  const { getToken } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   
@@ -160,7 +157,7 @@ export const useProductById = () => {
       setError(null);
       
       // Get authentication token
-      const token = await getToken();
+      const token = 'dummy-auth-token';
       
       const response = await fetch(
         `${config.apiBaseUrl}/products/${productId}`, 

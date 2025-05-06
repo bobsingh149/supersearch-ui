@@ -55,55 +55,43 @@ function App() {
   };
 
   return (
-    <ClerkProvider 
-      publishableKey={clerkPubKey}
-      appearance={{
-        baseTheme: mode === 'dark' ? dark : undefined,
-        variables: {
-          colorPrimary: theme.palette.primary.main,
-          colorTextOnPrimaryBackground: theme.palette.primary.contrastText,
-        },
-        elements: {
-          card: {
-            boxShadow: theme.shadows[4],
-            borderRadius: '12px',
-          },
-          formButtonPrimary: {
-            backgroundColor: theme.palette.primary.main,
-            '&:hover': {
-              backgroundColor: theme.palette.primary.dark,
-            },
-            borderRadius: '8px',
-          },
-          formFieldInput: {
-            borderRadius: '8px',
-          },
-        },
-      }}
-    >
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Router>
-          <Routes>
-            {/* Demo site route - protected but outside of layout */}
-            <Route 
-              path="/demo_site/*" 
-              element={
-                <>
-                  <SignedIn>
-                    <DemoSiteIndex />
-                  </SignedIn>
-                  <SignedOut>
-                    <SignInPage />
-                  </SignedOut>
-                </>
-              } 
-            />
-            
-            {/* Protected routes */}
-            <Route
-              path="/*"
-              element={
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Router>
+        <Routes>
+          {/* Demo site route - unprotected and outside of ClerkProvider */}
+          <Route path="/demo_site/*" element={<DemoSiteIndex />} />
+          
+          {/* Protected routes inside ClerkProvider */}
+          <Route
+            path="/*"
+            element={
+              <ClerkProvider 
+                publishableKey={clerkPubKey}
+                appearance={{
+                  baseTheme: mode === 'dark' ? dark : undefined,
+                  variables: {
+                    colorPrimary: theme.palette.primary.main,
+                    colorTextOnPrimaryBackground: theme.palette.primary.contrastText,
+                  },
+                  elements: {
+                    card: {
+                      boxShadow: theme.shadows[4],
+                      borderRadius: '12px',
+                    },
+                    formButtonPrimary: {
+                      backgroundColor: theme.palette.primary.main,
+                      '&:hover': {
+                        backgroundColor: theme.palette.primary.dark,
+                      },
+                      borderRadius: '8px',
+                    },
+                    formFieldInput: {
+                      borderRadius: '8px',
+                    },
+                  },
+                }}
+              >
                 <>
                   <SignedIn>
                     <Layout onThemeToggle={toggleTheme}>
@@ -123,12 +111,12 @@ function App() {
                     <SignInPage />
                   </SignedOut>
                 </>
-              }
-            />
-          </Routes>
-        </Router>
-      </ThemeProvider>
-    </ClerkProvider>
+              </ClerkProvider>
+            }
+          />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
 

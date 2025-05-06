@@ -1324,7 +1324,6 @@ const DemoEcommerce: React.FC = () => {
                       sx={{ borderRadius: 1 }}
                     >
                       <MenuItem value="relevance">Sort: Relevance</MenuItem>
-                      <MenuItem value="year_new">Sort: Newest</MenuItem>
                       <MenuItem value="rating_high">Sort: Highest Rating</MenuItem>
                     </Select>
                   </FormControl>

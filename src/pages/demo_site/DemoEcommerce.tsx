@@ -279,7 +279,7 @@ const DemoEcommerce: React.FC = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setFaqModalOpen(true);
-    }, 1500); // 1.5 seconds delay
+    }, 3000); // 3 seconds delay
     
     return () => clearTimeout(timer);
   }, []);

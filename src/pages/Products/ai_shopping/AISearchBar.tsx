@@ -124,6 +124,7 @@ export interface AISearchBarRef {
   sendMessage: (productIds?: string[]) => void;
   openAiChatWithMessage: (message: string, productIds?: string[]) => void;
   getSearchQuery: () => string;
+  closeAutocomplete: () => void;
 }
 
 interface AISearchBarProps {
@@ -855,7 +856,8 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
         }
       })();
     },
-    getSearchQuery: () => searchQuery
+    getSearchQuery: () => searchQuery,
+    closeAutocomplete: () => setShowAutocomplete(false)
   }));
 
   // Reset state when query changes (from URL parameters when navigating)

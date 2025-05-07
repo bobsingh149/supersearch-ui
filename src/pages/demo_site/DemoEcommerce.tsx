@@ -117,7 +117,7 @@ const DemoEcommerce: React.FC = () => {
   const allGenres = [
     'Action', 'Adventure', 'Animation', 'Comedy', 'Crime',
     'Documentary', 'Drama', 'Family', 'Fantasy', 'Horror',
-    'Mystery', 'Romance', 'Sci-Fi', 'Thriller'
+    'Mystery', 'Romance', 'Science Fiction', 'Thriller'
   ];
   
   // Get genres to display based on showAllGenres state
@@ -146,8 +146,13 @@ const DemoEcommerce: React.FC = () => {
 
   // Add ref for AISearchBar
   const aiSearchBarRef = useRef<AISearchBarRef | null>(null);
+
+  aiSearchBarRef.current?.closeAutocomplete()
+  
   // Add ref for mobile AISearchBar
   const mobileSearchRef = useRef<AISearchBarRef | null>(null);
+
+  mobileSearchRef.current?.closeAutocomplete()
 
   // Add state for selected question
   const [_selectedQuestion, setSelectedQuestion] = useState('');

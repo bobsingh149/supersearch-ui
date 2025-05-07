@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { getTheme } from './theme/theme';
 
+
 // import { ClerkProvider, SignedIn, SignedOut, SignIn } from '@clerk/clerk-react';
 // import { dark } from '@clerk/themes';
 // import Layout from './components/layout/Layout';

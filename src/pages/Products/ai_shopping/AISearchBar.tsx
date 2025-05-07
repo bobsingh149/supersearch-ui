@@ -1165,7 +1165,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
               borderRadius: { xs: 0, md: 2 },
               height: { xs: '100%', md: '95vh' },
               width: { xs: '100%', md: '95%' },
-              maxWidth: '1100px',
+              maxWidth: '900px',
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden'

@@ -43,6 +43,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import HelpIcon from '@mui/icons-material/Help';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import AISearchBar, { AISearchBarRef } from '../Products/ai_shopping/AISearchBar';
 import { useSearch, SearchResultItem} from '../../hooks/useSearch';
 import { ThemeProvider } from '@mui/material/styles';
@@ -215,8 +216,8 @@ const DemoEcommerce: React.FC = () => {
           sort = { field: 'vote_average', direction: 'desc' };
           break;
         default:
-          // For 'relevance', either leave undefined or use a specific field
-          sort = undefined;
+          // Default to popularity
+          sort = { field: 'vote_count', direction: 'desc' };
       }
       
       // Set the filters to state for debugging/transparency
@@ -388,8 +389,8 @@ const DemoEcommerce: React.FC = () => {
         sort = { field: 'vote_average', direction: 'desc' };
         break;
       default:
-        // For 'relevance', either leave undefined or use a specific field
-        sort = undefined;
+        // Default to popularity
+        sort = { field: 'vote_count', direction: 'desc' };
     }
     
     // Set the filters to state for debugging/transparency
@@ -596,7 +597,6 @@ const DemoEcommerce: React.FC = () => {
               }
             }}
           >
-            <MenuItem value="relevance" sx={{ fontWeight: 'medium' }}>Relevance</MenuItem>
             <MenuItem value="popularity" sx={{ fontWeight: 'medium' }}>Popularity</MenuItem>
             <MenuItem value="rating" sx={{ fontWeight: 'medium' }}>Rating</MenuItem>
           </Select>
@@ -1267,19 +1267,32 @@ const DemoEcommerce: React.FC = () => {
                     </Select>
                   </Box>
                 
-                <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-                  <FormControl size="small" sx={{ minWidth: 150 }}>
-                    <Select
-                      value={sortBy}
-                      onChange={handleSortChange}
-                      displayEmpty
-                      sx={{ borderRadius: 1 }}
-                    >
-                      <MenuItem value="relevance">Sort: Relevance</MenuItem>
-                      <MenuItem value="popularity">Sort: Popularity</MenuItem>
-                      <MenuItem value="rating">Sort: Rating</MenuItem>
-                    </Select>
-                  </FormControl>
+                  <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 1 }}>
+                    <FormControl size="small" sx={{ minWidth: 130 }}>
+                      <Select
+                        value={sortBy}
+                        onChange={handleSortChange}
+                        displayEmpty
+                        sx={{ borderRadius: 1 }}
+                      >
+                        <MenuItem value="popularity">Sort: Popularity</MenuItem>
+                        <MenuItem value="rating">Sort: Rating</MenuItem>
+                      </Select>
+                    </FormControl>
+                    <Tooltip title="Filters">
+                      <IconButton 
+                        onClick={toggleMobileFilter} 
+                        size="small"
+                        sx={{ 
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          borderRadius: 1,
+                          p: 1
+                        }}
+                      >
+                        <FilterListIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </Box>
                 </Box>
               </Box>

@@ -1,7 +1,7 @@
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route} from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { getTheme } from './theme/theme';
 
 // import { ClerkProvider, SignedIn, SignedOut, SignIn } from '@clerk/clerk-react';
@@ -64,7 +64,7 @@ function App() {
           <Route path="/demo_site/*" element={<DemoSiteIndex />} />
           
           {/* Temporary route to direct all paths to DemoSiteIndex while protected routes are not ready */}
-          <Route path="/*" element={<DemoSiteIndex />} />
+          <Route path="/*" element={<Navigate to="/demo_site" replace />} />
           
           {/* Protected routes inside ClerkProvider - temporarily disabled 
           <Route

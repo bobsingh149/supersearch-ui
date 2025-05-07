@@ -105,7 +105,7 @@ const DemoEcommerce: React.FC = () => {
 
   // Filter states
   const [priceRange, _setPriceRange] = useState<number[]>([0, 10]);
-  const [sortBy, setSortBy] = useState('relevance');
+  const [sortBy, setSortBy] = useState('popularity');
   const [genre, setGenre] = useState('all');
   const [_searchFilters, setSearchFilters] = useState<SearchFilters>({});
   // Add state for expanded genres
@@ -208,23 +208,11 @@ const DemoEcommerce: React.FC = () => {
       let sort: SortOptions | undefined;
       
       switch (sortBy) {
-        case 'popularity_high':
-          sort = { field: 'popularity', direction: 'desc' };
+        case 'popularity':
+          sort = { field: 'vote_count', direction: 'desc' };
           break;
-        case 'popularity_low':
-          sort = { field: 'popularity', direction: 'asc' };
-          break;
-        case 'year_new':
-          sort = { field: 'release_date', direction: 'desc' };
-          break;
-        case 'year_old':
-          sort = { field: 'release_date', direction: 'asc' };
-          break;
-        case 'rating_high':
+        case 'rating':
           sort = { field: 'vote_average', direction: 'desc' };
-          break;
-        case 'rating_low':
-          sort = { field: 'vote_average', direction: 'asc' };
           break;
         default:
           // For 'relevance', either leave undefined or use a specific field
@@ -393,23 +381,11 @@ const DemoEcommerce: React.FC = () => {
     let sort: SortOptions | undefined;
     
     switch (currentSortBy) {
-      case 'popularity_high':
-        sort = { field: 'popularity', direction: 'desc' };
+      case 'popularity':
+        sort = { field: 'vote_count', direction: 'desc' };
         break;
-      case 'popularity_low':
-        sort = { field: 'popularity', direction: 'asc' };
-        break;
-      case 'year_new':
-        sort = { field: 'release_date', direction: 'desc' };
-        break;
-      case 'year_old':
-        sort = { field: 'release_date', direction: 'asc' };
-        break;
-      case 'rating_high':
+      case 'rating':
         sort = { field: 'vote_average', direction: 'desc' };
-        break;
-      case 'rating_low':
-        sort = { field: 'vote_average', direction: 'asc' };
         break;
       default:
         // For 'relevance', either leave undefined or use a specific field
@@ -621,32 +597,8 @@ const DemoEcommerce: React.FC = () => {
             }}
           >
             <MenuItem value="relevance" sx={{ fontWeight: 'medium' }}>Relevance</MenuItem>
-            
-            <MenuItem disabled sx={{ 
-              opacity: 1, 
-              color: 'text.primary', 
-              fontWeight: 600,
-              pointerEvents: 'none',
-              bgcolor: alpha(theme.palette.primary.main, 0.04),
-              '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) } 
-            }}>
-              By Popularity
-            </MenuItem>
-            <MenuItem value="popularity_high" sx={{ pl: 3 }}>High to Low</MenuItem>
-            <MenuItem value="popularity_low" sx={{ pl: 3 }}>Low to High</MenuItem>
-            
-            <MenuItem disabled sx={{ 
-              opacity: 1, 
-              color: 'text.primary', 
-              fontWeight: 600,
-              pointerEvents: 'none',
-              bgcolor: alpha(theme.palette.primary.main, 0.04),
-              '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) } 
-            }}>
-              By Rating
-            </MenuItem>
-            <MenuItem value="rating_high" sx={{ pl: 3 }}>High to Low</MenuItem>
-            <MenuItem value="rating_low" sx={{ pl: 3 }}>Low to High</MenuItem>
+            <MenuItem value="popularity" sx={{ fontWeight: 'medium' }}>Popularity</MenuItem>
+            <MenuItem value="rating" sx={{ fontWeight: 'medium' }}>Rating</MenuItem>
           </Select>
         </FormControl>
       </Box>
@@ -1324,7 +1276,8 @@ const DemoEcommerce: React.FC = () => {
                       sx={{ borderRadius: 1 }}
                     >
                       <MenuItem value="relevance">Sort: Relevance</MenuItem>
-                      <MenuItem value="rating_high">Sort: Highest Rating</MenuItem>
+                      <MenuItem value="popularity">Sort: Popularity</MenuItem>
+                      <MenuItem value="rating">Sort: Rating</MenuItem>
                     </Select>
                   </FormControl>
                   </Box>

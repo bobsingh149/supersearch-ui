@@ -1358,23 +1358,23 @@ const DemoEcommerce: React.FC = () => {
                           {(product.image_url) ? (
                             <CardMedia
                               component="img"
-                              height="200"
+                              height="260"
                               image={product.image_url}
                               alt={product.title}
                               sx={{ 
                                 objectFit: 'cover',
-                                height: '200px'
+                                height: { xs: '240px', sm: '260px', md: '280px' }
                               }}
                             />
                           ) : (
                             <CardMedia
                               component="img"
-                              height="200"
+                              height="260"
                               image={`https://picsum.photos/400/300?random=${product.id}`}
                               alt={product.title}
                               sx={{ 
                                 objectFit: 'cover',
-                                height: '200px'
+                                height: { xs: '240px', sm: '260px', md: '280px' }
                               }}
                             />
                           )}

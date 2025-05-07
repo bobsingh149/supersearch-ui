@@ -1188,16 +1188,20 @@ const ProductDetail: React.FC = () => {
               <Box>
                 {/* Title and Genre/Category */}
                 {genres.length > 0 && (
-                  <Chip 
-                    label={genres[0]} 
-                    size="small" 
-                    sx={{ 
-                      mb: 2,
-                      fontWeight: 500,
-                      bgcolor: alpha(theme.palette.primary.main, 0.1),
-                      color: 'primary.main'
-                    }} 
-                  />
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                    {genres.map((genre, index) => (
+                      <Chip 
+                        key={index}
+                        label={genre} 
+                        size="small" 
+                        sx={{ 
+                          fontWeight: 500,
+                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          color: 'primary.main'
+                        }} 
+                      />
+                    ))}
+                  </Box>
                 )}
                 
                 <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 600 }}>

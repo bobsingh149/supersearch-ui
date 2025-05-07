@@ -71,7 +71,6 @@ export const useSearchConfig = () => {
       // If error is 'not_found', it means the record doesn't exist yet
       if (error.message === 'not_found') {
         // Just use the default empty state, no need to show an error
-        console.log('Search configuration not found, using default empty state');
         
         // Return empty config
         return {

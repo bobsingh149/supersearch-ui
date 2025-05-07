@@ -35,7 +35,6 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ open, onClose }) => {
 
   // Log when open state changes
   useEffect(() => {
-    console.log('ContactUsModal: open state changed to', open);
   }, [open]);
 
   // Handle success or error from API
@@ -55,7 +54,6 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ open, onClose }) => {
   }, [success, error]);
 
   const handleClose = () => {
-    console.log('ContactUsModal: handleClose called');
     setFormData({
       name: '',
       business_email: '',
@@ -80,7 +78,6 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ open, onClose }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('ContactUsModal: submitting form', formData);
     try {
       await submitLead(formData);
     } catch (err: any) {

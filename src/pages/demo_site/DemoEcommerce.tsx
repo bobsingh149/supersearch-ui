@@ -252,7 +252,6 @@ const DemoEcommerce: React.FC = () => {
   useEffect(() => {
     // When this is the initial render
     if (isInitialRender.current) {
-      console.log('Initial render');
       isInitialRender.current = false;
       fetchProducts(page, itemsPerPage, searchQuery);
       
@@ -264,7 +263,6 @@ const DemoEcommerce: React.FC = () => {
     } 
     // When page or itemsPerPage changes (not on initial render)
     else if (page !== previousPage.current || itemsPerPage !== previousItemsPerPage.current) {
-      console.log('Page or itemsPerPage changed');
       fetchProducts(page, itemsPerPage, currentSearchQuery);
       previousPage.current = page;
       previousItemsPerPage.current = itemsPerPage;
@@ -402,8 +400,6 @@ const DemoEcommerce: React.FC = () => {
     const filtersPayload = { filters, sort };
     setSearchFilters(filtersPayload);
     
-    // Log the filter payload for debugging
-    console.log('Applying filters:', filtersPayload);
     
     // Fetch products with new filters
     searchProducts({

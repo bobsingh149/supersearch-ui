@@ -304,11 +304,9 @@ export default function DataSources() {
       setProductsLoading(true);
       setProductError(null);
       
-      console.log('Fetching products:', { page, pageSize });
       
       const response = await getProducts(page, pageSize);
       
-      console.log('API Response:', response);
       
       // Set products
       setProducts(response.products);
@@ -327,13 +325,7 @@ export default function DataSources() {
       // Extract column definitions from the products
       setProductColumns(getColumnDefinitions(response.products) as unknown as GridColDef<Product>[]);
       
-      console.log('Products loaded:', {
-        products: response.products,
-        page: response.page,
-        size: response.size,
-        hasMore: response.has_more,
-        columns: productColumns
-      });
+
     } catch (error) {
       console.error('Error fetching products:', error);
       setProductError(productApiError || 'Failed to load products. Please try again later.');
@@ -349,7 +341,6 @@ export default function DataSources() {
       setSyncHistoryLoading(true);
       const response = await getSyncHistory(page, pageSize);
       
-      console.log('API Response:', response); // Log the API response for debugging
       
       // Map the API response to our internal format
       const formattedHistory: SyncHistory[] = response.items.map(item => ({
@@ -364,7 +355,6 @@ export default function DataSources() {
         updatedAt: item.updated_at || ''
       }));
       
-      console.log('Formatted History:', formattedHistory); // Log the formatted history for debugging
       
       setSyncHistory(formattedHistory);
       setSyncHistoryPage(response.page || 1);
@@ -379,13 +369,7 @@ export default function DataSources() {
       
       setSyncHistoryTotalCount(totalCount);
       
-      console.log('Sync history loaded:', {
-        items: formattedHistory,
-        page: response.page,
-        size: response.size,
-        hasMore: response.has_more,
-        totalCount
-      });
+
     } catch (error) {
       console.error('Error fetching sync history:', error);
       // Set empty data on error

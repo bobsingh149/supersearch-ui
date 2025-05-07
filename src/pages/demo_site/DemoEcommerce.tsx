@@ -987,7 +987,7 @@ const DemoEcommerce: React.FC = () => {
                     // Fetch products with the new query
                     fetchProducts(1, itemsPerPage, newQuery);
                     // Update URL to reflect the search
-                    navigate(`/demo_site?q=${encodeURIComponent(newQuery)}`, { replace: true });
+                    // navigate(`/demo_site?q=${encodeURIComponent(newQuery)}`, { replace: true });
                   }
                 }}
               />
@@ -1050,7 +1050,7 @@ const DemoEcommerce: React.FC = () => {
                   // Fetch products with the new query
                   fetchProducts(1, itemsPerPage, newQuery);
                   // Update URL to reflect the search
-                  navigate(`/demo_site?q=${encodeURIComponent(newQuery)}`, { replace: true });
+                  // navigate(`/demo_site?q=${encodeURIComponent(newQuery)}`, { replace: true });
                 }
               }}
             />

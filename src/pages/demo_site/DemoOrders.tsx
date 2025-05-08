@@ -562,7 +562,7 @@ const DemoOrders: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  mr: 2,
+                  mr: { xs: 1, sm: 2 },
                   color: 'white',
                   cursor: 'pointer'
                 }}
@@ -598,9 +598,14 @@ const DemoOrders: React.FC = () => {
             </Box>
             
             {/* Action Icons */}
-            <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto', gap: { xs: 1, sm: 2 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto', gap: { xs: 0.5, sm: 2 } }}>
               <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
-                <IconButton size="small" onClick={toggleTheme} color="inherit">
+                <IconButton 
+                  size="small" 
+                  onClick={toggleTheme} 
+                  color="inherit"
+                  sx={{ p: { xs: 0.5, sm: 1 } }}
+                >
                   {mode === 'light' ? <DarkModeIcon fontSize="small" /> : <LightModeIcon fontSize="small" />}
                 </IconButton>
               </Tooltip>
@@ -613,6 +618,7 @@ const DemoOrders: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   sx={{ 
+                    p: { xs: 0.5, sm: 1 },
                     '&:hover': { 
                       color: 'primary.main' 
                     }
@@ -630,9 +636,10 @@ const DemoOrders: React.FC = () => {
                   textTransform: 'none',
                   fontWeight: 600,
                   px: { xs: 1.5, sm: 4 },
-                  py: { xs: 0.75, sm: 1 },
+                  py: { xs: 0.5, sm: 1 },
                   fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                  minWidth: { xs: 'auto', sm: '140px' }
+                  minWidth: { xs: 'auto', sm: '140px' },
+                  ml: { xs: 0.5, sm: 0 }
                 }}
               >
                 Contact Us

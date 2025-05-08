@@ -598,7 +598,12 @@ const DemoOrders: React.FC = () => {
             </Box>
             
             {/* Action Icons */}
-            <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto', gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto', gap: { xs: 1, sm: 2 } }}>
+              <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
+                <IconButton size="small" onClick={toggleTheme} color="inherit">
+                  {mode === 'light' ? <DarkModeIcon fontSize="small" /> : <LightModeIcon fontSize="small" />}
+                </IconButton>
+              </Tooltip>
               <Tooltip title="Visit CogniShop Website">
                 <IconButton
                   size="small"
@@ -607,13 +612,13 @@ const DemoOrders: React.FC = () => {
                   href="https://www.cognishop.co/"
                   target="_blank"
                   rel="noopener noreferrer"
+                  sx={{ 
+                    '&:hover': { 
+                      color: 'primary.main' 
+                    }
+                  }}
                 >
                   <LanguageIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
-                <IconButton size="small" onClick={toggleTheme} color="inherit">
-                  {mode === 'light' ? <DarkModeIcon fontSize="small" /> : <LightModeIcon fontSize="small" />}
                 </IconButton>
               </Tooltip>
               <Button
@@ -624,7 +629,7 @@ const DemoOrders: React.FC = () => {
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600,
-                  px: { xs: 2, sm: 4 },
+                  px: { xs: 1.5, sm: 4 },
                   py: { xs: 0.75, sm: 1 },
                   fontSize: { xs: '0.85rem', sm: '0.95rem' },
                   minWidth: { xs: 'auto', sm: '140px' }

@@ -45,6 +45,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import HelpIcon from '@mui/icons-material/Help';
 import CloseIcon from '@mui/icons-material/Close';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
+import LanguageIcon from '@mui/icons-material/Language';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { getTheme } from '../../theme/theme';
@@ -1014,6 +1015,18 @@ const ProductDetail: React.FC = () => {
                   <Badge color="primary">
                     <ShoppingCartIcon fontSize="small" />
                   </Badge>
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Visit CogniShop Website">
+                <IconButton
+                  size="small"
+                  color="inherit"
+                  component="a"
+                  href="https://www.cognishop.co/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <LanguageIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
               <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>

@@ -44,6 +44,7 @@ import HelpIcon from '@mui/icons-material/Help';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import LanguageIcon from '@mui/icons-material/Language';
 import AISearchBar, { AISearchBarRef } from '../Products/ai_shopping/AISearchBar';
 import { useSearch, SearchResultItem} from '../../hooks/useSearch';
 import { ThemeProvider } from '@mui/material/styles';
@@ -988,6 +989,18 @@ const DemoEcommerce: React.FC = () => {
                   <Badge color="primary">
                     <ShoppingCartIcon fontSize="small" />
                   </Badge>
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Visit CogniShop Website">
+                <IconButton
+                  size="small"
+                  color="inherit"
+                  component="a"
+                  href="https://www.cognishop.co/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <LanguageIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
               <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>

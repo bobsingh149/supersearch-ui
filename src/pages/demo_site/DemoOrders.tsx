@@ -39,7 +39,8 @@ import {
   ArrowForward as ArrowForwardIcon,
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
-  ShoppingBag as ShoppingBagIcon
+  ShoppingBag as ShoppingBagIcon,
+  Language as LanguageIcon
 } from '@mui/icons-material';
 import { useOrdersList, Order } from '../../hooks/useOrdersList';
 import { useNavigate } from 'react-router-dom';
@@ -598,6 +599,18 @@ const DemoOrders: React.FC = () => {
             
             {/* Action Icons */}
             <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto', gap: 2 }}>
+              <Tooltip title="Visit CogniShop Website">
+                <IconButton
+                  size="small"
+                  color="inherit"
+                  component="a"
+                  href="https://www.cognishop.co/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <LanguageIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
               <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
                 <IconButton size="small" onClick={toggleTheme} color="inherit">
                   {mode === 'light' ? <DarkModeIcon fontSize="small" /> : <LightModeIcon fontSize="small" />}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useContext } from 'react';
 import { 
   Box, 
   Typography,  
@@ -52,6 +52,7 @@ import { getTheme } from '../../theme/theme';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ContactUsModal from './components/ContactUsModal';
+import { ThemeContext } from '../../App';
 
 // Drawer width
 const DRAWER_WIDTH = 280;
@@ -86,10 +87,7 @@ const DemoEcommerce: React.FC = () => {
   const [itemsPerPage, setItemsPerPage] = useState(12);
   const [totalResults, setTotalResults] = useState(0);
   const [hasMore, setHasMore] = useState(false);
-  const [mode, setMode] = useState<'light' | 'dark'>(() => {
-    // Get initial theme based on system preference
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  });
+  const { mode, toggleTheme } = useContext(ThemeContext);
   const navigate = useNavigate();
   const location = useLocation();
   const isInitialRender = useRef(true);
@@ -156,17 +154,6 @@ const DemoEcommerce: React.FC = () => {
 
   // Add state for selected question
   const [_selectedQuestion, setSelectedQuestion] = useState('');
-
-  useEffect(() => {
-    // Listen for system theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      setMode(e.matches ? 'dark' : 'light');
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
 
   useEffect(() => {
     // Set the current search query when URL param changes
@@ -286,10 +273,6 @@ const DemoEcommerce: React.FC = () => {
     
     return () => clearTimeout(timer);
   }, []);
-
-  const toggleTheme = () => {
-    setMode(prev => prev === 'light' ? 'dark' : 'light');
-  };
 
   const handlePageSizeChange = (event: SelectChangeEvent<number>) => {
     const newPageSize = Number(event.target.value);
@@ -1589,10 +1572,6 @@ const DemoEcommerce: React.FC = () => {
                     Next
                   </Button>
                 </Box>
-                
-                <Typography variant="body2" color="text.secondary">
-                  Showing {((page - 1) * itemsPerPage) + 1}-{Math.min(page * itemsPerPage, totalResults)} of {totalResults} results
-                </Typography>
               </Box>
             )}
           </Box>

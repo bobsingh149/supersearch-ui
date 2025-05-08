@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -57,6 +57,7 @@ import { useOrders, OrderRequest } from '../../hooks/useOrders';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import AISearchBar, { AISearchBarRef } from '../Products/ai_shopping/AISearchBar';
 import ContactUsModal from './components/ContactUsModal';
+import { ThemeContext } from '../../App';
 
 const ProductDetail: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -68,9 +69,10 @@ const ProductDetail: React.FC = () => {
   const { questions, loading: questionsLoading, error: questionsError, fetchProductQuestions } = useProductQuestions();
   const { loading: orderLoading, error: orderError, orderSuccess, createOrder, reset: resetOrder } = useOrders();
   const [product, setProduct] = useState<MovieProduct | null>(null);
-  const [mode, setMode] = useState<'light' | 'dark'>(() => {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  });
+  
+  // Use global theme context
+  const { mode, toggleTheme } = useContext(ThemeContext);
+  
   const [isFavorite, setIsFavorite] = useState(false);
   const [questionsOpen, setQuestionsOpen] = useState(false);
   const questionsButtonRef = useRef<HTMLButtonElement>(null);
@@ -186,10 +188,6 @@ const ProductDetail: React.FC = () => {
 
     fetchProduct();
   }, [productId]);
-
-  const toggleTheme = () => {
-    setMode(prev => prev === 'light' ? 'dark' : 'light');
-  };
 
   const handleGoBack = () => {
     navigate(-1);

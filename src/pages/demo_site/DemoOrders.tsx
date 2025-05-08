@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useContext } from 'react';
 import { 
   Box, 
   Typography, 
@@ -47,6 +47,7 @@ import AISearchBar, { AISearchBarRef } from '../Products/ai_shopping/AISearchBar
 import ContactUsModal from './components/ContactUsModal';
 import { ThemeProvider } from '@mui/material/styles';
 import { getTheme } from '../../theme/theme';
+import { ThemeContext } from '../../App';
 
 const DemoOrders: React.FC = () => {
   const theme = useTheme();
@@ -61,9 +62,10 @@ const DemoOrders: React.FC = () => {
     fetchOrders,
   } = useOrdersList();
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
-  const [mode, setMode] = useState<'light' | 'dark'>(() => {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  });
+  
+  // Use the global theme context instead of local state
+  const { mode, toggleTheme } = useContext(ThemeContext);
+  
   const [contactModalOpen, setContactModalOpen] = useState(false);
   
   // Updated refs with proper typing
@@ -124,11 +126,6 @@ const DemoOrders: React.FC = () => {
 
   const handleExpandOrder = (orderId: string) => {
     setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
-  };
-
-  // Handle theme toggle
-  const toggleTheme = () => {
-    setMode(prev => prev === 'light' ? 'dark' : 'light');
   };
 
   // Contact modal handlers

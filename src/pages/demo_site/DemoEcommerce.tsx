@@ -385,9 +385,10 @@ const DemoEcommerce: React.FC = () => {
     setSearchFilters(filtersPayload);
     
     
+    setCurrentSearchQuery('');
     // Fetch products with new filters
     searchProducts({
-      query: currentSearchQuery, // Use the current search query
+      query: '', 
       page: 1, // Reset to page 1 when changing filters
       size: itemsPerPage,
       filters: filtersPayload

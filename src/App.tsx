@@ -9,6 +9,7 @@ import { getTheme } from './theme/theme';
 // import { dark } from '@clerk/themes';
 // import Layout from './components/layout/Layout';
 
+
 // Import pages
 // import Dashboard from './pages/Dashboard/Dashboard';
 // import Search from './pages/Products/Search';

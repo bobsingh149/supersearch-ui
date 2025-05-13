@@ -1219,7 +1219,8 @@ const DemoEcommerce: React.FC = () => {
                         textDecoration: 'none',
                         fontWeight: 'medium',
                         '&:hover': {
-                          textDecoration: 'underline'
+                          textDecoration: 'underline',
+                          color: theme.palette.primary.main
                         }
                       }}
                     >

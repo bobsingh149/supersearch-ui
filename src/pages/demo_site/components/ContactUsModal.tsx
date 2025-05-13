@@ -178,7 +178,10 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ open, onClose }) => {
                       py: isMobile ? 1 : 1.2,
                       borderRadius: 1.5,
                       textTransform: 'none',
-                      fontWeight: 500
+                      fontWeight: 500,
+                      '&:hover': {
+                        backgroundColor: alpha(theme.palette.primary.main, 0.04)
+                      }
                     }}
                   >
                     Cancel

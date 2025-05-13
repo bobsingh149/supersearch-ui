@@ -1225,7 +1225,7 @@ const DemoEcommerce: React.FC = () => {
                     >
                       Kaggle Movies Dataset
                     </Link>
-                    but our AI-powered search works brilliantly with e-commerce products, blog content, knowledge bases, and more! Transform your customer experience today.
+                    but our AI-powered search also works brilliantly with e-commerce products, blog content, knowledge bases, and more! Transform your customer experience today.
                   </Typography>
                 </Box>
               </Box>

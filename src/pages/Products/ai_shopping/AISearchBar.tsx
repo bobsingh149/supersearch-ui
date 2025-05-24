@@ -149,7 +149,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
   const [conversationId, setConversationId] = useState(generateConversationId());
   
   // Add stream mode state
-  const [isStreamMode, setIsStreamMode] = useState(true); // Default to streaming for better UX
+  const [isStreamMode, setIsStreamMode] = useState(false); // Default to non-streaming mode
   
   // Use MediaQuery for responsive design
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));

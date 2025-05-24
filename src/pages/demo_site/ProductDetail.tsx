@@ -63,7 +63,7 @@ import { ThemeContext } from '../../App';
 const ProductDetail: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
-  const { loading: apiLoading, getProductById } = useProductById();
+  const { loading: apiLoading, error: productByIdError, getProductById } = useProductById();
   const { reviews, loading: reviewsLoading, error: reviewsError, fetchReviews } = useReviews();
   const { summary: reviewSummary, loading: summaryLoading, error: summaryError, fetchReviewSummary } = useReviewSummary();
   const { similarProducts, loading: similarProductsLoading, error: similarProductsError, fetchSimilarProducts } = useSimilarProducts();
@@ -677,7 +677,7 @@ const ProductDetail: React.FC = () => {
     );
   }
 
-  if (!product) {
+  if (productByIdError) {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
@@ -767,6 +767,31 @@ const ProductDetail: React.FC = () => {
               </Button>
             </Box>
           </Paper>
+        </Box>
+      </ThemeProvider>
+    );
+  }
+
+  // Fallback for when product is still null AFTER loading and no error
+  if (!product) {
+     return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            minHeight: '100vh',
+            bgcolor: theme.palette.mode === 'dark' ? 'background.default' : '#f5f5f7',
+            width: '100%'
+          }}
+        >
+          <CircularProgress />
         </Box>
       </ThemeProvider>
     );

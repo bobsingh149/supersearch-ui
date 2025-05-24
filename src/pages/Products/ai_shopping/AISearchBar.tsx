@@ -1308,42 +1308,105 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
             alignItems: 'center',
             borderBottom: '1px solid',
             borderColor: 'divider',
-            p: { xs: 1.5, sm: 2 }
+            p: { xs: 1.5, sm: 2 },
+            bgcolor: 'background.paper'
           }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Tooltip title="Start a new chat session">
-                <IconButton
-                  color="secondary"
+            {/* Left side - New Chat Button and Title */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Tooltip title="New conversation" placement="bottom">
+                <Button
+                  variant="outlined"
                   size="small"
                   onClick={startNewChat}
-                  sx={{ mr: 1.5 }}
+                  startIcon={<AddCommentIcon />}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    px: 2,
+                    py: 0.75,
+                    borderColor: 'divider',
+                    color: 'text.secondary',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      color: 'primary.main',
+                      bgcolor: alpha(theme.palette.primary.main, 0.04)
+                    }
+                  }}
                 >
-                  <AddCommentIcon fontSize="small" />
-                </IconButton>
+                  {!isMobile && 'New'}
+                </Button>
               </Tooltip>
               
-              {/* Streaming Mode Toggle */}
-              <Tooltip title="Toggle streaming mode">
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={isStreamMode}
-                      onChange={(e) => setIsStreamMode(e.target.checked)}
-                      size="small"
-                      sx={{ mr: 1.5 }}
-                    />
-                  }
-                  label="Stream"
-                />
-              </Tooltip>
-              
-              <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                CogniShop Assistant
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <AutoAwesomeIcon sx={{ color: 'primary.main', fontSize: '1.2rem' }} />
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    fontSize: { xs: '1rem', sm: '1.1rem' },
+                    fontWeight: 600,
+                    color: 'text.primary'
+                  }}
+                >
+                  CogniShop Assistant
+                </Typography>
+              </Box>
             </Box>
-            <IconButton onClick={closeAiChat} size="small">
-              <CloseIcon />
-            </IconButton>
+
+            {/* Right side - Stream Toggle and Close Button */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isStreamMode}
+                    onChange={(e) => setIsStreamMode(e.target.checked)}
+                    size="small"
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': {
+                        color: 'primary.main',
+                      },
+                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                        backgroundColor: 'primary.main',
+                      }
+                    }}
+                  />
+                }
+                label={
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      fontWeight: 500,
+                      color: 'text.secondary',
+                      fontSize: '0.875rem'
+                    }}
+                  >
+                    {!isMobile && 'Stream'}
+                  </Typography>
+                }
+                labelPlacement="start"
+                sx={{ 
+                  m: 0,
+                  gap: 1,
+                  '& .MuiFormControlLabel-label': {
+                    fontSize: '0.875rem'
+                  }
+                }}
+              />
+              
+              <IconButton 
+                onClick={closeAiChat} 
+                size="small"
+                sx={{
+                  color: 'text.secondary',
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.error.main, 0.08),
+                    color: 'error.main'
+                  }
+                }}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
           </DialogTitle>
           
           <DialogContent sx={{ 

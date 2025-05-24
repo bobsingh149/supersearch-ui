@@ -1454,7 +1454,14 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                                         height="180"
                                         image={(product as any).image_url || product.custom_data?.Poster_Url || product.custom_data?.image_url || `https://picsum.photos/400/300?random=${product.id}`}
                                         alt={product.title || product.custom_data?.Title || 'Product image'}
-                                        sx={{ objectFit: 'cover' }}
+                                        sx={{ 
+                                          objectFit: 'contain',
+                                          bgcolor: theme.palette.mode === 'dark' 
+                                            ? 'rgba(255,255,255,0.05)' 
+                                            : 'rgba(0,0,0,0.02)',
+                                          borderBottom: '1px solid',
+                                          borderColor: 'divider'
+                                        }}
                                       />
                                       <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
                                         <Typography variant="subtitle2" component="div" fontWeight="medium" noWrap>

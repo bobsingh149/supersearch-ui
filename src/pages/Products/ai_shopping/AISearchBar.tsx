@@ -39,7 +39,11 @@ import { useSearch, SearchResultItem } from '../../../hooks/useSearch';
 import ReactMarkdown from 'react-markdown';
 import config from '../../../config';
 
+// Replace with Switch import
+import Switch from '@mui/material/Switch';
 
+// Add FormControlLabel back for switch label
+import FormControlLabel from '@mui/material/FormControlLabel';
 
 // Animation for gradient border
 const gradientAnimation = keyframes`
@@ -143,6 +147,9 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
   const [isSearching, setIsSearching] = useState(false);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [conversationId, setConversationId] = useState(generateConversationId());
+  
+  // Add stream mode state
+  const [isStreamMode, setIsStreamMode] = useState(true); // Default to streaming for better UX
   
   // Use MediaQuery for responsive design
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -384,6 +391,111 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
     setConversationId(generateConversationId());
   };
 
+  // Streaming response handler
+  const handleStreamingResponse = async (response: Response, messageId: number) => {
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error('No response body reader available');
+    
+    const decoder = new TextDecoder();
+    let mainContent = '';
+    let questions: string[] = [];
+    let products: ProductSearchResult[] = [];
+    let isComplete = false;
+    
+    try {
+      while (!isComplete) {
+        const { done, value } = await reader.read();
+        
+        if (done) break;
+        
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n').filter(line => line.trim());
+        
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line);
+            
+            switch (data.type) {
+              case 'content':
+                mainContent += data.content;
+                // Update the AI message with new content progressively
+                setMessages(prev => {
+                  const updatedMessages = [...prev];
+                  const aiMessageIndex = updatedMessages.findIndex(msg => msg.id === messageId);
+                  
+                  if (aiMessageIndex !== -1) {
+                    updatedMessages[aiMessageIndex] = {
+                      ...updatedMessages[aiMessageIndex],
+                      text: mainContent,
+                      isTyping: true // Keep typing indicator while streaming
+                    };
+                  }
+                  
+                  return updatedMessages;
+                });
+                break;
+                
+              case 'questions':
+                questions = data.content || [];
+                break;
+                
+              case 'products':
+                products = data.content || [];
+                break;
+                
+              case 'complete':
+                isComplete = true;
+                // Update the final AI message with all data and remove typing indicator
+                setMessages(prev => {
+                  const updatedMessages = [...prev];
+                  const aiMessageIndex = updatedMessages.findIndex(msg => msg.id === messageId);
+                  
+                  if (aiMessageIndex !== -1) {
+                    updatedMessages[aiMessageIndex] = {
+                      ...updatedMessages[aiMessageIndex],
+                      text: mainContent,
+                      isTyping: false,
+                      suggestedProducts: products,
+                      suggestedQuestions: questions,
+                      includedProducts: products
+                    };
+                  }
+                  
+                  return updatedMessages;
+                });
+                break;
+            }
+          } catch (parseError) {
+            console.error('Error parsing JSON chunk:', parseError);
+            // Continue processing other chunks
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Streaming error:', error);
+      // Update with error message
+      setMessages(prev => {
+        const updatedMessages = [...prev];
+        const aiMessageIndex = updatedMessages.findIndex(msg => msg.id === messageId);
+        
+        if (aiMessageIndex !== -1) {
+          updatedMessages[aiMessageIndex] = {
+            id: messageId,
+            text: "**You've reached your free usage limit.** Contact us to start using CogniShop for your store!",
+            sender: 'ai',
+            timestamp: new Date(),
+            isTyping: false,
+            suggestedProducts: [],
+            suggestedQuestions: [],
+            includedProducts: []
+          };
+        }
+        
+        return updatedMessages;
+      });
+    }
+  };
+
   // Send message to shopping assistant API
   const sendMessage = async (productIds: string[] = []) => {
     if (currentMessage.trim()) {
@@ -396,13 +508,15 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
       };
       
       const messageText = currentMessage.trim();
+      const aiMessageId = Date.now() + 1;
+      
       setMessages([...messages, newUserMessage]);
       setCurrentMessage('');
       setIsChatLoading(true);
       
       // Add a loading message with empty products array
       const loadingMessage: Message = {
-        id: Date.now() + 1,
+        id: aiMessageId,
         text: '',
         sender: 'ai',
         timestamp: new Date(),
@@ -428,13 +542,13 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
           query: messageText,
           conversation_id: conversationId,
           product_ids: allProductIds,
-          stream: false // Set stream to false to get a complete response
+          stream: isStreamMode // Use stream mode setting
         };
         
         const response = await fetch(API_ENDPOINT, {
           method: 'POST',
           headers: {
-            'Accept': 'application/json',
+            'Accept': isStreamMode ? 'text/plain' : 'application/json',
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
@@ -445,29 +559,33 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        // Parse the JSON response
-        const data = await response.json();
-        
-        // Update the AI message with the complete response
-        setMessages(prev => {
-          const updatedMessages = [...prev];
-          const aiMessageIndex = updatedMessages.findIndex(msg => msg.isTyping);
+        if (isStreamMode) {
+          // Handle streaming response
+          await handleStreamingResponse(response, aiMessageId);
+        } else {
+          // Handle non-streaming response (original logic)
+          const data = await response.json();
           
-          if (aiMessageIndex !== -1) {
-            updatedMessages[aiMessageIndex] = {
-              id: Date.now() + 1,
-              text: data.response || '',
-              sender: 'ai',
-              timestamp: new Date(),
-              isTyping: false,
-              suggestedProducts: data.products || [],
-              suggestedQuestions: data.follow_up_questions || [],
-              includedProducts: data.products || []
-            };
-          }
-          
-          return updatedMessages;
-        });
+          setMessages(prev => {
+            const updatedMessages = [...prev];
+            const aiMessageIndex = updatedMessages.findIndex(msg => msg.id === aiMessageId);
+            
+            if (aiMessageIndex !== -1) {
+              updatedMessages[aiMessageIndex] = {
+                id: aiMessageId,
+                text: data.response || '',
+                sender: 'ai',
+                timestamp: new Date(),
+                isTyping: false,
+                suggestedProducts: data.products || [],
+                suggestedQuestions: data.follow_up_questions || [],
+                includedProducts: data.products || []
+              };
+            }
+            
+            return updatedMessages;
+          });
+        }
         
       } catch (error) {
         console.error('Fetch error:', error);
@@ -475,11 +593,11 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
         // Update with error message
         setMessages(prev => {
           const updatedMessages = [...prev];
-          const aiMessageIndex = updatedMessages.findIndex(msg => msg.isTyping);
+          const aiMessageIndex = updatedMessages.findIndex(msg => msg.id === aiMessageId);
           
           if (aiMessageIndex !== -1) {
             updatedMessages[aiMessageIndex] = {
-              id: Date.now(),
+              id: aiMessageId,
               text: "**You've reached your free usage limit.** Contact us to start using CogniShop for your store!",
               sender: 'ai',
               timestamp: new Date(),
@@ -502,6 +620,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
   const usePrompt = (prompt: string, productIds: string[] = []) => {
     // Store the prompt text in a variable
     const messageToSend = prompt.trim();
+    const aiMessageId = Date.now() + 1;
 
     // Set the input field initially (for visual feedback)
     setCurrentMessage(messageToSend);
@@ -517,7 +636,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
     
     // Add a loading message
     const loadingMessage: Message = {
-      id: Date.now() + 1,
+      id: aiMessageId,
       text: '',
       sender: 'ai',
       timestamp: new Date(),
@@ -552,13 +671,13 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
           query: messageToSend,
           conversation_id: conversationId,
           product_ids: allProductIds,
-          stream: false
+          stream: isStreamMode // Use stream mode setting
         };
         
         const response = await fetch(API_ENDPOINT, {
           method: 'POST',
           headers: {
-            'Accept': 'application/json',
+            'Accept': isStreamMode ? 'text/plain' : 'application/json',
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
@@ -569,29 +688,33 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        // Parse the JSON response
-        const data = await response.json();
-        
-        // Update the AI message with the complete response
-        setMessages(prev => {
-          const updatedMessages = [...prev];
-          const aiMessageIndex = updatedMessages.findIndex(msg => msg.isTyping);
+        if (isStreamMode) {
+          // Handle streaming response
+          await handleStreamingResponse(response, aiMessageId);
+        } else {
+          // Handle non-streaming response (original logic)
+          const data = await response.json();
           
-          if (aiMessageIndex !== -1) {
-            updatedMessages[aiMessageIndex] = {
-              id: Date.now() + 1,
-              text: data.response || '',
-              sender: 'ai',
-              timestamp: new Date(),
-              isTyping: false,
-              suggestedProducts: data.products || [],
-              suggestedQuestions: data.follow_up_questions || [],
-              includedProducts: data.products || []
-            };
-          }
-          
-          return updatedMessages;
-        });
+          setMessages(prev => {
+            const updatedMessages = [...prev];
+            const aiMessageIndex = updatedMessages.findIndex(msg => msg.id === aiMessageId);
+            
+            if (aiMessageIndex !== -1) {
+              updatedMessages[aiMessageIndex] = {
+                id: aiMessageId,
+                text: data.response || '',
+                sender: 'ai',
+                timestamp: new Date(),
+                isTyping: false,
+                suggestedProducts: data.products || [],
+                suggestedQuestions: data.follow_up_questions || [],
+                includedProducts: data.products || []
+              };
+            }
+            
+            return updatedMessages;
+          });
+        }
         
       } catch (error) {
         console.error('Fetch error:', error);
@@ -599,11 +722,11 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
         // Update with error message
         setMessages(prev => {
           const updatedMessages = [...prev];
-          const aiMessageIndex = updatedMessages.findIndex(msg => msg.isTyping);
+          const aiMessageIndex = updatedMessages.findIndex(msg => msg.id === aiMessageId);
           
           if (aiMessageIndex !== -1) {
             updatedMessages[aiMessageIndex] = {
-              id: Date.now(),
+              id: aiMessageId,
               text: "**You've reached your free usage limit.** Contact us to start using CogniShop for your store!",
               sender: 'ai',
               timestamp: new Date(),
@@ -725,6 +848,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
     openAiChatWithMessage: (message: string, productIds: string[] = []) => {
       // Store the message text in a variable so we can use it after state updates
       const messageToSend = message.trim();
+      const aiMessageId = Date.now() + 1;
       
       // Open the chat
       setIsChatOpen(true);
@@ -763,7 +887,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
           
           // Add a loading message right away
           const loadingMessage: Message = {
-            id: Date.now() + 1,
+            id: aiMessageId,
             text: '',
             sender: 'ai',
             timestamp: new Date(),
@@ -786,13 +910,13 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
             query: messageToSend,
             conversation_id: conversationId,
             product_ids: productIds,
-            stream: false
+            stream: isStreamMode // Use stream mode setting
           };
           
           const response = await fetch(API_ENDPOINT, {
             method: 'POST',
             headers: {
-              'Accept': 'application/json',
+              'Accept': isStreamMode ? 'text/plain' : 'application/json',
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`
             },
@@ -803,29 +927,33 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
             throw new Error(`HTTP error! status: ${response.status}`);
           }
           
-          // Parse the JSON response
-          const data = await response.json();
-          
-          // Update the AI message with the complete response
-          setMessages(prev => {
-            const updatedMessages = [...prev];
-            const aiMessageIndex = updatedMessages.findIndex(msg => msg.isTyping);
+          if (isStreamMode) {
+            // Handle streaming response
+            await handleStreamingResponse(response, aiMessageId);
+          } else {
+            // Handle non-streaming response (original logic)
+            const data = await response.json();
             
-            if (aiMessageIndex !== -1) {
-              updatedMessages[aiMessageIndex] = {
-                id: Date.now() + 1,
-                text: data.response || '',
-                sender: 'ai',
-                timestamp: new Date(),
-                isTyping: false,
-                suggestedProducts: data.products || [],
-                suggestedQuestions: data.follow_up_questions || [],
-                includedProducts: data.products || []
-              };
-            }
-            
-            return updatedMessages;
-          });
+            setMessages(prev => {
+              const updatedMessages = [...prev];
+              const aiMessageIndex = updatedMessages.findIndex(msg => msg.id === aiMessageId);
+              
+              if (aiMessageIndex !== -1) {
+                updatedMessages[aiMessageIndex] = {
+                  id: aiMessageId,
+                  text: data.response || '',
+                  sender: 'ai',
+                  timestamp: new Date(),
+                  isTyping: false,
+                  suggestedProducts: data.products || [],
+                  suggestedQuestions: data.follow_up_questions || [],
+                  includedProducts: data.products || []
+                };
+              }
+              
+              return updatedMessages;
+            });
+          }
           
         } catch (error) {
           console.error('Fetch error:', error);
@@ -833,11 +961,11 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
           // Update with error message
           setMessages(prev => {
             const updatedMessages = [...prev];
-            const aiMessageIndex = updatedMessages.findIndex(msg => msg.isTyping);
+            const aiMessageIndex = updatedMessages.findIndex(msg => msg.id === aiMessageId);
             
             if (aiMessageIndex !== -1) {
               updatedMessages[aiMessageIndex] = {
-                id: Date.now(),
+                id: aiMessageId,
                 text: "**You've reached your free usage limit.** Contact us to start using CogniShop for your store!",
                 sender: 'ai',
                 timestamp: new Date(),
@@ -1193,11 +1321,24 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                   <AddCommentIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
+              
+              {/* Streaming Mode Toggle */}
+              <Tooltip title="Toggle streaming mode">
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={isStreamMode}
+                      onChange={(e) => setIsStreamMode(e.target.checked)}
+                      size="small"
+                      sx={{ mr: 1.5 }}
+                    />
+                  }
+                  label="Stream"
+                />
+              </Tooltip>
+              
               <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                 CogniShop Assistant
-              </Typography>
-              <Typography variant="caption" sx={{ ml: 2, color: 'text.secondary', display: { xs: 'none', sm: 'block' } }}>
-                Session: {conversationId}
               </Typography>
             </Box>
             <IconButton onClick={closeAiChat} size="small">

@@ -27,7 +27,9 @@ import {
   Divider,
   ClickAwayListener,
   Avatar,
-  useMediaQuery
+  useMediaQuery,
+  Menu,
+  MenuItem
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -35,6 +37,7 @@ import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import AddCommentIcon from '@mui/icons-material/AddComment';
 import StreamIcon from '@mui/icons-material/Stream';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { keyframes } from '@mui/material/styles';
 import { useSearch, SearchResultItem } from '../../../hooks/useSearch';
 import ReactMarkdown from 'react-markdown';
@@ -167,6 +170,10 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
 
+  // Add state for mobile menu
+  const [mobileMenuAnchor, setMobileMenuAnchor] = useState<null | HTMLElement>(null);
+  const isMobileMenuOpen = Boolean(mobileMenuAnchor);
+
   const navigate = useNavigate();
 
   // Predefined FAQs to show when starting a new chat
@@ -288,6 +295,15 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
   // Close autocomplete dropdown when clicking away
   const handleClickAway = () => {
     setShowAutocomplete(false);
+  };
+
+  // Handle mobile menu
+  const handleMobileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setMobileMenuAnchor(event.currentTarget);
+  };
+
+  const handleMobileMenuClose = () => {
+    setMobileMenuAnchor(null);
   };
 
   // Handle key press in search input
@@ -1362,33 +1378,25 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
 
             {/* Right side - Stream Toggle and Close Button */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={isStreamMode}
-                    onChange={(e) => setIsStreamMode(e.target.checked)}
-                    size="small"
-                    sx={{
-                      '& .MuiSwitch-switchBase.Mui-checked': {
-                        color: 'primary.main',
-                      },
-                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                        backgroundColor: 'primary.main',
-                      }
-                    }}
-                  />
-                }
-                label={
-                  isMobile ? (
-                    <StreamIcon 
-                      sx={{ 
-                        fontSize: '1.1rem',
-                        color: 'text.secondary',
-                        display: 'flex',
-                        alignItems: 'center'
-                      }} 
+              {/* Desktop: Show stream toggle directly */}
+              {!isMobile && (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={isStreamMode}
+                      onChange={(e) => setIsStreamMode(e.target.checked)}
+                      size="small"
+                      sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': {
+                          color: 'primary.main',
+                        },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                          backgroundColor: 'primary.main',
+                        }
+                      }}
                     />
-                  ) : (
+                  }
+                  label={
                     <Typography 
                       variant="body2" 
                       sx={{ 
@@ -1399,21 +1407,108 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                     >
                       Stream Mode
                     </Typography>
-                  )
-                }
-                labelPlacement="start"
-                sx={{ 
-                  m: 0,
-                  gap: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  '& .MuiFormControlLabel-label': {
-                    fontSize: '0.875rem',
-                    display: 'flex',
-                    alignItems: 'center'
                   }
-                }}
-              />
+                  labelPlacement="start"
+                  sx={{ 
+                    m: 0,
+                    gap: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    '& .MuiFormControlLabel-label': {
+                      fontSize: '0.875rem',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }
+                  }}
+                />
+              )}
+
+              {/* Mobile: Show more options menu */}
+              {isMobile && (
+                <>
+                  <IconButton 
+                    onClick={handleMobileMenuOpen}
+                    size="small"
+                    sx={{
+                      color: 'text.secondary',
+                      '&:hover': {
+                        bgcolor: alpha(theme.palette.primary.main, 0.08),
+                        color: 'primary.main'
+                      }
+                    }}
+                  >
+                    <MoreVertIcon fontSize="small" />
+                  </IconButton>
+                  
+                  <Menu
+                    anchorEl={mobileMenuAnchor}
+                    open={isMobileMenuOpen}
+                    onClose={handleMobileMenuClose}
+                    anchorOrigin={{
+                      vertical: 'bottom',
+                      horizontal: 'right',
+                    }}
+                    transformOrigin={{
+                      vertical: 'top',
+                      horizontal: 'right',
+                    }}
+                    PaperProps={{
+                      sx: {
+                        borderRadius: 2,
+                        minWidth: 200,
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                      }
+                    }}
+                  >
+                    <MenuItem sx={{ py: 1.5, px: 2 }}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={isStreamMode}
+                            onChange={(e) => setIsStreamMode(e.target.checked)}
+                            size="small"
+                            sx={{
+                              '& .MuiSwitch-switchBase.Mui-checked': {
+                                color: 'primary.main',
+                              },
+                              '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                backgroundColor: 'primary.main',
+                              }
+                            }}
+                          />
+                        }
+                        label={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <StreamIcon 
+                              sx={{ 
+                                fontSize: '1.1rem',
+                                color: 'text.secondary'
+                              }} 
+                            />
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                fontWeight: 500,
+                                color: 'text.secondary',
+                                fontSize: '0.875rem'
+                              }}
+                            >
+                              Stream Mode
+                            </Typography>
+                          </Box>
+                        }
+                        labelPlacement="start"
+                        sx={{ 
+                          m: 0,
+                          gap: 1,
+                          width: '100%',
+                          justifyContent: 'space-between'
+                        }}
+                      />
+                    </MenuItem>
+                  </Menu>
+                </>
+              )}
               
               <IconButton 
                 onClick={closeAiChat} 

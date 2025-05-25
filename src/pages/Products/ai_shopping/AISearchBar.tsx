@@ -1348,7 +1348,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                     color: 'text.primary'
                   }}
                 >
-                  CogniShop Assistant
+                  CogniShop
                 </Typography>
               </Box>
             </Box>

@@ -34,6 +34,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import AddCommentIcon from '@mui/icons-material/AddComment';
+import StreamIcon from '@mui/icons-material/Stream';
 import { keyframes } from '@mui/material/styles';
 import { useSearch, SearchResultItem } from '../../../hooks/useSearch';
 import ReactMarkdown from 'react-markdown';
@@ -149,7 +150,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
   const [conversationId, setConversationId] = useState(generateConversationId());
   
   // Add stream mode state
-  const [isStreamMode, setIsStreamMode] = useState(false); // Default to non-streaming mode
+  const [isStreamMode, setIsStreamMode] = useState(true); // Default to non-streaming mode
   
   // Use MediaQuery for responsive design
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -1311,11 +1312,11 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
             p: { xs: 1.5, sm: 2 },
             bgcolor: 'background.paper'
           }}>
-            {/* Left side - New Chat Button and Title */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* Left side - New Chat Button */}
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Tooltip title="New conversation" placement="bottom">
                 <Button
-                  variant="outlined"
+                  variant="text"
                   size="small"
                   onClick={startNewChat}
                   startIcon={<AddCommentIcon />}
@@ -1325,10 +1326,8 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                     fontWeight: 500,
                     px: 2,
                     py: 0.75,
-                    borderColor: 'divider',
                     color: 'text.secondary',
                     '&:hover': {
-                      borderColor: 'primary.main',
                       color: 'primary.main',
                       bgcolor: alpha(theme.palette.primary.main, 0.04)
                     }
@@ -1337,20 +1336,28 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                   {!isMobile && 'New'}
                 </Button>
               </Tooltip>
-              
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <AutoAwesomeIcon sx={{ color: 'primary.main', fontSize: '1.2rem' }} />
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    fontSize: { xs: '1rem', sm: '1.1rem' },
-                    fontWeight: 600,
-                    color: 'text.primary'
-                  }}
-                >
-                  CogniShop
-                </Typography>
-              </Box>
+            </Box>
+
+            {/* Center - Title */}
+            <Box sx={{ 
+              position: 'absolute',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 1 
+            }}>
+              <AutoAwesomeIcon sx={{ color: 'primary.main', fontSize: '1.2rem' }} />
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  fontSize: { xs: '1rem', sm: '1.1rem' },
+                  fontWeight: 600,
+                  color: 'text.primary'
+                }}
+              >
+                CogniShop
+              </Typography>
             </Box>
 
             {/* Right side - Stream Toggle and Close Button */}
@@ -1372,23 +1379,38 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                   />
                 }
                 label={
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      fontWeight: 500,
-                      color: 'text.secondary',
-                      fontSize: '0.875rem'
-                    }}
-                  >
-                    {!isMobile && 'Stream'}
-                  </Typography>
+                  isMobile ? (
+                    <StreamIcon 
+                      sx={{ 
+                        fontSize: '1.1rem',
+                        color: 'text.secondary',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }} 
+                    />
+                  ) : (
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        fontWeight: 500,
+                        color: 'text.secondary',
+                        fontSize: '0.875rem'
+                      }}
+                    >
+                      Stream Mode
+                    </Typography>
+                  )
                 }
                 labelPlacement="start"
                 sx={{ 
                   m: 0,
                   gap: 1,
+                  display: 'flex',
+                  alignItems: 'center',
                   '& .MuiFormControlLabel-label': {
-                    fontSize: '0.875rem'
+                    fontSize: '0.875rem',
+                    display: 'flex',
+                    alignItems: 'center'
                   }
                 }}
               />

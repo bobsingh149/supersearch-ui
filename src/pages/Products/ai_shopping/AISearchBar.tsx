@@ -516,20 +516,17 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
   // Send message to shopping assistant API
   const sendMessage = async (productIds: string[] = []) => {
     if (currentMessage.trim()) {
+      const messageText = currentMessage.trim();
+      const userMessageId = Date.now();
+      const aiMessageId = userMessageId + 1;
+      
       const newUserMessage: Message = {
-        id: Date.now(),
-        text: currentMessage.trim(),
+        id: userMessageId,
+        text: messageText,
         sender: 'user',
         timestamp: new Date(),
         includedProducts: [...selectedProducts]
       };
-      
-      const messageText = currentMessage.trim();
-      const aiMessageId = Date.now() + 1;
-      
-      setMessages([...messages, newUserMessage]);
-      setCurrentMessage('');
-      setIsChatLoading(true);
       
       // Add a loading message with empty products array
       const loadingMessage: Message = {
@@ -542,7 +539,9 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
         suggestedQuestions: []
       };
       
-      setMessages(prev => [...prev, loadingMessage]);
+      setMessages(prev => [...prev, newUserMessage, loadingMessage]);
+      setCurrentMessage('');
+      setIsChatLoading(true);
       
       try {
         // Get the authentication token
@@ -637,14 +636,15 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
   const usePrompt = (prompt: string, productIds: string[] = []) => {
     // Store the prompt text in a variable
     const messageToSend = prompt.trim();
-    const aiMessageId = Date.now() + 1;
+    const userMessageId = Date.now();
+    const aiMessageId = userMessageId + 1;
 
     // Set the input field initially (for visual feedback)
     setCurrentMessage(messageToSend);
     
     // Create and add the user message directly
     const newUserMessage: Message = {
-      id: Date.now(),
+      id: userMessageId,
       text: messageToSend,
       sender: 'user',
       timestamp: new Date(),
@@ -865,7 +865,8 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
     openAiChatWithMessage: (message: string, productIds: string[] = []) => {
       // Store the message text in a variable so we can use it after state updates
       const messageToSend = message.trim();
-      const aiMessageId = Date.now() + 1;
+      const userMessageId = Date.now();
+      const aiMessageId = userMessageId + 1;
       
       // Open the chat
       setIsChatOpen(true);
@@ -895,7 +896,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
           
           // Create user message with product context
           const newUserMessage: Message = {
-            id: Date.now(),
+            id: userMessageId,
             text: messageToSend,
             sender: 'user',
             timestamp: new Date(),

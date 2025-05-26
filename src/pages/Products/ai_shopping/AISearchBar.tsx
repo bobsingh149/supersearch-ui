@@ -38,6 +38,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import AddCommentIcon from '@mui/icons-material/AddComment';
 import StreamIcon from '@mui/icons-material/Stream';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { keyframes } from '@mui/material/styles';
 import { useSearch, SearchResultItem } from '../../../hooks/useSearch';
 import ReactMarkdown from 'react-markdown';
@@ -173,6 +174,11 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
   // Add state for mobile menu
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState<null | HTMLElement>(null);
   const isMobileMenuOpen = Boolean(mobileMenuAnchor);
+
+  // Add state to track scroll behavior
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [lastMessageCount, setLastMessageCount] = useState(0);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const navigate = useNavigate();
 
@@ -315,14 +321,44 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
     }
   };
 
+  // Check if user is near bottom of chat
+  const isNearBottom = () => {
+    if (!chatContainerRef.current) return true;
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    const threshold = 100; // pixels from bottom
+    return scrollHeight - scrollTop - clientHeight < threshold;
+  };
+
   // Scroll to bottom of chat
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Handle scroll events to detect if user scrolled up
+  const handleScroll = () => {
+    setShouldAutoScroll(isNearBottom());
+  };
+
+  // Smart scroll logic - only scroll when appropriate
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    const messageCountChanged = messages.length !== lastMessageCount;
+    
+    if (messageCountChanged) {
+      // New message added - always scroll if we should auto-scroll
+      if (shouldAutoScroll) {
+        scrollToBottom();
+      }
+      setLastMessageCount(messages.length);
+    } else if (shouldAutoScroll && isStreamMode) {
+      // During streaming, only scroll if user is very close to bottom and message is complete
+      // Check if the last message is no longer typing (streaming complete)
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage && !lastMessage.isTyping && isNearBottom()) {
+        // Use gentle auto scroll for completed streaming messages
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+      }
+    }
+  }, [messages, shouldAutoScroll, lastMessageCount, isStreamMode]);
 
   // Function to fetch product details by ID
   const fetchProductDetails = async (productId: string): Promise<SelectedProduct | null> => {
@@ -392,6 +428,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
     }
     // Load the product details when opening chat
     loadSelectedProducts(productIds);
+    setShouldAutoScroll(true);
     setIsChatOpen(true);
   };
 
@@ -406,6 +443,8 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
     setCurrentMessage('');
     setSelectedProducts([]);
     setConversationId(generateConversationId());
+    setShouldAutoScroll(true);
+    setLastMessageCount(0);
   };
 
   // Streaming response handler
@@ -1540,27 +1579,31 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
               height: '100%'
             }}>
               {/* Chat messages area */}
-              <Box sx={{ 
-                flexGrow: 1, 
-                p: { xs: 1.5, sm: 2 }, 
-                overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
-                '&::-webkit-scrollbar': {
-                  width: '6px',
-                },
-                '&::-webkit-scrollbar-track': {
-                  background: 'transparent',
-                },
-                '&::-webkit-scrollbar-thumb': {
-                  background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
-                  borderRadius: '3px',
-                },
-                '&::-webkit-scrollbar-thumb:hover': {
-                  background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
-                }
-              }}>
+              <Box 
+                ref={chatContainerRef}
+                onScroll={handleScroll}
+                sx={{ 
+                  flexGrow: 1, 
+                  p: { xs: 1.5, sm: 2 }, 
+                  overflowY: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2,
+                  position: 'relative',
+                  '&::-webkit-scrollbar': {
+                    width: '6px',
+                  },
+                  '&::-webkit-scrollbar-track': {
+                    background: 'transparent',
+                  },
+                  '&::-webkit-scrollbar-thumb': {
+                    background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                    borderRadius: '3px',
+                  },
+                  '&::-webkit-scrollbar-thumb:hover': {
+                    background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+                  }
+                }}>
                 {messages.length === 0 ? (
                   <Box sx={{ 
                     display: 'flex', 
@@ -1953,6 +1996,42 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                     </Box>
                   ))
                 )}
+                
+                {/* Floating scroll to bottom button */}
+                {!shouldAutoScroll && messages.length > 0 && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      bottom: 16,
+                      right: 16,
+                      zIndex: 10
+                    }}
+                  >
+                    <IconButton
+                      onClick={() => {
+                        setShouldAutoScroll(true);
+                        scrollToBottom();
+                      }}
+                      sx={{
+                        bgcolor: 'primary.main',
+                        color: 'white',
+                        boxShadow: 2,
+                        '&:hover': {
+                          bgcolor: 'primary.dark',
+                          boxShadow: 4
+                        },
+                        animation: 'fadeIn 0.3s ease-in-out',
+                        '@keyframes fadeIn': {
+                          from: { opacity: 0, transform: 'scale(0.8)' },
+                          to: { opacity: 1, transform: 'scale(1)' }
+                        }
+                      }}
+                    >
+                      <KeyboardArrowDownIcon />
+                    </IconButton>
+                  </Box>
+                )}
+                
                 <div ref={messagesEndRef} />
               </Box>
               

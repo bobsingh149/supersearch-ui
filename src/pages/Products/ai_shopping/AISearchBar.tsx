@@ -1705,20 +1705,13 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                           {/* AI Text Response - Render First */}
                           <Box
                             sx={{
-                              display: 'flex',
-                              justifyContent: 'flex-start',
-                              mb: 2
+                              pl: { xs: 0, sm: 2 },
+                              mb: 3
                             }}
                           >
-                            <Paper
-                              elevation={1}
+                            <Box
                               sx={{
-                                p: { xs: 1.5, sm: 2 },
                                 maxWidth: { xs: '90%', sm: '80%' },
-                                borderRadius: '18px 18px 18px 4px',
-                                bgcolor: theme.palette.mode === 'dark' 
-                                  ? 'rgba(255,255,255,0.08)' 
-                                  : 'rgba(0,0,0,0.04)',
                                 color: 'text.primary',
                                 '& a': {
                                   color: theme.palette.primary.main,
@@ -1734,6 +1727,13 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                                   bgcolor: alpha(theme.palette.divider, 0.2),
                                   p: 0.5,
                                   borderRadius: 0.5
+                                },
+                                '& p': {
+                                  margin: 0,
+                                  marginBottom: 1
+                                },
+                                '& p:last-child': {
+                                  marginBottom: 0
                                 }
                               }}
                             >
@@ -1747,7 +1747,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                                 {message.text}
                               </ReactMarkdown>
                               {message.isTyping && <TypingIndicator />}
-                            </Paper>
+                            </Box>
                           </Box>
 
                           {/* Suggested Products - Render Second */}

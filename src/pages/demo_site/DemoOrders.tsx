@@ -799,7 +799,7 @@ const DemoOrders: React.FC = () => {
           }}
         >
           <Typography variant="body2" color="text.secondary">
-            © {new Date().getFullYear()} SuperShop Demo. All rights reserved.
+            © {new Date().getFullYear()} CogniShop Demo. All rights reserved.
           </Typography>
           <Typography variant="caption" color="text.disabled" sx={{ mt: 1, display: 'block' }}>
             This is a demo site. No real purchases can be made.

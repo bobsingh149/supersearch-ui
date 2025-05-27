@@ -834,7 +834,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
       alignItems: 'center',
       gap: 0.5,
       pb: { 
-        xs: 'calc(100vh - 360px)', // Mobile: full height minus header/input areas
+        xs: 'calc(100vh - 380px)', // Mobile: full height minus header/input areas
         md: 'calc(95vh - 360px)'   // Desktop: 95vh minus header/input areas
       }
     }}>

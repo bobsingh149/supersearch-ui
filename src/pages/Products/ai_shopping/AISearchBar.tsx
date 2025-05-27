@@ -832,7 +832,11 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
     <Box sx={{
       display: 'flex',
       alignItems: 'center',
-      gap: 0.5
+      gap: 0.5,
+      pb: { 
+        xs: 'calc(100vh - 300px)', // Mobile: full height minus header/input areas
+        md: 'calc(95vh - 360px)'   // Desktop: 95vh minus header/input areas
+      }
     }}>
       <Box
         sx={{

@@ -633,7 +633,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                 timestamp: new Date(),
                 isTyping: false,
                 suggestedProducts: data.products || [],
-                suggestedQuestions: data.follow_up_questions || [],
+                suggestedQuestions: data.suggested_user_queries || [],
                 includedProducts: data.products || []
               };
             }
@@ -763,7 +763,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                 timestamp: new Date(),
                 isTyping: false,
                 suggestedProducts: data.products || [],
-                suggestedQuestions: data.follow_up_questions || [],
+                suggestedQuestions: data.suggested_user_queries || [],
                 includedProducts: data.products || []
               };
             }
@@ -1003,7 +1003,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                   timestamp: new Date(),
                   isTyping: false,
                   suggestedProducts: data.products || [],
-                  suggestedQuestions: data.follow_up_questions || [],
+                  suggestedQuestions: data.suggested_user_queries || [],
                   includedProducts: data.products || []
                 };
               }

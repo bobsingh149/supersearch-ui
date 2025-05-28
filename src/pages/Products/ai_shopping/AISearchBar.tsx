@@ -180,6 +180,18 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
   const [lastMessageCount, setLastMessageCount] = useState(0);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
+  // Add refs and state for dynamic height calculation
+  const dialogTitleRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLDivElement>(null);
+  const productContextRef = useRef<HTMLDivElement>(null);
+  const lastUserMessageRef = useRef<HTMLDivElement>(null);
+  const [dynamicHeights, setDynamicHeights] = useState({
+    dialogTitle: 64, // Default fallback values
+    chatInput: 80,
+    productContext: 0,
+    lastUserMessage: 60
+  });
+
   const navigate = useNavigate();
 
   // Predefined FAQs to show when starting a new chat
@@ -828,63 +840,75 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
   }, [handleKeyDown]);
 
   // Typing indicator component
-  const TypingIndicator = () => (
-    <Box sx={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 0.5,
-      pb: { 
-        xs: 'calc(100vh - 380px)', // Mobile: full height minus header/input areas
-        md: 'calc(95vh - 360px)'   // Desktop: 95vh minus header/input areas
-      }
-    }}>
-      <Box
-        sx={{
-          width: 6,
-          height: 6,
-          borderRadius: '50%',
-          bgcolor: 'primary.main',
-          animation: 'pulse 1s infinite',
-          animationDelay: '0s',
-          '@keyframes pulse': {
-            '0%': { opacity: 0.4 },
-            '50%': { opacity: 1 },
-            '100%': { opacity: 0.4 },
-          },
-        }}
-      />
-      <Box
-        sx={{
-          width: 6,
-          height: 6,
-          borderRadius: '50%',
-          bgcolor: 'primary.main',
-          animation: 'pulse 1s infinite',
-          animationDelay: '0.2s',
-          '@keyframes pulse': {
-            '0%': { opacity: 0.4 },
-            '50%': { opacity: 1 },
-            '100%': { opacity: 0.4 },
-          },
-        }}
-      />
-      <Box
-        sx={{
-          width: 6,
-          height: 6,
-          borderRadius: '50%',
-          bgcolor: 'primary.main',
-          animation: 'pulse 1s infinite',
-          animationDelay: '0.4s',
-          '@keyframes pulse': {
-            '0%': { opacity: 0.4 },
-            '50%': { opacity: 1 },
-            '100%': { opacity: 0.4 },
-          },
-        }}
-      />
-    </Box>
-  );
+  const TypingIndicator = () => {
+    // Calculate total height to subtract based on actual component heights
+    const MINIMUM_TOP_SPACING = 90; // Constant spacing to always maintain from top (48px = 6 * 8px spacing units)
+    const DIALOG_MARGIN = 32; // Desktop margin (16px top + 16px bottom)
+    const totalHeightToSubtract = dynamicHeights.dialogTitle + 
+                                  dynamicHeights.chatInput + 
+                                  dynamicHeights.productContext + 
+                                  dynamicHeights.lastUserMessage + 
+                                  32 + // Chat area padding (16px top + 16px bottom)
+                                  MINIMUM_TOP_SPACING; // Always maintain this minimum spacing from top
+    
+    return (
+      <Box sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.5,
+        pb: { 
+          xs: `calc(100vh - ${totalHeightToSubtract}px)`, // Mobile: full height minus all measured components
+          md: `calc(100vh - ${totalHeightToSubtract + DIALOG_MARGIN}px)`   // Desktop: 100vh minus all measured components and dialog margin
+        }
+      }}>
+        <Box
+          sx={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            bgcolor: 'primary.main',
+            animation: 'pulse 1s infinite',
+            animationDelay: '0s',
+            '@keyframes pulse': {
+              '0%': { opacity: 0.4 },
+              '50%': { opacity: 1 },
+              '100%': { opacity: 0.4 },
+            },
+          }}
+        />
+        <Box
+          sx={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            bgcolor: 'primary.main',
+            animation: 'pulse 1s infinite',
+            animationDelay: '0.2s',
+            '@keyframes pulse': {
+              '0%': { opacity: 0.4 },
+              '50%': { opacity: 1 },
+              '100%': { opacity: 0.4 },
+            },
+          }}
+        />
+        <Box
+          sx={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            bgcolor: 'primary.main',
+            animation: 'pulse 1s infinite',
+            animationDelay: '0.4s',
+            '@keyframes pulse': {
+              '0%': { opacity: 0.4 },
+              '50%': { opacity: 1 },
+              '100%': { opacity: 0.4 },
+            },
+          }}
+        />
+      </Box>
+    );
+  };
 
   // Handle opening AI chat with current query
   const openAiChatWithQuery = () => {
@@ -1056,6 +1080,40 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
       setShowAutocomplete(false); // Close autocomplete when query changes due to navigation
     }
   }, [initialQuery]);
+
+  // Function to calculate dynamic heights
+  const calculateDynamicHeights = useCallback(() => {
+    const dialogTitleHeight = dialogTitleRef.current?.offsetHeight || 64;
+    const chatInputHeight = chatInputRef.current?.offsetHeight || 80;
+    const productContextHeight = productContextRef.current?.offsetHeight || 0;
+    const lastUserMessageHeight = lastUserMessageRef.current?.offsetHeight || 60;
+
+    setDynamicHeights({
+      dialogTitle: dialogTitleHeight,
+      chatInput: chatInputHeight,
+      productContext: productContextHeight,
+      lastUserMessage: lastUserMessageHeight
+    });
+  }, []);
+
+  // Update heights when relevant elements change
+  useEffect(() => {
+    calculateDynamicHeights();
+    
+    // Add resize observer to recalculate on window resize
+    const resizeObserver = new ResizeObserver(() => {
+      calculateDynamicHeights();
+    });
+
+    if (dialogTitleRef.current) resizeObserver.observe(dialogTitleRef.current);
+    if (chatInputRef.current) resizeObserver.observe(chatInputRef.current);
+    if (productContextRef.current) resizeObserver.observe(productContextRef.current);
+    if (lastUserMessageRef.current) resizeObserver.observe(lastUserMessageRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [calculateDynamicHeights, selectedProducts.length, messages.length]);
 
   return (
     <ClickAwayListener onClickAway={handleClickAway}>
@@ -1351,10 +1409,19 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
           maxWidth="xl"
           disableEscapeKeyDown
           fullScreen={isMobile}
+          sx={{
+            '& .MuiDialog-container': {
+              alignItems: { xs: 'center', md: 'flex-start' }, // Align to top on desktop
+            },
+            '& .MuiDialog-paper': {
+              m: { xs: 0, md: 2 }, // Add margin back on desktop (16px)
+              maxHeight: { xs: '100%', md: 'calc(100vh - 32px)' }, // Subtract margin from height (2 * 16px = 32px)
+            }
+          }}
           PaperProps={{
             sx: {
               borderRadius: { xs: 0, md: 2 },
-              height: { xs: '100%', md: '95vh' },
+              height: { xs: '100%', md: 'calc(100vh - 32px)' },
               width: { xs: '100%', md: '95%' },
               maxWidth: '900px',
               display: 'flex',
@@ -1363,15 +1430,17 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
             }
           }}
         >
-          <DialogTitle sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            p: { xs: 1.5, sm: 2 },
-            bgcolor: 'background.paper'
-          }}>
+          <DialogTitle 
+            ref={dialogTitleRef}
+            sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              p: { xs: 1.5, sm: 2 },
+              bgcolor: 'background.paper'
+            }}>
             {/* Left side - New Chat Button */}
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Tooltip title="New conversation" placement="bottom">
@@ -1668,100 +1737,40 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                     </Box>
                   </Box>
                 ) : (
-                  messages.map((message) => (
-                    <Box key={message.id}>
-                      {/* User messages */}
-                      {message.sender === 'user' && (
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            mb: 2
-                          }}
-                        >
-                          <Paper
-                            elevation={0}
-                            sx={{
-                              p: { xs: 1.5, sm: 2 },
-                              maxWidth: { xs: '90%', sm: '80%' },
-                              borderRadius: '18px 18px 4px 18px',
-                              bgcolor: 'primary.main',
-                              color: '#fff',
-                              '& a': {
-                                color: '#fff',
-                                textDecoration: 'none',
-                                fontWeight: 'bold',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  textDecoration: 'underline',
-                                }
-                              },
-                              '& code': {
-                                fontFamily: 'monospace',
-                                bgcolor: 'rgba(255,255,255,0.2)',
-                                p: 0.5,
-                                borderRadius: 0.5
-                              }
-                            }}
-                          >
-                            <Typography variant="body1">{message.text}</Typography>
-                            
-                            {/* Add product context chips to the message bubble */}
-                            {message.includedProducts && message.includedProducts.length > 0 && (
-                              <Box sx={{ 
-                                display: 'flex', 
-                                flexWrap: 'wrap', 
-                                gap: 0.5, 
-                                mt: 1.5,
-                                pt: 1.5,
-                                borderTop: '1px solid',
-                                borderColor: 'rgba(255,255,255,0.2)'
-                              }}>
-                                {message.includedProducts.map(product => (
-                                  <Chip
-                                    key={product.id}
-                                    size="small"
-                                    avatar={
-                                      <Avatar 
-                                        alt={product.title} 
-                                        src={product.image_url || `https://picsum.photos/40/40?random=${product.id}`}
-                                      />
-                                    }
-                                    label={product.title || 'Unknown Product'}
-                                    variant="outlined"
-                                    sx={{ 
-                                      borderRadius: 1.5,
-                                      height: 28,
-                                      border: '1px solid rgba(255,255,255,0.3)',
-                                      color: '#fff',
-                                      '& .MuiChip-avatar': {
-                                        ml: 0.5
-                                      }
-                                    }}
-                                  />
-                                ))}
-                              </Box>
-                            )}
-                          </Paper>
-                        </Box>
-                      )}
-
-                      {/* AI messages - First text response, then suggested products */}
-                      {message.sender === 'ai' && (
-                        <>
-                          {/* AI Text Response - Render First */}
+                  messages.map((message, index) => {
+                    // Check if this is the last user message
+                    // Find the last index of a user message manually (since findLastIndex may not be available)
+                    let lastUserMessageIndex = -1;
+                    for (let i = messages.length - 1; i >= 0; i--) {
+                      if (messages[i].sender === 'user') {
+                        lastUserMessageIndex = i;
+                        break;
+                      }
+                    }
+                    const isLastUserMessage = message.sender === 'user' && index === lastUserMessageIndex;
+                    
+                    return (
+                      <Box key={message.id}>
+                        {/* User messages */}
+                        {message.sender === 'user' && (
                           <Box
+                            ref={isLastUserMessage ? lastUserMessageRef : undefined}
                             sx={{
-                              pl: { xs: 0, sm: 2 },
-                              mb: 3
+                              display: 'flex',
+                              justifyContent: 'flex-end',
+                              mb: 2
                             }}
                           >
-                            <Box
+                            <Paper
+                              elevation={0}
                               sx={{
+                                p: { xs: 1.5, sm: 2 },
                                 maxWidth: { xs: '90%', sm: '80%' },
-                                color: 'text.primary',
+                                borderRadius: '18px 18px 4px 18px',
+                                bgcolor: 'primary.main',
+                                color: '#fff',
                                 '& a': {
-                                  color: theme.palette.primary.main,
+                                  color: '#fff',
                                   textDecoration: 'none',
                                   fontWeight: 'bold',
                                   transition: 'all 0.2s ease',
@@ -1771,234 +1780,308 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                                 },
                                 '& code': {
                                   fontFamily: 'monospace',
-                                  bgcolor: alpha(theme.palette.divider, 0.2),
+                                  bgcolor: 'rgba(255,255,255,0.2)',
                                   p: 0.5,
                                   borderRadius: 0.5
-                                },
-                                '& p': {
-                                  margin: 0,
-                                  marginBottom: 1
-                                },
-                                '& p:last-child': {
-                                  marginBottom: 0
                                 }
                               }}
                             >
-                              <ReactMarkdown
-                                components={{
-                                  a: ({ node, ...props }) => (
-                                    <a target="_blank" rel="noopener noreferrer" {...props} />
-                                  )
-                                }}
-                              >
-                                {message.text}
-                              </ReactMarkdown>
-                              {message.isTyping && <TypingIndicator />}
-                            </Box>
-                          </Box>
-
-                          {/* Suggested Products - Render Second */}
-                          {message.suggestedProducts && message.suggestedProducts.length > 0 && (
-                            <Box sx={{ mt: 1, mb: 3, pl: { xs: 0, sm: 2 } }}>
-                              <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
-                                Referenced Items:
-                              </Typography>
-                              <Grid container spacing={2}>
-                                {message.suggestedProducts.map((product) => (
-                                  <Grid item xs={12} sm={6} md={4} key={product.id}>
-                                    <Card sx={{ 
-                                      display: 'flex',
-                                      flexDirection: 'column',
-                                      height: '100%',
-                                      borderRadius: 2,
-                                      boxShadow: 1,
-                                      transition: 'transform 0.2s',
-                                      '&:hover': {
-                                        transform: 'translateY(-4px)',
-                                        boxShadow: 3
-                                      }
-                                    }}>
-                                      <CardMedia
-                                        component="img"
-                                        height="180"
-                                        image={(product as any).image_url || product.custom_data?.Poster_Url || product.custom_data?.image_url || `https://picsum.photos/400/300?random=${product.id}`}
-                                        alt={product.title || product.custom_data?.Title || 'Product image'}
-                                        sx={{ 
-                                          objectFit: 'contain',
-                                          bgcolor: theme.palette.mode === 'dark' 
-                                            ? 'rgba(255,255,255,0.05)' 
-                                            : 'rgba(0,0,0,0.02)',
-                                          borderBottom: '1px solid',
-                                          borderColor: 'divider'
-                                        }}
-                                      />
-                                      <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
-                                        <Typography variant="subtitle2" component="div" fontWeight="medium" noWrap>
-                                          {product.title || product.custom_data?.Title}
-                                        </Typography>
-                                        
-                                        {/* Release Date & Vote Average */}
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5 }}>
-                                          {product.custom_data?.Release_Date && (
-                                            <Typography variant="caption" color="text.secondary">
-                                              {new Date(product.custom_data.Release_Date).getFullYear()}
-                                            </Typography>
-                                          )}
-                                          
-                                          {product.custom_data?.Vote_Average && (
-                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                              <Rating 
-                                                value={parseFloat(product.custom_data.Vote_Average) / 2} 
-                                                readOnly 
-                                                size="small" 
-                                                precision={0.5}
-                                              />
-                                              <Typography variant="caption" fontWeight="medium" sx={{ ml: 0.5 }}>
-                                                {product.custom_data.Vote_Average}
-                                              </Typography>
-                                            </Box>
-                                          )}
-                                        </Box>
-                                        
-                                        {/* Genre */}
-                                        {product.custom_data?.Genre && (
-                                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, fontStyle: 'italic' }}>
-                                            {product.custom_data.Genre.split(',')[0]}
-                                            {product.custom_data.Genre.split(',').length > 1 ? '...' : ''}
-                                          </Typography>
-                                        )}
-                                        
-                                        <Button 
-                                          variant="contained"
-                                          size="small"
-                                          fullWidth
-                                          sx={{ mt: 1, textTransform: 'none' }}
-                                          onClick={() => {
-                                            // Open product details in a new tab
-                                            window.open(`/demo_site/${product.id}`, '_blank');
-                                          }}
-                                        >
-                                          View Details
-                                        </Button>
-                                      </CardContent>
-                                    </Card>
-                                  </Grid>
-                                ))}
-                              </Grid>
-                            </Box>
-                          )}
-
-                          {/* Suggested Follow-up Questions */}
-                          {message.suggestedQuestions && message.suggestedQuestions.length > 0 && (
-                            <Box sx={{ mt: 1, mb: 3, pl: { xs: 0, sm: 2 } }}>
-                              <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
-                                Suggested Follow-up:
-                              </Typography>
-                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                {message.suggestedQuestions.map((question, index) => {
-                                  // Create a temporary div to parse the markdown and extract plain text
-                                  const tempDiv = document.createElement('div');
-                                  tempDiv.innerHTML = question;
-                                  const plainTextQuestion = tempDiv.textContent || tempDiv.innerText || question;
-                                  
-                                  return (
+                              <Typography variant="body1">{message.text}</Typography>
+                              
+                              {/* Add product context chips to the message bubble */}
+                              {message.includedProducts && message.includedProducts.length > 0 && (
+                                <Box sx={{ 
+                                  display: 'flex', 
+                                  flexWrap: 'wrap', 
+                                  gap: 0.5, 
+                                  mt: 1.5,
+                                  pt: 1.5,
+                                  borderTop: '1px solid',
+                                  borderColor: 'rgba(255,255,255,0.2)'
+                                }}>
+                                  {message.includedProducts.map(product => (
                                     <Chip
-                                      key={index}
-                                      label={
-                                        <Box sx={{ display: 'flex', alignItems: 'center', maxWidth: '300px' }}>
-                                          <ReactMarkdown
-                                            components={{
-                                              p: ({ children }) => <span>{children}</span>,
-                                              strong: ({ children }) => (
-                                                <Typography
-                                                  component="span"
-                                                  variant="body2"
-                                                  sx={{ fontWeight: 'bold', display: 'inline' }}
-                                                >
-                                                  {children}
-                                                </Typography>
-                                              ),
-                                              em: ({ children }) => (
-                                                <Typography
-                                                  component="span"
-                                                  variant="body2"
-                                                  sx={{ fontStyle: 'italic', display: 'inline' }}
-                                                >
-                                                  {children}
-                                                </Typography>
-                                              ),
-                                              code: ({ children }) => (
-                                                <Typography
-                                                  component="span"
-                                                  variant="body2"
-                                                  sx={{
-                                                    fontFamily: 'monospace',
-                                                    bgcolor: alpha(theme.palette.divider, 0.2),
-                                                    px: 0.5,
-                                                    borderRadius: 0.5,
-                                                    display: 'inline'
-                                                  }}
-                                                >
-                                                  {children}
-                                                </Typography>
-                                              ),
-                                              a: ({ href, children }) => (
-                                                <Typography
-                                                  component="a"
-                                                  href={href}
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  variant="body2"
-                                                  sx={{
-                                                    color: 'primary.main',
-                                                    textDecoration: 'none',
-                                                    display: 'inline',
-                                                    fontWeight: 'bold',
-                                                    '&:hover': {
-                                                      textDecoration: 'underline',
-                                                      color: 'primary.main'
-                                                    }
-                                                  }}
-                                                >
-                                                  {children}
-                                                </Typography>
-                                              )
-                                            }}
-                                          >
-                                            {question}
-                                          </ReactMarkdown>
-                                        </Box>
+                                      key={product.id}
+                                      size="small"
+                                      avatar={
+                                        <Avatar 
+                                          alt={product.title} 
+                                          src={product.image_url || `https://picsum.photos/40/40?random=${product.id}`}
+                                        />
                                       }
-                                      clickable
-                                      onClick={() => usePrompt(plainTextQuestion, [])}
-                                      color="primary"
+                                      label={product.title || 'Unknown Product'}
                                       variant="outlined"
-                                      sx={{
-                                        borderRadius: '16px',
-                                        py: 1,
-                                        maxWidth: '100%',
-                                        height: 'auto',
-                                        '& .MuiChip-label': {
-                                          display: 'block',
-                                          whiteSpace: 'normal',
-                                          textOverflow: 'ellipsis',
-                                          overflow: 'hidden',
-                                          textAlign: 'left'
-                                        },
-                                        '&:hover': {
-                                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                      sx={{ 
+                                        borderRadius: 1.5,
+                                        height: 28,
+                                        border: '1px solid rgba(255,255,255,0.3)',
+                                        color: '#fff',
+                                        '& .MuiChip-avatar': {
+                                          ml: 0.5
                                         }
                                       }}
                                     />
-                                  );
-                                })}
+                                  ))}
+                                </Box>
+                              )}
+                            </Paper>
+                          </Box>
+                        )}
+
+                        {/* AI messages - First text response, then suggested products */}
+                        {message.sender === 'ai' && (
+                          <>
+                            {/* AI Text Response - Render First */}
+                            <Box
+                              sx={{
+                                pl: { xs: 0, sm: 2 },
+                                mb: 3
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  maxWidth: { xs: '90%', sm: '80%' },
+                                  color: 'text.primary',
+                                  '& a': {
+                                    color: theme.palette.primary.main,
+                                    textDecoration: 'none',
+                                    fontWeight: 'bold',
+                                    transition: 'all 0.2s ease',
+                                    '&:hover': {
+                                      textDecoration: 'underline',
+                                    }
+                                  },
+                                  '& code': {
+                                    fontFamily: 'monospace',
+                                    bgcolor: alpha(theme.palette.divider, 0.2),
+                                    p: 0.5,
+                                    borderRadius: 0.5
+                                  },
+                                  '& p': {
+                                    margin: 0,
+                                    marginBottom: 1
+                                  },
+                                  '& p:last-child': {
+                                    marginBottom: 0
+                                  }
+                                }}
+                              >
+                                <ReactMarkdown
+                                  components={{
+                                    a: ({ node, ...props }) => (
+                                      <a target="_blank" rel="noopener noreferrer" {...props} />
+                                    )
+                                  }}
+                                >
+                                  {message.text}
+                                </ReactMarkdown>
+                                {message.isTyping && <TypingIndicator />}
                               </Box>
                             </Box>
-                          )}
-                        </>
-                      )}
-                    </Box>
-                  ))
+
+                            {/* Suggested Products - Render Second */}
+                            {message.suggestedProducts && message.suggestedProducts.length > 0 && (
+                              <Box sx={{ mt: 1, mb: 3, pl: { xs: 0, sm: 2 } }}>
+                                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+                                  Referenced Items:
+                                </Typography>
+                                <Grid container spacing={2}>
+                                  {message.suggestedProducts.map((product) => (
+                                    <Grid item xs={12} sm={6} md={4} key={product.id}>
+                                      <Card sx={{ 
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        height: '100%',
+                                        borderRadius: 2,
+                                        boxShadow: 1,
+                                        transition: 'transform 0.2s',
+                                        '&:hover': {
+                                          transform: 'translateY(-4px)',
+                                          boxShadow: 3
+                                        }
+                                      }}>
+                                        <CardMedia
+                                          component="img"
+                                          height="180"
+                                          image={(product as any).image_url || product.custom_data?.Poster_Url || product.custom_data?.image_url || `https://picsum.photos/400/300?random=${product.id}`}
+                                          alt={product.title || product.custom_data?.Title || 'Product image'}
+                                          sx={{ 
+                                            objectFit: 'contain',
+                                            bgcolor: theme.palette.mode === 'dark' 
+                                              ? 'rgba(255,255,255,0.05)' 
+                                              : 'rgba(0,0,0,0.02)',
+                                            borderBottom: '1px solid',
+                                            borderColor: 'divider'
+                                          }}
+                                        />
+                                        <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
+                                          <Typography variant="subtitle2" component="div" fontWeight="medium" noWrap>
+                                            {product.title || product.custom_data?.Title}
+                                          </Typography>
+                                          
+                                          {/* Release Date & Vote Average */}
+                                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5 }}>
+                                            {product.custom_data?.Release_Date && (
+                                              <Typography variant="caption" color="text.secondary">
+                                                {new Date(product.custom_data.Release_Date).getFullYear()}
+                                              </Typography>
+                                            )}
+                                            
+                                            {product.custom_data?.Vote_Average && (
+                                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <Rating 
+                                                  value={parseFloat(product.custom_data.Vote_Average) / 2} 
+                                                  readOnly 
+                                                  size="small" 
+                                                  precision={0.5}
+                                                />
+                                                <Typography variant="caption" fontWeight="medium" sx={{ ml: 0.5 }}>
+                                                  {product.custom_data.Vote_Average}
+                                                </Typography>
+                                              </Box>
+                                            )}
+                                          </Box>
+                                          
+                                          {/* Genre */}
+                                          {product.custom_data?.Genre && (
+                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, fontStyle: 'italic' }}>
+                                              {product.custom_data.Genre.split(',')[0]}
+                                              {product.custom_data.Genre.split(',').length > 1 ? '...' : ''}
+                                            </Typography>
+                                          )}
+                                          
+                                          <Button 
+                                            variant="contained"
+                                            size="small"
+                                            fullWidth
+                                            sx={{ mt: 1, textTransform: 'none' }}
+                                            onClick={() => {
+                                              // Open product details in a new tab
+                                              window.open(`/demo_site/${product.id}`, '_blank');
+                                            }}
+                                          >
+                                            View Details
+                                          </Button>
+                                        </CardContent>
+                                      </Card>
+                                    </Grid>
+                                  ))}
+                                </Grid>
+                              </Box>
+                            )}
+
+                            {/* Suggested Follow-up Questions */}
+                            {message.suggestedQuestions && message.suggestedQuestions.length > 0 && (
+                              <Box sx={{ mt: 1, mb: 3, pl: { xs: 0, sm: 2 } }}>
+                                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+                                  Suggested Follow-up:
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                  {message.suggestedQuestions.map((question, index) => {
+                                    // Create a temporary div to parse the markdown and extract plain text
+                                    const tempDiv = document.createElement('div');
+                                    tempDiv.innerHTML = question;
+                                    const plainTextQuestion = tempDiv.textContent || tempDiv.innerText || question;
+                                    
+                                    return (
+                                      <Chip
+                                        key={index}
+                                        label={
+                                          <Box sx={{ display: 'flex', alignItems: 'center', maxWidth: '300px' }}>
+                                            <ReactMarkdown
+                                              components={{
+                                                p: ({ children }) => <span>{children}</span>,
+                                                strong: ({ children }) => (
+                                                  <Typography
+                                                    component="span"
+                                                    variant="body2"
+                                                    sx={{ fontWeight: 'bold', display: 'inline' }}
+                                                  >
+                                                    {children}
+                                                  </Typography>
+                                                ),
+                                                em: ({ children }) => (
+                                                  <Typography
+                                                    component="span"
+                                                    variant="body2"
+                                                    sx={{ fontStyle: 'italic', display: 'inline' }}
+                                                  >
+                                                    {children}
+                                                  </Typography>
+                                                ),
+                                                code: ({ children }) => (
+                                                  <Typography
+                                                    component="span"
+                                                    variant="body2"
+                                                    sx={{
+                                                      fontFamily: 'monospace',
+                                                      bgcolor: alpha(theme.palette.divider, 0.2),
+                                                      px: 0.5,
+                                                      borderRadius: 0.5,
+                                                      display: 'inline'
+                                                    }}
+                                                  >
+                                                    {children}
+                                                  </Typography>
+                                                ),
+                                                a: ({ href, children }) => (
+                                                  <Typography
+                                                    component="a"
+                                                    href={href}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    variant="body2"
+                                                    sx={{
+                                                      color: 'primary.main',
+                                                      textDecoration: 'none',
+                                                      display: 'inline',
+                                                      fontWeight: 'bold',
+                                                      '&:hover': {
+                                                        textDecoration: 'underline',
+                                                        color: 'primary.main'
+                                                      }
+                                                    }}
+                                                  >
+                                                    {children}
+                                                  </Typography>
+                                                )
+                                              }}
+                                            >
+                                              {question}
+                                            </ReactMarkdown>
+                                          </Box>
+                                        }
+                                        clickable
+                                        onClick={() => usePrompt(plainTextQuestion, [])}
+                                        color="primary"
+                                        variant="outlined"
+                                        sx={{
+                                          borderRadius: '16px',
+                                          py: 1,
+                                          maxWidth: '100%',
+                                          height: 'auto',
+                                          '& .MuiChip-label': {
+                                            display: 'block',
+                                            whiteSpace: 'normal',
+                                            textOverflow: 'ellipsis',
+                                            overflow: 'hidden',
+                                            textAlign: 'left'
+                                          },
+                                          '&:hover': {
+                                            bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                          }
+                                        }}
+                                      />
+                                    );
+                                  })}
+                                </Box>
+                              </Box>
+                            )}
+                          </>
+                        )}
+                      </Box>
+                    );
+                  })
                 )}
                 
                 {/* Floating scroll to bottom button */}
@@ -2040,13 +2123,81 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
               </Box>
               
               {/* Chat input area with Selected Products Display moved ABOVE it */}
-              <Box sx={{ 
-                borderTop: '1px solid',
-                borderColor: 'divider',
-              }}>
+              <Box 
+                ref={chatInputRef}
+                sx={{ 
+                  borderTop: '1px solid',
+                  borderColor: 'divider',
+                }}>
+                {/* Selected Products Display - Now at the top */}
+                {selectedProducts.length > 0 && (
+                  <Box 
+                    ref={productContextRef}
+                    sx={{ 
+                      px: { xs: 1.5, sm: 2 }, // Only horizontal padding, same as input
+                      py: 0.25, // Even more minimal vertical padding
+                      bgcolor: alpha(theme.palette.primary.main, 0.02)
+                    }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexWrap: 'wrap', 
+                      gap: 0.5, // Reduced gap between chips
+                      alignItems: 'center'
+                    }}>
+                      {isLoadingProducts ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <CircularProgress size={16} />
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                            Loading...
+                          </Typography>
+                        </Box>
+                      ) : (
+                        selectedProducts.map(product => (
+                          <Chip
+                            key={product.id}
+                            size="small"
+                            avatar={
+                              <Avatar 
+                                alt={product.title} 
+                                src={product.image_url || `https://picsum.photos/40/40?random=${product.id}`}
+                                sx={{ width: 20, height: 20 }}
+                              />
+                            }
+                            label={product.title || 'Unknown Product'}
+                            onDelete={() => removeProduct(product.id)}
+                            deleteIcon={<CloseIcon sx={{ fontSize: '0.875rem' }} />}
+                            variant="outlined"
+                            sx={{ 
+                              borderRadius: 1,
+                              height: 24, // Much smaller height
+                              fontSize: '0.7rem',
+                              '& .MuiChip-avatar': {
+                                width: 20,
+                                height: 20,
+                                ml: 0.25
+                              },
+                              '& .MuiChip-label': {
+                                px: 0.5,
+                                fontSize: '0.7rem'
+                              },
+                              '& .MuiChip-deleteIcon': {
+                                width: 16,
+                                height: 16,
+                                mr: 0.25
+                              }
+                            }}
+                          />
+                        ))
+                      )}
+                    </Box>
+                  </Box>
+                )}
+                
                 {/* Text input and send button */}
                 <Box sx={{ 
-                  p: { xs: 1.5, sm: 2 }, 
+                  px: { xs: 1.5, sm: 2 }, 
+                  pt: { xs: 0.5, sm: 0.5 }, // Reduced top padding
+                  pb: { xs: 1.5, sm: 2 }, // Keep bottom padding for send button
                   display: 'flex',
                   alignItems: 'center'
                 }}>
@@ -2060,48 +2211,6 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                     maxRows={4}
                     variant="outlined"
                     sx={{ mr: 1 }}
-                    InputProps={{
-                      startAdornment: selectedProducts.length > 0 && (
-                        <Box sx={{ 
-                          display: 'flex', 
-                          flexWrap: 'wrap', 
-                          gap: 0.5, 
-                          p: 0.5,
-                          alignItems: 'center'
-                        }}>
-                          {isLoadingProducts ? (
-                            <CircularProgress size={20} />
-                          ) : (
-                            selectedProducts.map(product => (
-                              <Chip
-                                key={product.id}
-                                size="small"
-                                avatar={
-                                  <Avatar 
-                                    alt={product.title} 
-                                    src={product.image_url || `https://picsum.photos/40/40?random=${product.id}`}
-                                    sx={{ width: 28, height: 28 }}
-                                  />
-                                }
-                                label={product.title || 'Unknown Product'}
-                                onDelete={() => removeProduct(product.id)}
-                                deleteIcon={<CloseIcon fontSize="small" />}
-                                variant="outlined"
-                                sx={{ 
-                                  borderRadius: 1.5,
-                                  height: 32,
-                                  '& .MuiChip-avatar': {
-                                    width: 28,
-                                    height: 28,
-                                    ml: 0.5
-                                  }
-                                }}
-                              />
-                            ))
-                          )}
-                        </Box>
-                      )
-                    }}
                   />
                   <IconButton 
                     color="primary" 

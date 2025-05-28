@@ -2135,14 +2135,15 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                     ref={productContextRef}
                     sx={{ 
                       px: { xs: 1.5, sm: 2 }, // Only horizontal padding, same as input
-                      py: 0.25, // Even more minimal vertical padding
+                      py: 0, // Remove all vertical padding
                       bgcolor: alpha(theme.palette.primary.main, 0.02)
                     }}>
                     <Box sx={{ 
                       display: 'flex', 
                       flexWrap: 'wrap', 
                       gap: 0.5, // Reduced gap between chips
-                      alignItems: 'center'
+                      alignItems: 'center',
+                      py: 0.5 // Move padding to inner box for tighter control
                     }}>
                       {isLoadingProducts ? (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -2196,7 +2197,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                 {/* Text input and send button */}
                 <Box sx={{ 
                   px: { xs: 1.5, sm: 2 }, 
-                  pt: { xs: 0.5, sm: 0.5 }, // Reduced top padding
+                  pt: 0, // Remove top padding completely
                   pb: { xs: 1.5, sm: 2 }, // Keep bottom padding for send button
                   display: 'flex',
                   alignItems: 'center'

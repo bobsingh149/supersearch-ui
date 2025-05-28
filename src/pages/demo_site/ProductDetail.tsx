@@ -191,7 +191,7 @@ const ProductDetail: React.FC = () => {
   }, [productId]);
 
   const handleGoBack = () => {
-    navigate(-1);
+    navigate('/demo_site?contactUs=true');
   };
 
   const handleContactModalOpen = () => {

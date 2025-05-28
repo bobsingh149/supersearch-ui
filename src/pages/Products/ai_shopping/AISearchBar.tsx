@@ -39,6 +39,8 @@ import AddCommentIcon from '@mui/icons-material/AddComment';
 import StreamIcon from '@mui/icons-material/Stream';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { keyframes } from '@mui/material/styles';
 import { useSearch, SearchResultItem } from '../../../hooks/useSearch';
 import ReactMarkdown from 'react-markdown';
@@ -179,6 +181,12 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [lastMessageCount, setLastMessageCount] = useState(0);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Add state for expanded messages
+  const [expandedMessages, setExpandedMessages] = useState<Set<number>>(new Set());
+  
+  // Character limit for user messages
+  const USER_MESSAGE_CHAR_LIMIT = 150;
 
   // Add refs and state for dynamic height calculation
   const dialogTitleRef = useRef<HTMLDivElement>(null);
@@ -457,6 +465,30 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
     setConversationId(generateConversationId());
     setShouldAutoScroll(true);
     setLastMessageCount(0);
+    setExpandedMessages(new Set()); // Reset expanded messages
+  };
+
+  // Helper function to toggle message expansion
+  const toggleMessageExpansion = (messageId: number) => {
+    setExpandedMessages(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(messageId)) {
+        newSet.delete(messageId);
+      } else {
+        newSet.add(messageId);
+      }
+      return newSet;
+    });
+  };
+
+  // Helper function to check if message should be truncated
+  const shouldTruncateMessage = (text: string) => {
+    return text.length > USER_MESSAGE_CHAR_LIMIT;
+  };
+
+  // Helper function to get truncated text
+  const getTruncatedText = (text: string) => {
+    return text.substring(0, USER_MESSAGE_CHAR_LIMIT) + '...';
   };
 
   // Streaming response handler
@@ -1769,6 +1801,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                                 borderRadius: '18px 18px 4px 18px',
                                 bgcolor: 'primary.main',
                                 color: '#fff',
+                                position: 'relative',
                                 '& a': {
                                   color: '#fff',
                                   textDecoration: 'none',
@@ -1786,7 +1819,46 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                                 }
                               }}
                             >
-                              <Typography variant="body1">{message.text}</Typography>
+                              {/* Message text with truncation logic */}
+                              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                <Typography 
+                                  variant="body1" 
+                                  sx={{ 
+                                    flexGrow: 1,
+                                    wordBreak: 'break-word',
+                                    whiteSpace: 'pre-wrap'
+                                  }}
+                                >
+                                  {shouldTruncateMessage(message.text) && !expandedMessages.has(message.id)
+                                    ? getTruncatedText(message.text)
+                                    : message.text
+                                  }
+                                </Typography>
+                                
+                                {/* Expand/Collapse button */}
+                                {shouldTruncateMessage(message.text) && (
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => toggleMessageExpansion(message.id)}
+                                    sx={{
+                                      color: 'rgba(255,255,255,0.8)',
+                                      p: 0.25,
+                                      ml: 0.5,
+                                      mt: -0.25,
+                                      '&:hover': {
+                                        color: '#fff',
+                                        bgcolor: 'rgba(255,255,255,0.1)'
+                                      }
+                                    }}
+                                  >
+                                    {expandedMessages.has(message.id) ? (
+                                      <ExpandLessIcon fontSize="small" />
+                                    ) : (
+                                      <ExpandMoreIcon fontSize="small" />
+                                    )}
+                                  </IconButton>
+                                )}
+                              </Box>
                               
                               {/* Add product context chips to the message bubble */}
                               {message.includedProducts && message.includedProducts.length > 0 && (
@@ -2161,7 +2233,6 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                               <Avatar 
                                 alt={product.title} 
                                 src={product.image_url || `https://picsum.photos/40/40?random=${product.id}`}
-                                sx={{ width: 20, height: 20 }}
                               />
                             }
                             label={product.title || 'Unknown Product'}

@@ -1721,7 +1721,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                   }}>
                     <AutoAwesomeIcon sx={{ fontSize: 48, mb: 2, color: 'secondary.main' }} />
                     <Typography variant="h6" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
-                      Welcome to CogniShop Assistant!
+                      CogniShop Shopping Assistant!
                     </Typography>
                     <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1, mb: 3 }}>
                       This demo uses the Kaggle Movies Dataset to showcase our powerful AI search capabilities. 

@@ -1725,7 +1725,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                     </Typography>
                     <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1, mb: 3 }}>
                       This demo uses the Kaggle Movies Dataset to showcase our powerful AI search capabilities. 
-                      Ask about genres, directors, actors, or describe the type of movie you're looking for!
+                      But it also works perfectly with any ecommerce dataset for a complete shopping experience.
                     </Typography>
                     
                     {/* Frequently Asked Questions */}

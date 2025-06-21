@@ -413,9 +413,9 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
       const data = await response.json();
       return {
         id: data.id,
-        title: data.title || data.custom_data?.Title || 'Unknown Product',
-        image_url: data.image_url || data.poster_path || data.custom_data?.Poster_Url || data.custom_data?.image_url,
-        custom_data: data.custom_data
+        title: data.product_name || data.title || 'Unknown Product',
+        image_url: data.image_url || `https://picsum.photos/300/400?random=${data.id}`,
+        custom_data: data
       };
     } catch (error) {
       console.error('Error fetching product details:', error);

@@ -22,8 +22,7 @@ import {
   Container,
   Slider,
   CardActions,
-  useMediaQuery,
-  SelectChangeEvent
+  useMediaQuery
 } from '@mui/material';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -45,8 +44,7 @@ import {
   EcommerceSearchResultItem, 
   FilterCondition,
   FilterOptions,
-  SortOptions,
-  SearchFilters
+  SortOptions
 } from './types/ecommerce';
 
 const EcommerceHome: React.FC = () => {
@@ -79,7 +77,15 @@ const EcommerceHome: React.FC = () => {
   const [sortBy, setSortBy] = useState('popularity');
   const [category, setCategory] = useState('all');
   const [rating, setRating] = useState(0);
-  const [searchFilters, setSearchFilters] = useState<SearchFilters>({});
+  
+  // Track initial filter values to prevent unnecessary API calls
+  const initialFilters = useRef({
+    priceRange: [0, 5000],
+    sortBy: 'popularity',
+    category: 'all',
+    rating: 0
+  });
+
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
   // Ecommerce categories - updated for fashion/apparel
@@ -97,8 +103,10 @@ const EcommerceHome: React.FC = () => {
 
   // Handle FAQ question click
   const handleFAQQuestionClick = (question: string) => {
-    // FAQ functionality can be implemented here
-    console.log('FAQ question clicked:', question);
+    // Open AI assistant with the selected question
+    if (aiSearchBarRef.current) {
+      aiSearchBarRef.current.openAiChatWithMessage(question, []);
+    }
   };
 
   // Reset filters
@@ -109,12 +117,16 @@ const EcommerceHome: React.FC = () => {
     setSortBy('popularity');
   };
 
-  // Effects and handlers
-  useEffect(() => {
-    if (searchQuery) {
-      setCurrentSearchQuery(searchQuery);
+  // Update URL with search query
+  const updateURLWithQuery = useCallback((query: string) => {
+    const newUrl = new URL(window.location.href);
+    if (query.trim()) {
+      newUrl.searchParams.set('q', query.trim());
+    } else {
+      newUrl.searchParams.delete('q');
     }
-  }, [searchQuery]);
+    window.history.pushState({}, '', newUrl.toString());
+  }, []);
 
   // Fetch products function
   const fetchProductsInternal = async (currentPage: number, pageSize: number, query: string = '') => {
@@ -181,13 +193,12 @@ const EcommerceHome: React.FC = () => {
           sort = { field: 'rating_count', direction: 'desc' };
       }
       
-      // Set the filters to state for debugging/transparency
+      // Create the filters payload
       const filtersPayload = { filters, sort };
-      setSearchFilters(filtersPayload);
       
       // Fetch products with current page
       const response = await searchProducts({
-        query: query || currentSearchQuery || '',
+        query: query || '',
         page: currentPage,
         size: pageSize,
         filters: filtersPayload
@@ -217,13 +228,13 @@ const EcommerceHome: React.FC = () => {
   useEffect(() => {
     if (isInitialRender.current) {
       isInitialRender.current = false;
+      // Set the current search query from URL if it exists
+      if (searchQuery) {
+        setCurrentSearchQuery(searchQuery);
+      }
       fetchProductsInternal(page, itemsPerPage, searchQuery);
       
-      // If there was a query parameter, let's update the URL to remove it 
-      // after the initial search to keep it clean for subsequent navigation
-    if (searchQuery) {
-        window.history.replaceState(null, '', '/demo_ecommerce');
-      }
+      // Don't clear the URL query parameter - keep it for proper navigation
     }
   }, []);
 
@@ -231,6 +242,8 @@ const EcommerceHome: React.FC = () => {
   useEffect(() => {
     if (!isInitialRender.current) {
       if (page !== previousPage.current || itemsPerPage !== previousItemsPerPage.current) {
+        // Update URL to maintain current search query
+        updateURLWithQuery(currentSearchQuery);
         fetchProductsInternal(page, itemsPerPage, currentSearchQuery);
         previousPage.current = page;
         previousItemsPerPage.current = itemsPerPage;
@@ -241,18 +254,24 @@ const EcommerceHome: React.FC = () => {
   // Apply filters when filter criteria change
   useEffect(() => {
     if (!isInitialRender.current) {
-      fetchProductsInternal(1, itemsPerPage, currentSearchQuery);
-      setPage(1);
+      // Check if any filter has actually changed from initial values
+      const hasFilterChanged = 
+        category !== initialFilters.current.category ||
+        rating !== initialFilters.current.rating ||
+        sortBy !== initialFilters.current.sortBy ||
+        priceRange[0] !== initialFilters.current.priceRange[0] ||
+        priceRange[1] !== initialFilters.current.priceRange[1];
+      
+      if (hasFilterChanged) {
+        // Update URL to maintain current search query
+        updateURLWithQuery(currentSearchQuery);
+        fetchProductsInternal(1, itemsPerPage, currentSearchQuery);
+        setPage(1);
+      }
     }
   }, [category, priceRange, rating, sortBy]);
 
-  // Search query changes
-  useEffect(() => {
-    if (!isInitialRender.current && currentSearchQuery !== searchQuery) {
-      fetchProductsInternal(1, itemsPerPage, currentSearchQuery);
-      setPage(1);
-    }
-  }, [currentSearchQuery]);
+
 
   // Handle contact modal
   useEffect(() => {
@@ -291,15 +310,7 @@ const EcommerceHome: React.FC = () => {
     }
   };
 
-  const handlePageSizeChange = (event: SelectChangeEvent<number>) => {
-    const newPageSize = Number(event.target.value);
-    // When changing page size, adjust the current page to maintain the start position
-    const currentStartIndex = (page - 1) * itemsPerPage; 
-    const newPage = Math.floor(currentStartIndex / newPageSize) + 1;
-    
-    setItemsPerPage(newPageSize);
-    setPage(newPage);
-  };
+
 
   // Get product price
   const getProductPrice = (product: EcommerceSearchResultItem) => {
@@ -348,13 +359,15 @@ const EcommerceHome: React.FC = () => {
               
               // Get search query directly from the AISearchBar
               const newQuery = aiSearchBarRef.current?.getSearchQuery() || '';
-              if (newQuery) {
-                setCurrentSearchQuery(newQuery);
-                // Reset to page 1 when performing a new search
-                setPage(1);
-                // Fetch products with the new query
-                fetchProductsInternal(1, itemsPerPage, newQuery);
-              }
+              
+              // Update URL with the new query
+              updateURLWithQuery(newQuery);
+              
+              setCurrentSearchQuery(newQuery);
+              // Reset to page 1 when performing a new search
+              setPage(1);
+              // Fetch products with the new query
+              fetchProductsInternal(1, itemsPerPage, newQuery);
             }}
           />
 

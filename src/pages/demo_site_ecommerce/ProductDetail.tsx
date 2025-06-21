@@ -782,7 +782,7 @@ const ProductDetail: React.FC = () => {
             <Button
               variant="text"
               startIcon={<ArrowBackIcon />}
-              onClick={() => navigate('/demo_ecommerce')}
+              onClick={() => navigate(-1)}
               sx={{
                 color: 'text.secondary',
                 textTransform: 'none',
@@ -796,7 +796,7 @@ const ProductDetail: React.FC = () => {
                 }
               }}
             >
-              Back to Shop
+              Back
             </Button>
           </Box>
 

@@ -963,6 +963,7 @@ const DemoEcommerce: React.FC = () => {
                 setData={setSearchResults}
                 initialQuery={searchQuery}
                 ref={aiSearchBarRef}
+                autoFocus={true}
                 onSearch={() => {
                   // Get search query directly from the AISearchBar
                   const newQuery = aiSearchBarRef.current?.getSearchQuery() || '';
@@ -1051,6 +1052,7 @@ const DemoEcommerce: React.FC = () => {
               setData={setSearchResults}
               initialQuery={searchQuery}
               ref={mobileSearchRef}
+              autoFocus={true}
               onSearch={() => {
                 // Get search query directly from the AISearchBar
                 const newQuery = mobileSearchRef.current?.getSearchQuery() || '';

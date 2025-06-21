@@ -5,20 +5,21 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { getTheme } from './theme/theme';
 
 
-// import { ClerkProvider, SignedIn, SignedOut, SignIn } from '@clerk/clerk-react';
-// import { dark } from '@clerk/themes';
-// import Layout from './components/layout/Layout';
+import { ClerkProvider, SignedIn, SignedOut, SignIn } from '@clerk/clerk-react';
+import { dark } from '@clerk/themes';
+import Layout from './components/layout/Layout';
 
 
 // Import pages
-// import Dashboard from './pages/Dashboard/Dashboard';
-// import Search from './pages/Products/Search';
-// import Recommend from './pages/Products/Recommend';
-// import AiShopping from './pages/Products/AiShopping';
-// import DataSources from './pages/Data/DataSources';
-// import GetStarted from './pages/Utility/GetStarted';
-// import Settings from './pages/Utility/Settings';
+import Dashboard from './pages/Dashboard/Dashboard';
+import Search from './pages/Products/Search';
+import Recommend from './pages/Products/Recommend';
+import AiShopping from './pages/Products/AiShopping';
+import DataSources from './pages/Data/DataSources';
+import GetStarted from './pages/Utility/GetStarted';
+import Settings from './pages/Utility/Settings';
 import DemoSiteIndex from './pages/demo_site';
+import EcommerceDemoIndex from './pages/demo_site_ecommerce';
 
 // Create theme context
 export const ThemeContext = createContext<{
@@ -30,19 +31,19 @@ export const ThemeContext = createContext<{
 });
 
 // Replace with your Clerk publishable key
-// const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
-// // SignIn Page Component
-// const SignInPage = () => (
-//   <div style={{
-//     position: 'absolute',
-//     top: '50%',
-//     left: '50%',
-//     transform: 'translate(-50%, -50%)'
-//   }}>
-//     <SignIn />
-//   </div>
-// );
+// SignIn Page Component
+const SignInPage = () => (
+  <div style={{
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)'
+  }}>
+    <SignIn />
+  </div>
+);
 
 function App() {
   const [mode, setMode] = useState<'light' | 'dark'>(() => {
@@ -75,10 +76,13 @@ function App() {
             {/* Demo site route - unprotected and outside of ClerkProvider */}
             <Route path="/demo_site/*" element={<DemoSiteIndex />} />
             
-            {/* Temporary route to direct all paths to DemoSiteIndex while protected routes are not ready */}
-            <Route path="/*" element={<Navigate to="/demo_site" replace />} />
+            {/* Ecommerce demo site route */}
+            <Route path="/demo_ecommerce/*" element={<EcommerceDemoIndex />} />
             
-            {/* Protected routes inside ClerkProvider - temporarily disabled 
+            {/* Temporary route to direct all paths to DemoSiteIndex while protected routes are not ready */}
+            {/* <Route path="/*" element={<Navigate to="/demo_site" replace />} /> */}
+            
+            Protected routes inside ClerkProvider - temporarily disabled 
             <Route
               path="/*"
               element={
@@ -130,7 +134,7 @@ function App() {
                 </ClerkProvider>
               }
             />
-            */}
+           
           </Routes>
         </Router>
       </ThemeProvider>

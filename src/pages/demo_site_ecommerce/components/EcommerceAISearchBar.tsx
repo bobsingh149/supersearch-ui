@@ -42,7 +42,8 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { keyframes } from '@mui/material/styles';
-import { useSearch, SearchResultItem } from '../../../hooks/useSearch';
+import { useSearch } from '../../../hooks/useSearch';
+import { EcommerceSearchResultItem } from '../types/ecommerce';
 import ReactMarkdown from 'react-markdown';
 import config from '../../../config';
 
@@ -52,16 +53,15 @@ import Switch from '@mui/material/Switch';
 // Add FormControlLabel back for switch label
 import FormControlLabel from '@mui/material/FormControlLabel';
 
-// Animation for gradient border
-const gradientAnimation = keyframes`
-  0% {
-    background-position: 0% 50%;
+// Simple keyframes for basic animations
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
   }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 `;
 
@@ -139,7 +139,7 @@ export interface AISearchBarRef {
 }
 
 interface AISearchBarProps {
-  setData?: (data: SearchResultItem[]) => void;
+  setData?: (data: EcommerceSearchResultItem[]) => void;
   onSearch?: () => void;
   initialQuery?: string;
 }
@@ -204,8 +204,8 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
 
   // Predefined FAQs to show when starting a new chat
   const faqs = [
-    "Summarize The Dark Knight's reviews",
-    "Can you recommend movies similar to Inception?",
+    "What are the most comfortable running shoes for beginners?",
+    "Can you recommend premium fashion brands?",
     "What's the update on my latest order?",
   ];
 
@@ -246,7 +246,17 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
         
         // Only call setData if it's provided
         if (setData) {
-          setData(response.results);
+          // Transform the response to match ecommerce interface
+          const ecommerceResults: EcommerceSearchResultItem[] = response.results.map(item => ({
+            id: item.id,
+            title: item.title,
+            image_url: item.image_url,
+            custom_data: item.custom_data as unknown as EcommerceSearchResultItem['custom_data'],
+            searchable_content: item.searchable_content,
+            score: item.score,
+            search_type: item.search_type
+          }));
+          setData(ecommerceResults);
         }
       } catch (error) {
         console.error('Error performing search:', error);
@@ -313,8 +323,8 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
 
   // Handle selecting an autocomplete suggestion
   const handleAutocompleteSelect = (result: AutocompleteResult) => {
-    // Navigate to product detail page instead of performing search
-    navigate(`/demo_site/${result.data.id}`);
+    // Navigate to ecommerce product detail page instead of demo_site
+    navigate(`/demo_ecommerce/${result.data.id}`);
     setShowAutocomplete(false);
   };
 
@@ -1152,25 +1162,11 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
       <Box sx={{
         position: 'relative',
         width: '100%',
-        my: { xs: 2.5, sm: 2 }, // Increased vertical margin for mobile (from 2 to 2.5)
+        my: { xs: 2, sm: 2 },
         zIndex: 10,
+        maxWidth: { xs: '100%', sm: '1000px', md: '1200px' },
+        mx: 'auto',
       }}>
-        {/* Animated gradient border wrapper */}
-        <Box 
-          sx={{
-            position: 'absolute',
-            top: -2,
-            left: -2,
-            right: -2,
-            bottom: -2,
-            borderRadius: '12px',
-            background: theme => `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main}, ${theme.palette.primary.main})`,
-            backgroundSize: '200% 200%',
-            animation: `${gradientAnimation} 3s ease infinite`,
-            zIndex: 0,
-            opacity: 0.8,
-          }}
-        />
         <Box ref={searchInputRef}>
           <TextField
             fullWidth
@@ -1183,34 +1179,97 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                 setShowAutocomplete(true);
               }
             }}
+            autoFocus
             variant="outlined"
             sx={{
-              position: 'relative',
-              zIndex: 1,
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
-                height: 46,
-                transition: 'all 0.3s',
-                backgroundColor: theme => theme.palette.background.paper,
+                height: { xs: 48, sm: 52 },
+                backgroundColor: 'background.paper',
+                position: 'relative',
+                overflow: 'hidden',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: '-100%',
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+                  animation: 'shimmer 3s infinite',
+                  zIndex: 1,
+                  pointerEvents: 'none',
+                },
                 '& fieldset': {
-                  border: 'none'
+                  borderWidth: 2,
+                  borderColor: alpha(theme.palette.divider, 0.7),
+                  transition: 'all 0.3s ease',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'primary.main',
+                  borderWidth: 2,
+                  boxShadow: `0 0 0 1px rgba(25, 118, 210, 0.2)`,
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: 'primary.main',
+                  borderWidth: 2.5,
+                  boxShadow: `0 0 0 2px rgba(25, 118, 210, 0.1)`,
+                },
+                '& .MuiInputBase-input': {
+                  position: 'relative',
+                  zIndex: 2,
+                  '&::placeholder': {
+                    background: 'linear-gradient(45deg, #4f46e5, #7c3aed, #4f46e5)',
+                    backgroundSize: '200% 200%',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    color: 'transparent',
+                    animation: 'gradientShift 3s ease-in-out infinite',
+                    fontWeight: 600,
+                    fontSize: { xs: '0.95rem', sm: '1.05rem' },
+                    opacity: 0.5,
+                  }
+                },
+                '@keyframes shimmer': {
+                  '0%': { left: '-100%' },
+                  '100%': { left: '100%' }
+                },
+                '@keyframes gradientShift': {
+                  '0%, 100%': { backgroundPosition: '0% 50%' },
+                  '50%': { backgroundPosition: '100% 50%' }
                 }
               },
               '& .MuiInputBase-input': {
-                padding: '12px 14px'
+                padding: { xs: '12px 16px', sm: '14px 16px' },
+                fontSize: '1rem',
+                '&::placeholder': {
+                  color: 'text.primary',
+                  opacity: 0.5,
+                }
               }
             }}
             InputProps={{
               endAdornment: (
-                <InputAdornment position="end" sx={{ height: '100%', alignItems: 'center' }}>
+                <InputAdornment position="end" sx={{ 
+                  height: '100%', 
+                  alignItems: 'center',
+                  gap: 0.5,
+                  mr: 0.5
+                }}>
                   <Tooltip title="Search" arrow>
                     <IconButton 
                       onClick={handleSearch} 
                       edge="end"
                       disabled={isSearching}
                       aria-label="Search products"
-                      size="small"
-                      sx={{ mx: 0.5 }}
+                      size="medium"
+                      sx={{ 
+                        mx: 0.5,
+                        color: 'text.secondary',
+                        '&:hover': {
+                          color: 'primary.main',
+                        }
+                      }}
                     >
                       {isSearching ? (
                         <CircularProgress size={20} color="inherit" />
@@ -1219,7 +1278,18 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                       )}
                     </IconButton>
                   </Tooltip>
-                  <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                  
+                  <Divider 
+                    orientation="vertical" 
+                    flexItem 
+                    sx={{ 
+                      mx: 0.5,
+                      my: 1,
+                      borderColor: alpha(theme.palette.divider, 0.5),
+                      borderWidth: 1
+                    }} 
+                  />
+                  
                   <Tooltip 
                     title="Ask the CogniShop AI Assistant" 
                     arrow
@@ -1234,7 +1304,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                         px: isMobile ? 0.75 : 1.5,
                         py: 0.5,
                         ml: 0.5,
-                        mr: 0.5,
+                        mr: isMobile ? 0.5 : 1,
                         color: 'text.secondary',
                         bgcolor: 'transparent',
                         textTransform: 'none',
@@ -1246,28 +1316,26 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                           color: 'secondary.main'
                         },
                         '& .MuiButton-startIcon': {
-                          mr: isMobile ? 0 : 0.5 // No margin on mobile
-                        },
-                        '& .MuiButton-endIcon': {
-                          ml: 0
+                          mr: isMobile ? 0 : 0.5
                         }
                       }}
                     >
                       {!isMobile && "Assistant"}
                     </Button>
                   </Tooltip>
+                  
                   {!isMobile && (
                     <Chip 
-                      label="Ctrl + K"
+                      label="⌘ K"
                       size="small"
                       variant="outlined"
                       sx={{ 
                         height: 24,
-                        fontSize: '0.7rem',
-                        letterSpacing: '0.5px',
+                        fontSize: '0.75rem',
                         color: 'text.secondary',
                         borderColor: 'divider',
-                        mr: 1
+                        ml: 0.5,
+                        mr: 0.5,
                       }}
                     />
                   )}
@@ -1283,20 +1351,39 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
             elevation={3}
             sx={{
               position: 'absolute',
-              zIndex: 10,
+              zIndex: 15,
               width: '100%',
-              mt: 0.5,
-              borderRadius: 1,
-              maxHeight: '400px',
+              mt: 1,
+              borderRadius: 2,
+              maxHeight: { xs: '350px', sm: '450px' },
               overflow: 'hidden',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+              bgcolor: 'background.paper',
               display: 'flex',
-              flexDirection: 'column'
+              flexDirection: 'column',
+              animation: `${fadeIn} 0.2s ease-out`,
             }}
           >
             {isLoadingAutocomplete ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                p: 4,
+                minHeight: 120
+              }}>
                 <CircularProgress size={24} />
+              </Box>
+            ) : autocompleteResults.length === 0 ? (
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                p: 4,
+                minHeight: 120
+              }}>
+                <Typography variant="body2" color="text.secondary">
+                  No products found
+                </Typography>
               </Box>
             ) : (
               <>
@@ -1318,69 +1405,164 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                   }
                 }}>
                   <List disablePadding>
-                    {autocompleteResults.map((result) => (
+                    {autocompleteResults.map((result, index) => (
                       <ListItemButton
                         key={result.data.id}
                         onClick={() => handleAutocompleteSelect(result)}
                         sx={{
                           display: 'flex',
-                          py: 1.5,
-                          borderBottom: '1px solid',
+                          py: 2,
+                          px: 2,
+                          borderBottom: index < autocompleteResults.length - 1 ? '1px solid' : 'none',
                           borderColor: 'divider',
-                          transition: 'all 0.2s',
                           '&:hover': {
-                            bgcolor: alpha(theme.palette.primary.main, 0.08),
-                          },
+                            bgcolor: 'action.hover',
+                          }
                         }}
                       >
-                        <Box sx={{ display: 'flex', width: '100%' }}>
-                          {/* Movie poster */}
-                          <Box sx={{ flexShrink: 0, width: 60, height: 90, mr: 2 }}>
+                        <Box sx={{ display: 'flex', width: '100%', alignItems: 'center' }}>
+                          {/* Product image */}
+                          <Box sx={{ 
+                            flexShrink: 0, 
+                            width: { xs: 60, sm: 64 }, 
+                            height: { xs: 80, sm: 85 }, 
+                            mr: 2,
+                            overflow: 'hidden',
+                            borderRadius: 1,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                          }}>
                             <img
-                              src={result.data.poster_path || `https://picsum.photos/60/90?random=${result.data.id}`}
-                              alt={result.data.title}
+                              src={result.data.image_url || result.data.poster_path || `https://picsum.photos/70/95?random=${result.data.id}`}
+                              alt={result.data.title || result.data.product_name}
                               style={{
                                 width: '100%',
                                 height: '100%',
                                 objectFit: 'cover',
-                                borderRadius: 4,
                               }}
+                              loading="lazy"
                             />
                           </Box>
 
-                          {/* Movie details */}
-                          <Box sx={{ flexGrow: 1 }}>
-                            <Typography variant="subtitle1" fontWeight="medium" noWrap>
-                              {result.data.title}
+                          {/* Product details */}
+                          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                            <Typography 
+                              variant="subtitle1" 
+                              fontWeight="500" 
+                              sx={{ 
+                                fontSize: '0.95rem',
+                                lineHeight: 1.3,
+                                mb: 0.5,
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              {result.data.title || result.data.product_name}
                             </Typography>
 
-                            <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-                              {result.data.release_date && (
-                                <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>
-                                  {new Date(result.data.release_date).getFullYear()}
-                                </Typography>
+                            {/* Brand and Rating Row */}
+                            <Box sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'space-between',
+                              mb: 0.75,
+                              gap: 1
+                            }}>
+                              {result.data.brand && (
+                                <Chip
+                                  label={result.data.brand}
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{ 
+                                    height: 20,
+                                    fontSize: '0.7rem',
+                                  }}
+                                />
                               )}
                               
-                              {result.data.vote_average && (
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              {result.data.average_rating && (
+                                <Box sx={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center',
+                                }}>
                                   <Rating
-                                    value={parseFloat(result.data.vote_average) / 2}
+                                    value={parseFloat(result.data.average_rating)}
                                     readOnly
                                     size="small"
-                                    precision={0.5}
+                                    precision={0.1}
+                                    sx={{ 
+                                      fontSize: '0.9rem',
+                                      mr: 0.5
+                                    }}
                                   />
-                                  <Typography variant="caption" fontWeight="medium" sx={{ ml: 0.5 }}>
-                                    {result.data.vote_average}
+                                  <Typography 
+                                    variant="caption" 
+                                    sx={{ 
+                                      fontSize: '0.7rem'
+                                    }}
+                                  >
+                                    {result.data.average_rating}
                                   </Typography>
                                 </Box>
                               )}
                             </Box>
 
-                            {result.data.genres && (
-                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                                {typeof result.data.genres === 'string' 
-                                  ? result.data.genres.replace(/[\[\]']/g, '').split(',')[0]
-                                  : result.data.genres[0]}
+                            {/* Price Row */}
+                            {(result.data.price || result.data.discounted_price) && (
+                              <Box sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: 1.5,
+                                mb: 0.5
+                              }}>
+                                <Typography 
+                                  variant="body2" 
+                                  fontWeight="700" 
+                                  sx={{ 
+                                    color: 'secondary.main',
+                                    fontSize: { xs: '0.9rem', sm: '1rem' }
+                                  }}
+                                >
+                                  ₹{result.data.discounted_price || result.data.price}
+                                </Typography>
+                                {result.data.discounted_price && result.data.price && parseFloat(result.data.price) > parseFloat(result.data.discounted_price) && (
+                                  <>
+                                    <Typography 
+                                      variant="caption" 
+                                      sx={{ 
+                                        textDecoration: 'line-through', 
+                                        color: 'text.disabled',
+                                        fontSize: '0.8rem'
+                                      }}
+                                    >
+                                      ₹{result.data.price}
+                                    </Typography>
+                                    <Chip
+                                      label={`${Math.round(((parseFloat(result.data.price) - parseFloat(result.data.discounted_price)) / parseFloat(result.data.price)) * 100)}% OFF`}
+                                      size="small"
+                                      color="error"
+                                      sx={{ 
+                                        height: 18,
+                                        fontSize: '0.65rem',
+                                      }}
+                                    />
+                                  </>
+                                )}
+                              </Box>
+                            )}
+
+                            {/* Category */}
+                            {result.data.master_category && (
+                              <Typography 
+                                variant="caption" 
+                                sx={{ 
+                                  color: 'text.secondary',
+                                  fontSize: '0.75rem',
+                                }}
+                              >
+                                {result.data.master_category}
                               </Typography>
                             )}
                           </Box>
@@ -1390,36 +1572,31 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                   </List>
                 </Box>
 
-                {/* Ask AI button - Fixed at bottom */}
+                {/* Ask AI button */}
                 {searchQuery.trim() && (
                   <Box sx={{ 
-                    p: 1.5, 
+                    p: 2, 
                     borderTop: '1px solid',
                     borderColor: 'divider',
                     display: 'flex',
                     justifyContent: 'center',
                     bgcolor: 'background.paper',
-                    position: 'sticky',
-                    bottom: 0,
-                    zIndex: 1,
-                    boxShadow: '0 -2px 10px rgba(0,0,0,0.05)'
                   }}>
                     <Button
                       variant="contained"
                       startIcon={<AutoAwesomeIcon />}
                       onClick={openAiChatWithQuery}
+                      fullWidth
                       sx={{
                         textTransform: 'none',
-                        borderRadius: 2,
+                        borderRadius: 1,
                         px: 2,
                         py: 1,
-                        bgcolor: 'secondary.main',
-                        '&:hover': {
-                          bgcolor: 'secondary.dark',
-                        }
+                        fontSize: '0.875rem',
+                        maxWidth: '300px',
                       }}
                     >
-                      Ask AI about "{searchQuery}"
+                      Ask AI about "{searchQuery.length > 20 ? searchQuery.slice(0, 20) + '...' : searchQuery}"
                     </Button>
                   </Box>
                 )}
@@ -1724,8 +1901,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                       CogniShop Shopping Assistant!
                     </Typography>
                     <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1, mb: 3 }}>
-                      This demo uses the Kaggle Movies Dataset to showcase our powerful AI search capabilities. 
-                      But it also works perfectly with any ecommerce dataset for a complete shopping experience.
+                      Your AI-powered shopping companion. Ask me anything about products, orders, or get personalized recommendations.
                     </Typography>
                     
                     {/* Frequently Asked Questions */}
@@ -1975,8 +2151,8 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                                         <CardMedia
                                           component="img"
                                           height="180"
-                                          image={(product as any).image_url || product.custom_data?.Poster_Url || product.custom_data?.image_url || `https://picsum.photos/400/300?random=${product.id}`}
-                                          alt={product.title || product.custom_data?.Title || 'Product image'}
+                                          image={(product as any).image_url || product.custom_data?.image_url || `https://picsum.photos/400/300?random=${product.id}`}
+                                          alt={product.title || product.custom_data?.product_name || 'Product image'}
                                           sx={{ 
                                             objectFit: 'contain',
                                             bgcolor: theme.palette.mode === 'dark' 
@@ -1988,37 +2164,43 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                                         />
                                         <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
                                           <Typography variant="subtitle2" component="div" fontWeight="medium" noWrap>
-                                            {product.title || product.custom_data?.Title}
+                                            {product.title || product.custom_data?.product_name}
                                           </Typography>
                                           
-                                          {/* Release Date & Vote Average */}
+                                          {/* Brand */}
+                                          {product.custom_data?.brand && (
+                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                                              {product.custom_data.brand}
+                                            </Typography>
+                                          )}
+                                          
+                                          {/* Price & Rating */}
                                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5 }}>
-                                            {product.custom_data?.Release_Date && (
-                                              <Typography variant="caption" color="text.secondary">
-                                                {new Date(product.custom_data.Release_Date).getFullYear()}
+                                            {(product.custom_data?.price || product.custom_data?.discounted_price) && (
+                                              <Typography variant="body2" fontWeight="medium" color="secondary.main">
+                                                ₹{product.custom_data?.discounted_price || product.custom_data?.price}
                                               </Typography>
                                             )}
                                             
-                                            {product.custom_data?.Vote_Average && (
+                                            {product.custom_data?.average_rating && (
                                               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                                 <Rating 
-                                                  value={parseFloat(product.custom_data.Vote_Average) / 2} 
+                                                  value={parseFloat(product.custom_data.average_rating)} 
                                                   readOnly 
                                                   size="small" 
-                                                  precision={0.5}
+                                                  precision={0.1}
                                                 />
                                                 <Typography variant="caption" fontWeight="medium" sx={{ ml: 0.5 }}>
-                                                  {product.custom_data.Vote_Average}
+                                                  {product.custom_data.average_rating}
                                                 </Typography>
                                               </Box>
                                             )}
                                           </Box>
                                           
-                                          {/* Genre */}
-                                          {product.custom_data?.Genre && (
+                                          {/* Category */}
+                                          {product.custom_data?.master_category && (
                                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, fontStyle: 'italic' }}>
-                                              {product.custom_data.Genre.split(',')[0]}
-                                              {product.custom_data.Genre.split(',').length > 1 ? '...' : ''}
+                                              {product.custom_data.master_category}
                                             </Typography>
                                           )}
                                           
@@ -2029,7 +2211,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                                             sx={{ mt: 1, textTransform: 'none' }}
                                             onClick={() => {
                                               // Open product details in a new tab
-                                              window.open(`/demo_site/${product.id}`, '_blank');
+                                              window.open(`/demo_ecommerce/${product.id}`, '_blank');
                                             }}
                                           >
                                             View Details
@@ -2275,7 +2457,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                 }}>
                   <TextField
                     fullWidth
-                    placeholder="Ask about movies..."
+                    placeholder="Ask about products..."
                     value={currentMessage}
                     onChange={(e) => setCurrentMessage(e.target.value)}
                     onKeyPress={handleKeyPress}

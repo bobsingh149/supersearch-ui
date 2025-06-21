@@ -19,26 +19,30 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import SortIcon from '@mui/icons-material/Sort';
 import { ConfigureTabProps } from '../components/types';
 
-// Updated available fields based on the specified movie database columns
+// Updated available fields based on the product database columns
 const availableFields = [
-  { id: 'adult', label: 'Adult' },
-  { id: 'backdrop_path', label: 'Backdrop Path' },
-  { id: 'genres', label: 'Genres' },
   { id: 'id', label: 'ID' },
-  { id: 'imdb_id', label: 'IMDB ID' },
-  { id: 'original_language', label: 'Original Language' },
-  { id: 'overview', label: 'Overview' },
-  { id: 'popularity', label: 'Popularity' },
-  { id: 'poster_path', label: 'Poster Path' },
-  { id: 'release_date', label: 'Release Date' },
-  { id: 'runtime', label: 'Runtime' },
-  { id: 'tagline', label: 'Tagline' },
-  { id: 'title', label: 'Title' },
-  { id: 'vote_average', label: 'Vote Average' },
-  { id: 'vote_count', label: 'Vote Count' },
-  { id: 'actors', label: 'Actors' },
-  { id: 'director', label: 'Director' },
-  { id: 'keywords', label: 'Keywords' }
+  { id: 'product_name', label: 'Product Name' },
+  { id: 'brand', label: 'Brand' },
+  { id: 'price', label: 'Price' },
+  { id: 'discounted_price', label: 'Discounted Price' },
+  { id: 'gender', label: 'Gender' },
+  { id: 'age_group', label: 'Age Group' },
+  { id: 'base_colour', label: 'Base Colour' },
+  { id: 'season', label: 'Season' },
+  { id: 'year', label: 'Year' },
+  { id: 'usage', label: 'Usage' },
+  { id: 'display_categories', label: 'Display Categories' },
+  { id: 'article_type', label: 'Article Type' },
+  { id: 'master_category', label: 'Master Category' },
+  { id: 'sub_category', label: 'Sub Category' },
+  { id: 'image_url', label: 'Image URL' },
+  { id: 'description', label: 'Description' },
+  { id: 'material_care', label: 'Material Care' },
+  { id: 'style_note', label: 'Style Note' },
+  { id: 'available_sizes', label: 'Available Sizes' },
+  { id: 'average_rating', label: 'Average Rating' },
+  { id: 'rating_count', label: 'Rating Count' }
 ];
 
 const ConfigureTab = ({

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AppBar,
@@ -21,9 +21,10 @@ interface GlobalHeaderProps {
   onContactUs: () => void;
   onSearch?: () => void;
   searchRef?: React.RefObject<AISearchBarRef | null>;
+  initialQuery?: string;
 }
 
-const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onContactUs, onSearch, searchRef }) => {
+const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onContactUs, onSearch, searchRef, initialQuery }) => {
   const navigate = useNavigate();
   const theme = useTheme();
 
@@ -97,6 +98,7 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onContactUs, onSearch, sear
           <EcommerceAISearchBar 
             onSearch={handleSearch}
             ref={searchRef}
+            initialQuery={initialQuery}
           />
         </Box>
         
@@ -177,6 +179,7 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onContactUs, onSearch, sear
         <EcommerceAISearchBar 
           onSearch={handleSearch}
           ref={searchRef}
+          initialQuery={initialQuery}
         />
       </Box>
     </AppBar>

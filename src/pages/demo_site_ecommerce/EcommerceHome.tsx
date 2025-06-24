@@ -62,6 +62,7 @@ const EcommerceHome: React.FC = () => {
   const previousItemsPerPage = useRef(itemsPerPage);
   const questionsButtonRef = useRef<HTMLButtonElement>(null);
   const isMobile = useMediaQuery('(max-width:768px)');
+  const isSearchTriggeredByUser = useRef(false);
 
   // Add ref for EcommerceAISearchBar
   const aiSearchBarRef = useRef<AISearchBarRef>(null);
@@ -284,6 +285,42 @@ const EcommerceHome: React.FC = () => {
     }
   }, [shouldOpenContactModal]);
 
+  // Sync search bar with URL parameters when location changes
+  useEffect(() => {
+    // Skip during initial render - let the initial load effect handle it
+    if (isInitialRender.current) {
+      return;
+    }
+    
+    // Skip if this URL change was triggered by user search to avoid loop
+    if (isSearchTriggeredByUser.current) {
+      isSearchTriggeredByUser.current = false;
+      return;
+    }
+    
+    const urlParams = new URLSearchParams(location.search);
+    const urlQuery = urlParams.get('q') || '';
+    
+    // Update search bar if URL query is different from current search query
+    if (urlQuery !== currentSearchQuery) {
+      setCurrentSearchQuery(urlQuery);
+      // Update the search bar's internal state
+      if (aiSearchBarRef.current) {
+        aiSearchBarRef.current.setSearchQuery(urlQuery);
+      }
+      
+      // If there's a URL query, trigger search
+      if (urlQuery.trim()) {
+        fetchProductsInternal(1, itemsPerPage, urlQuery);
+        setPage(1);
+      } else {
+        // If no query, fetch all products
+        fetchProductsInternal(1, itemsPerPage, '');
+        setPage(1);
+      }
+    }
+  }, [location.search, currentSearchQuery, itemsPerPage]);
+
   const handleProductClick = (productId: string) => {
     navigate(`/demo_ecommerce/${productId}`);
   };
@@ -353,6 +390,7 @@ const EcommerceHome: React.FC = () => {
           <GlobalHeader 
             onContactUs={() => setContactModalOpen(true)}
             searchRef={aiSearchBarRef}
+            initialQuery={currentSearchQuery}
             onSearch={() => {
               // Close autocomplete dropdown
               aiSearchBarRef.current?.closeAutocomplete();
@@ -360,14 +398,20 @@ const EcommerceHome: React.FC = () => {
               // Get search query directly from the AISearchBar
               const newQuery = aiSearchBarRef.current?.getSearchQuery() || '';
               
-              // Update URL with the new query
-              updateURLWithQuery(newQuery);
-              
-              setCurrentSearchQuery(newQuery);
-              // Reset to page 1 when performing a new search
-              setPage(1);
-              // Fetch products with the new query
-              fetchProductsInternal(1, itemsPerPage, newQuery);
+              // Only proceed if there's a query
+              if (newQuery.trim()) {
+                // Set flag to indicate this is a user-triggered search
+                isSearchTriggeredByUser.current = true;
+                
+                // Update URL with the new query
+                updateURLWithQuery(newQuery);
+                
+                setCurrentSearchQuery(newQuery);
+                // Reset to page 1 when performing a new search
+                setPage(1);
+                // Fetch products with the new query
+                fetchProductsInternal(1, itemsPerPage, newQuery);
+              }
             }}
           />
 

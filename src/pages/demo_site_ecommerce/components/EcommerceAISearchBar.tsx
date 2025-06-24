@@ -135,6 +135,7 @@ export interface AISearchBarRef {
   sendMessage: (productIds?: string[]) => void;
   openAiChatWithMessage: (message: string, productIds?: string[]) => void;
   getSearchQuery: () => string;
+  setSearchQuery: (query: string) => void;
   closeAutocomplete: () => void;
 }
 
@@ -1112,6 +1113,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
       })();
     },
     getSearchQuery: () => searchQuery,
+    setSearchQuery: (query: string) => setSearchQuery(query),
     closeAutocomplete: () => setShowAutocomplete(false)
   }));
 

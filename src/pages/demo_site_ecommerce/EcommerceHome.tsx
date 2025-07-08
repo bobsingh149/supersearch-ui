@@ -75,6 +75,7 @@ const EcommerceHome: React.FC = () => {
 
   // Filter states - adapted for ecommerce
   const [priceRange, setPriceRange] = useState<number[]>([0, 5000]);
+  const [debouncedPriceRange, setDebouncedPriceRange] = useState<number[]>(priceRange);
   const [sortBy, setSortBy] = useState('popularity');
   const [category, setCategory] = useState('all');
   const [rating, setRating] = useState(0);
@@ -91,8 +92,26 @@ const EcommerceHome: React.FC = () => {
 
   // Ecommerce categories - updated for fashion/apparel
   const allCategories = [
-    'Apparel', 'Footwear', 'Accessories', 'Personal Care', 'Home & Living', 'Sports',
-    'Bags', 'Watches', 'Eyewear', 'Fragrance', 'Innerwear', 'Jewellery'
+    "Apparel Set",
+    "Bags",
+    "Belts",
+    "Bottomwear",
+    "Dress",
+    "Flip Flops",
+    "Free Gifts",
+    "Headwear",
+    "Innerwear",
+    "Sandal",
+    "Saree",
+    "Scarves",
+    "Shoe Accessories",
+    "Shoes",
+    "Socks",
+    "Stoles",
+    "Ties",
+    "Topwear",
+    "Wallets",
+    "Watches"
   ];
 
   // Use the ecommerce theme
@@ -135,15 +154,15 @@ const EcommerceHome: React.FC = () => {
       const filterConditions: FilterCondition[] = [];
       
       // Add price filter (using discounted_price field)
-      if (priceRange[0] > 0 || priceRange[1] < 5000) {
+      if (debouncedPriceRange[0] > 0 || debouncedPriceRange[1] < 5000) {
         filterConditions.push({
           field: 'discounted_price',
-          value: priceRange[0],
+          value: debouncedPriceRange[0],
           operator: 'gte'
         });
         filterConditions.push({
           field: 'discounted_price',
-          value: priceRange[1],
+          value: debouncedPriceRange[1],
           operator: 'lte'
         });
       }
@@ -151,7 +170,7 @@ const EcommerceHome: React.FC = () => {
       // Add category filter
       if (category !== 'all') {
         filterConditions.push({
-          field: 'master_category',
+          field: 'sub_category',
           value: category,
           operator: 'eq'
         });
@@ -239,6 +258,27 @@ const EcommerceHome: React.FC = () => {
     }
   }, []);
 
+  // Debounce price range
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedPriceRange(priceRange);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [priceRange]);
+
+  // Fetch products when filters change
+  useEffect(() => {
+    if (!isInitialRender.current) {
+      // We want to trigger a search when the user changes filters.
+      // We'll reset to page 1 to show the most relevant results.
+      setPage(1); 
+      fetchProductsInternal(1, itemsPerPage, currentSearchQuery);
+    }
+  }, [debouncedPriceRange, category, rating, sortBy]);
+
   // Page and page size changes
   useEffect(() => {
     if (!isInitialRender.current) {
@@ -251,28 +291,6 @@ const EcommerceHome: React.FC = () => {
       }
     }
   }, [page, itemsPerPage]);
-
-  // Apply filters when filter criteria change
-  useEffect(() => {
-    if (!isInitialRender.current) {
-      // Check if any filter has actually changed from initial values
-      const hasFilterChanged = 
-        category !== initialFilters.current.category ||
-        rating !== initialFilters.current.rating ||
-        sortBy !== initialFilters.current.sortBy ||
-        priceRange[0] !== initialFilters.current.priceRange[0] ||
-        priceRange[1] !== initialFilters.current.priceRange[1];
-      
-      if (hasFilterChanged) {
-        // Update URL to maintain current search query
-        updateURLWithQuery(currentSearchQuery);
-        fetchProductsInternal(1, itemsPerPage, currentSearchQuery);
-        setPage(1);
-      }
-    }
-  }, [category, priceRange, rating, sortBy]);
-
-
 
   // Handle contact modal
   useEffect(() => {
@@ -416,7 +434,7 @@ const EcommerceHome: React.FC = () => {
           />
 
           {/* Products Section */}
-          <Container maxWidth="xl" sx={{ flexGrow: 1, pb: 4, pt: { xs: 16, md: 12 } }}>
+          <Container maxWidth="xl" sx={{ flexGrow: 1, pt: { xs: 20, md: 12 } }}>
             <Box sx={{ display: 'flex', gap: 3 }}>
               {/* Filter Sidebar - Desktop */}
               {!isMobile && (
@@ -584,6 +602,126 @@ const EcommerceHome: React.FC = () => {
                 </Paper>
               )}
 
+              {/* Filter Drawer - Mobile */}
+              <Drawer
+                anchor="left"
+                open={isFilterDrawerOpen}
+                onClose={() => setIsFilterDrawerOpen(false)}
+                sx={{ zIndex: theme.zIndex.drawer + 2 }}
+                PaperProps={{
+                  sx: { 
+                    width: 280,
+                    bgcolor: 'background.default',
+                    p: 2
+                  }
+                }}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">Filters</Typography>
+                  <IconButton onClick={() => setIsFilterDrawerOpen(false)}>
+                    <CloseIcon />
+                  </IconButton>
+                </Box>
+                
+                {/* Category Filter */}
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
+                    Category
+                  </Typography>
+                  <FormControl fullWidth size="small">
+                    <Select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                    >
+                      <MenuItem value="all">All Categories</MenuItem>
+                      {allCategories.map((cat) => (
+                        <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
+
+                {/* Price Range Filter */}
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
+                    Price Range
+                  </Typography>
+                  <Slider
+                    value={priceRange}
+                    onChange={(_, newValue) => setPriceRange(newValue as number[])}
+                    valueLabelDisplay="auto"
+                    min={0}
+                    max={5000}
+                    step={50}
+                  />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="caption">₹{priceRange[0]}</Typography>
+                    <Typography variant="caption">₹{priceRange[1]}</Typography>
+                  </Box>
+                </Box>
+
+                {/* Rating Filter */}
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
+                    Minimum Rating
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    {[4, 3, 2, 1, 0].map((stars) => (
+                      <Box
+                        key={stars}
+                        onClick={() => setRating(stars)}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1.5,
+                          p: 1,
+                          borderRadius: 1,
+                          cursor: 'pointer',
+                          bgcolor: rating === stars ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                          '&:hover': {
+                            bgcolor: alpha(theme.palette.primary.main, 0.05)
+                          }
+                        }}
+                      >
+                        <Rating value={stars} readOnly />
+                        <Typography variant="body2">
+                          {stars === 0 ? 'All' : `${stars}+ stars`}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+
+                {/* Sort Options */}
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
+                    Sort By
+                  </Typography>
+                  <FormControl fullWidth size="small">
+                    <Select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                    >
+                      <MenuItem value="popularity">Popularity</MenuItem>
+                      <MenuItem value="price-low">Price: Low to High</MenuItem>
+                      <MenuItem value="price-high">Price: High to Low</MenuItem>
+                      <MenuItem value="rating">Highest Rated</MenuItem>
+                      <MenuItem value="name">Name A-Z</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+
+                <Box sx={{ mt: 'auto', pt: 2 }}>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    onClick={() => setIsFilterDrawerOpen(false)}
+                  >
+                    Apply Filters
+                  </Button>
+                </Box>
+              </Drawer>
+
               {/* Main Content */}
               <Box sx={{ flexGrow: 1 }}>
                 {/* Section Header */}
@@ -670,7 +808,7 @@ const EcommerceHome: React.FC = () => {
 
                 {/* Products Grid */}
                   {!apiLoading && searchResults.length > 0 && (
-                  <Grid container spacing={3}>
+                  <Grid container spacing={3} justifyContent="flex-start">
                       {searchResults.map((product) => {
                   const price = getProductPrice(product);
                   const originalPrice = product.custom_data?.price;
@@ -679,7 +817,7 @@ const EcommerceHome: React.FC = () => {
                   const discount = getDiscountPercentage(product);
 
                   return (
-                    <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
+                    <Grid item xs={6} sm={6} md={4} lg={3} key={product.id}>
                       <Card
                         onClick={() => handleProductClick(product.id)}
                         sx={{
@@ -1031,145 +1169,6 @@ const EcommerceHome: React.FC = () => {
           onQuestionClick={handleFAQQuestionClick}
           anchorEl={questionsButtonRef.current}
         />
-
-        {/* Mobile Filter Drawer */}
-        <Drawer
-          anchor="right"
-          open={isFilterDrawerOpen}
-          onClose={() => setIsFilterDrawerOpen(false)}
-          PaperProps={{
-            sx: {
-              width: 320,
-              p: 3
-            }
-          }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Filters
-            </Typography>
-            <Box>
-              <Button 
-                size="small" 
-                onClick={resetFilters}
-                sx={{ textTransform: 'none', mr: 1 }}
-              >
-                Reset
-              </Button>
-              <IconButton onClick={() => setIsFilterDrawerOpen(false)}>
-                <CloseIcon />
-              </IconButton>
-            </Box>
-          </Box>
-
-          {/* Category Filter */}
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-              Category
-            </Typography>
-            <FormControl fullWidth size="small">
-              <Select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                sx={{ borderRadius: 2 }}
-              >
-                <MenuItem value="all">All Categories</MenuItem>
-                {allCategories.map((cat) => (
-                  <MenuItem key={cat} value={cat}>{cat}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-
-          {/* Price Range Filter */}
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-              Price Range
-            </Typography>
-            <Box sx={{ px: 1 }}>
-              <Slider
-                value={priceRange}
-                onChange={(_, newValue) => setPriceRange(newValue as number[])}
-                valueLabelDisplay="auto"
-                min={0}
-                max={5000}
-                step={50}
-                valueLabelFormat={(value) => `₹${value}`}
-                sx={{ mb: 2 }}
-              />
-              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography variant="body2" color="text.secondary">
-                  ₹{priceRange[0]}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  ₹{priceRange[1]}
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-
-          {/* Rating Filter */}
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-              Minimum Rating
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {[4, 3, 2, 1, 0].map((stars) => (
-                <Box
-                  key={stars}
-                  onClick={() => setRating(stars)}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    p: 1,
-                    borderRadius: 1,
-                    cursor: 'pointer',
-                    bgcolor: rating === stars ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
-                    '&:hover': {
-                      bgcolor: alpha(theme.palette.primary.main, 0.05)
-                    }
-                  }}
-                >
-                  <Rating value={stars} readOnly size="small" />
-                  <Typography variant="body2">
-                    {stars === 0 ? 'All' : `${stars}+ stars`}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          </Box>
-
-          {/* Sort Options */}
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-              Sort By
-            </Typography>
-            <FormControl fullWidth size="small">
-              <Select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                sx={{ borderRadius: 2 }}
-              >
-                <MenuItem value="popularity">Popularity</MenuItem>
-                <MenuItem value="price-low">Price: Low to High</MenuItem>
-                <MenuItem value="price-high">Price: High to Low</MenuItem>
-                <MenuItem value="rating">Highest Rated</MenuItem>
-                <MenuItem value="name">Name A-Z</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-
-          {/* Apply Filters Button */}
-          <Button
-            variant="contained"
-            fullWidth
-            onClick={() => setIsFilterDrawerOpen(false)}
-            sx={{ mt: 2, borderRadius: 2 }}
-          >
-            Apply Filters ({totalResults} products)
-          </Button>
-        </Drawer>
 
         {/* Contact Modal */}
         <ContactUsModal 

@@ -120,9 +120,17 @@ const EcommerceHome: React.FC = () => {
 
   // Handle FAQ question click
   const handleFAQQuestionClick = (question: string) => {
-    // Open AI assistant with the selected question
-    if (aiSearchBarRef.current) {
-      aiSearchBarRef.current.openAiChatWithMessage(question, []);
+    // Check if it's the "Ask AI" option
+    if (question === "Ask AI - Open Assistant to ask any question") {
+      // Open AI assistant without any pre-filled message
+      if (aiSearchBarRef.current) {
+        aiSearchBarRef.current.openAiChat([]);
+      }
+    } else {
+      // Open AI assistant with the selected question
+      if (aiSearchBarRef.current) {
+        aiSearchBarRef.current.openAiChatWithMessage(question, []);
+      }
     }
   };
 

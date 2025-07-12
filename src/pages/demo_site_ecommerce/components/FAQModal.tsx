@@ -36,6 +36,11 @@ const FAQModal: React.FC<FAQModalProps> = ({ open, onClose, onQuestionClick, anc
 
   const faqs = [
     {
+      question: "Ask AI - Open Assistant to ask any question",
+      icon: <AutoAwesomeIcon />,
+      category: "AI Assistant"
+    },
+    {
       question: "What are the most comfortable running shoes for beginners?",
       icon: <TrendingUpIcon />,
       category: "Popular Products"
@@ -97,8 +102,8 @@ const FAQModal: React.FC<FAQModalProps> = ({ open, onClose, onQuestionClick, anc
       }}
       PaperProps={{
         sx: {
-          width: 380,
-          maxHeight: '70vh',
+          width: { xs: 'calc(100vw - 32px)', sm: 380 },
+          maxHeight: { xs: '50vh', sm: '70vh' },
           borderRadius: 3,
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           border: '1px solid',
@@ -155,7 +160,7 @@ const FAQModal: React.FC<FAQModalProps> = ({ open, onClose, onQuestionClick, anc
         </Box>
 
         {/* FAQ List */}
-        <Box sx={{ maxHeight: 'calc(70vh - 140px)', overflow: 'auto' }}>
+        <Box sx={{ maxHeight: { xs: 'calc(50vh - 140px)', sm: 'calc(70vh - 140px)' }, overflow: 'auto' }}>
           <List sx={{ py: 0 }}>
             {faqs.map((faq, index) => (
               <React.Fragment key={index}>

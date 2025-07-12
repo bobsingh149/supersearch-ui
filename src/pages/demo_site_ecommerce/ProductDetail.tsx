@@ -111,6 +111,7 @@ const ProductDetail: React.FC = () => {
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [questionsOpen, setQuestionsOpen] = useState(false);
   const [_selectedQuestion, setSelectedQuestion] = useState<string>('');
+  const [productLoadingError, setProductLoadingError] = useState<string | null>(null);
   
   const questionsButtonRef = useRef<HTMLButtonElement>(null);
   const aiSearchBarRef = useRef<AISearchBarRef>(null);
@@ -158,6 +159,8 @@ const ProductDetail: React.FC = () => {
       if (!productId) return;
       
       try {
+        setProductLoadingError(null);
+        
         // First, fetch the product data
         const productData = await getProductById(productId);
         
@@ -196,6 +199,7 @@ const ProductDetail: React.FC = () => {
         
       } catch (error) {
         console.error('Error fetching product data:', error);
+        setProductLoadingError(error instanceof Error ? error.message : 'Failed to fetch product data');
         setReviewsError(error instanceof Error ? error.message : 'Failed to fetch data');
         setReviewsLoading(false);
       }
@@ -311,7 +315,14 @@ const ProductDetail: React.FC = () => {
     setQuestionsOpen(false);
     
     if (aiSearchBarRef.current && productId) {
-      aiSearchBarRef.current.openAiChatWithMessage(question, [productId]);
+      // Check if it's the "Ask AI" option
+      if (question === "Ask AI - Open Assistant to ask any question") {
+        // Open AI assistant with product context but no pre-filled message
+        aiSearchBarRef.current.openAiChat([productId]);
+      } else {
+        // Open AI assistant with the selected question and product context
+        aiSearchBarRef.current.openAiChatWithMessage(question, [productId]);
+      }
     }
   };
 
@@ -332,8 +343,8 @@ const ProductDetail: React.FC = () => {
               transform: { xs: 'none', md: 'translateY(-50%)' },
               zIndex: 1300,
               width: { xs: 'calc(100% - 32px)', sm: 400 },
-              height: { xs: '400px', sm: 'auto' },
-              maxHeight: { xs: '400px', sm: '450px' },
+              height: { xs: '300px', sm: 'auto' },
+              maxHeight: { xs: '300px', sm: '450px' },
               overflowY: 'auto',
               borderRadius: { xs: 3, sm: 2 },
               p: { xs: 2, sm: 3 },
@@ -382,6 +393,36 @@ const ProductDetail: React.FC = () => {
               </Box>
             ) : (
               <List sx={{ px: 0 }}>
+                {/* Add "Ask AI" option as first item */}
+                <ListItem 
+                  sx={{ 
+                    py: 1.5, 
+                    px: 2,
+                    borderRadius: 1,
+                    mb: 1,
+                    bgcolor: alpha(theme.palette.secondary.main, 0.05),
+                    '&:hover': {
+                      bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                      cursor: 'pointer'
+                    }
+                  }}
+                  onClick={() => handleQuestionClick("Ask AI - Open Assistant to ask any question")}
+                >
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                        <AutoAwesomeIcon fontSize="small" sx={{ color: 'secondary.main', mr: 1, mt: 0.3 }} />
+                        <Box>
+                          <Typography variant="body1" sx={{ fontWeight: 600 }}>Ask AI - Open Assistant to ask any question</Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mt: 0.5, gap: 0.5 }}>
+                            <AutoAwesomeIcon fontSize="inherit" />
+                            AI Assistant
+                          </Typography>
+                        </Box>
+                      </Box>
+                    }
+                  />
+                </ListItem>
                 {questions.map((question, index) => (
                   <ListItem 
                     key={index} 
@@ -591,7 +632,7 @@ const ProductDetail: React.FC = () => {
     );
   }
 
-  if (productByIdError) {
+  if (productByIdError || productLoadingError) {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
@@ -601,6 +642,7 @@ const ProductDetail: React.FC = () => {
         }}>
           <GlobalHeader 
             onContactUs={() => setContactModalOpen(true)}
+            autoFocus={false}
           />
           <Container maxWidth="lg" sx={{ py: 8, pt: 16, textAlign: 'center' }}>
             <Typography variant="h4" gutterBottom>
@@ -761,6 +803,7 @@ const ProductDetail: React.FC = () => {
           onContactUs={() => setContactModalOpen(true)}
           searchRef={desktopSearchRef}
           onSearch={handleSearch}
+          autoFocus={false}
         />
 
         {/* Contact Form Modal */}

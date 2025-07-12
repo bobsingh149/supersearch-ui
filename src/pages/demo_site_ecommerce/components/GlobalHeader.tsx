@@ -22,9 +22,10 @@ interface GlobalHeaderProps {
   onSearch?: () => void;
   searchRef?: React.RefObject<AISearchBarRef | null>;
   initialQuery?: string;
+  autoFocus?: boolean;
 }
 
-const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onContactUs, onSearch, searchRef, initialQuery }) => {
+const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onContactUs, onSearch, searchRef, initialQuery, autoFocus = true }) => {
   const navigate = useNavigate();
   const theme = useTheme();
 
@@ -99,6 +100,7 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onContactUs, onSearch, sear
             onSearch={handleSearch}
             ref={searchRef}
             initialQuery={initialQuery}
+            autoFocus={autoFocus}
           />
         </Box>
         
@@ -180,6 +182,7 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onContactUs, onSearch, sear
           onSearch={handleSearch}
           ref={searchRef}
           initialQuery={initialQuery}
+          autoFocus={autoFocus}
         />
       </Box>
     </AppBar>

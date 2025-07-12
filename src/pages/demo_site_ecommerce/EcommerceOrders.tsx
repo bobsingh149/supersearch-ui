@@ -130,6 +130,7 @@ const EcommerceOrders: React.FC = () => {
           onContactUs={() => setContactModalOpen(true)}
           searchRef={desktopSearchRef}
           onSearch={handleSearch}
+          autoFocus={false}
         />
 
         {/* Contact Form Modal */}

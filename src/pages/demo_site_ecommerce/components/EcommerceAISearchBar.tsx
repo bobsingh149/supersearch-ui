@@ -144,9 +144,10 @@ interface AISearchBarProps {
   setData?: (data: EcommerceSearchResultItem[]) => void;
   onSearch?: () => void;
   initialQuery?: string;
+  autoFocus?: boolean;
 }
 
-const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onSearch, initialQuery = '' }, ref) => {
+const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onSearch, initialQuery = '', autoFocus = true }, ref) => {
   const theme = useTheme();
   const {searchProducts} = useSearch();
   const [searchQuery, setSearchQuery] = useState(initialQuery);
@@ -1179,7 +1180,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                 setShowAutocomplete(true);
               }
             }}
-            autoFocus
+            autoFocus={autoFocus}
             variant="outlined"
             sx={{
               '& .MuiOutlinedInput-root': {

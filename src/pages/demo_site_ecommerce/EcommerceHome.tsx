@@ -68,6 +68,8 @@ const EcommerceHome: React.FC = () => {
   // Add ref for EcommerceAISearchBar
   const aiSearchBarRef = useRef<AISearchBarRef>(null);
 
+  aiSearchBarRef.current?.closeAutocomplete();
+
   // Extract search query from URL if present
   const queryParams = new URLSearchParams(location.search);
   const searchQuery = queryParams.get('q') || '';
@@ -809,7 +811,7 @@ const EcommerceHome: React.FC = () => {
                   const discount = getDiscountPercentage(product);
 
                   return (
-                    <Grid item xs={6} sm={6} md={4} lg={3} key={product.id}>
+                    <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
                       <Card
                         onClick={() => handleProductClick(product.id)}
                         sx={{

@@ -1057,15 +1057,31 @@ const ProductDetail: React.FC = () => {
                           Available Sizes:
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                          {product.custom_data.available_sizes.split(',').map((size: string, index: number) => (
-                            <Chip
-                              key={index}
-                              label={size.trim()}
-                              variant="outlined"
-                              size="small"
-                              sx={{ borderRadius: 1 }}
-                            />
-                          ))}
+                          {(() => {
+                            const sizes = product.custom_data.available_sizes;
+                            // Handle both string and number types
+                            if (typeof sizes === 'string') {
+                              return sizes.split(',').map((size: string, index: number) => (
+                                <Chip
+                                  key={index}
+                                  label={size.trim()}
+                                  variant="outlined"
+                                  size="small"
+                                  sx={{ borderRadius: 1 }}
+                                />
+                              ));
+                            } else if (typeof sizes === 'number') {
+                              return (
+                                <Chip
+                                  label={String(sizes)}
+                                  variant="outlined"
+                                  size="small"
+                                  sx={{ borderRadius: 1 }}
+                                />
+                              );
+                            }
+                            return null;
+                          })()}
                         </Box>
                       </Box>
                     )}

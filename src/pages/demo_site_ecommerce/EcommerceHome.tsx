@@ -201,9 +201,6 @@ const EcommerceHome: React.FC = () => {
         case 'rating':
           sort = { field: 'average_rating', direction: 'desc' };
           break;
-        case 'name':
-          sort = { field: 'product_name', direction: 'asc' };
-          break;
         default:
           sort = { field: 'rating_count', direction: 'desc' };
       }
@@ -592,7 +589,6 @@ const EcommerceHome: React.FC = () => {
                         <MenuItem value="price-low">Price: Low to High</MenuItem>
                         <MenuItem value="price-high">Price: High to Low</MenuItem>
                         <MenuItem value="rating">Highest Rated</MenuItem>
-                        <MenuItem value="name">Name A-Z</MenuItem>
                       </Select>
                     </FormControl>
                   </Box>
@@ -703,7 +699,6 @@ const EcommerceHome: React.FC = () => {
                       <MenuItem value="price-low">Price: Low to High</MenuItem>
                       <MenuItem value="price-high">Price: High to Low</MenuItem>
                       <MenuItem value="rating">Highest Rated</MenuItem>
-                      <MenuItem value="name">Name A-Z</MenuItem>
                     </Select>
                   </FormControl>
                 </Box>

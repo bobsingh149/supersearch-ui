@@ -31,7 +31,7 @@ export const useReviewSummary = () => {
       }
 
       const data = await response.json();
-      setSummary(data.summary);
+      setSummary(data?.summary);
       return data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';

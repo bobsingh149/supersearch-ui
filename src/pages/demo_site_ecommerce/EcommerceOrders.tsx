@@ -15,14 +15,12 @@ import {
   CircularProgress,
   Stack,
   alpha,
-  useTheme,
   IconButton,
   Tooltip,
   Collapse,
   Card,
   CardContent,
   Grid,
-  Divider
 } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -37,8 +35,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ecommerceTheme from './theme/ecommerceTheme';
 import GlobalHeader from './components/GlobalHeader';
 import ContactUsModal from './components/ContactUsModal';
-import EcommerceAISearchBar, { AISearchBarRef } from './components/EcommerceAISearchBar';
-import { useOrdersList, Order } from '../../hooks/useOrdersList';
+import { AISearchBarRef } from './components/EcommerceAISearchBar';
+import { useOrdersList} from '../../hooks/useOrdersList';
 import { useNavigate } from 'react-router-dom';
 
 const getStatusColor = (status: string) => {

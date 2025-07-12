@@ -52,7 +52,7 @@ const EcommerceHome: React.FC = () => {
   const [page, setPage] = useState(1);
   const { loading: apiLoading, searchProducts } = useSearch();
   const [itemsPerPage, setItemsPerPage] = useState(12);
-  const [totalResults, setTotalResults] = useState(0);
+  const [_totalResults, setTotalResults] = useState(0);
   const [hasMore, setHasMore] = useState(false);
 
   const navigate = useNavigate();
@@ -80,13 +80,7 @@ const EcommerceHome: React.FC = () => {
   const [category, setCategory] = useState('all');
   const [rating, setRating] = useState(0);
   
-  // Track initial filter values to prevent unnecessary API calls
-  const initialFilters = useRef({
-    priceRange: [0, 5000],
-    sortBy: 'popularity',
-    category: 'all',
-    rating: 0
-  });
+
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 

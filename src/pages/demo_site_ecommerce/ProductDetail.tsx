@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -14,12 +14,9 @@ import {
   Link,
   Divider,
   Stack,
-  Badge,
-  Tooltip,
   alpha,
   CircularProgress,
   Card,
-  CardContent,
   CardMedia,
   List,
   ListItem,
@@ -55,12 +52,11 @@ import { useProductById } from '../../hooks/useProduct';
 import { useProductQuestions } from '../../hooks/useProductQuestions';
 import { useSimilarProducts } from '../../hooks/useSimilarProducts';
 import { useOrders, OrderRequest } from '../../hooks/useOrders';
-import { EcommerceSearchResultItem, EcommerceCustomData } from './types/ecommerce';
+import { EcommerceCustomData } from './types/ecommerce';
 import ContactUsModal from './components/ContactUsModal';
 import GlobalHeader from './components/GlobalHeader';
 import EcommerceAISearchBar, { AISearchBarRef } from './components/EcommerceAISearchBar';
 import ecommerceTheme from './theme/ecommerceTheme';
-import { ThemeContext } from '../../App';
 import config from '../../config';
 
 // Interfaces for API responses
@@ -113,7 +109,7 @@ const ProductDetail: React.FC = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [questionsOpen, setQuestionsOpen] = useState(false);
-  const [selectedQuestion, setSelectedQuestion] = useState<string>('');
+  const [_selectedQuestion, setSelectedQuestion] = useState<string>('');
   
   const questionsButtonRef = useRef<HTMLButtonElement>(null);
   const aiSearchBarRef = useRef<AISearchBarRef>(null);
@@ -218,7 +214,7 @@ const ProductDetail: React.FC = () => {
   }, [questionsLoading, questions.length, product?.id]); // Use specific values to prevent unnecessary re-renders
 
   // Helper functions
-  const handleApiError = (error: string) => {
+  const handleApiError = (_error: string) => {
     return (
       <Paper 
         elevation={3}

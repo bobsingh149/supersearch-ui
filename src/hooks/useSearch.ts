@@ -96,6 +96,8 @@ export const useSearch = () => {
       if (filters.sort) {
         requestBody.sort = filters.sort;
       }
+
+    
       
       const response = await fetch(
         `${config.apiBaseUrl}/search?${queryParams.toString()}`, 
@@ -105,9 +107,20 @@ export const useSearch = () => {
           body: JSON.stringify(requestBody)
         }
       );
+
+  
+      console.log('************************************************');
+      console.log('response', response);
+      console.log('************************************************');
       
       if (!response.ok) {
         const statusCode = response.status;
+
+        console.log('************************************************');
+        console.log('statusCode', statusCode);
+        console.log('************************************************');
+
+
         setErrorStatusCode(statusCode);
         
         const customError = new Error(`Search API error: ${statusCode} ${response.statusText}`) as SearchError;

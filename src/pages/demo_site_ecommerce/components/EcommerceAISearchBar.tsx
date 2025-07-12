@@ -351,6 +351,13 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
     }
   };
 
+  // Handle mobile keyboard submit (for iOS/Android virtual keyboards)
+  const handleInputSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSearch();
+    setShowAutocomplete(false);
+  };
+
   // Check if user is near bottom of chat
   const isNearBottom = () => {
     if (!chatContainerRef.current) return true;
@@ -1169,19 +1176,20 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
         mx: 'auto',
       }}>
         <Box ref={searchInputRef}>
-          <TextField
-            fullWidth
-            placeholder="Try AI Search - Ask anything!"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={handleSearchKeyPress}
-            onFocus={() => {
-              if (autocompleteResults.length > 0) {
-                setShowAutocomplete(true);
-              }
-            }}
-            autoFocus={autoFocus}
-            variant="outlined"
+          <form onSubmit={handleInputSubmit} style={{ width: '100%' }}>
+            <TextField
+              fullWidth
+              placeholder="Try AI Search - Ask anything!"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={handleSearchKeyPress}
+              onFocus={() => {
+                if (autocompleteResults.length > 0) {
+                  setShowAutocomplete(true);
+                }
+              }}
+              autoFocus={autoFocus}
+              variant="outlined"
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
@@ -1344,6 +1352,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
               )
             }}
           />
+          </form>
         </Box>
 
         {/* Autocomplete dropdown */}

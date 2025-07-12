@@ -68,6 +68,8 @@ const EcommerceHome: React.FC = () => {
   // Add ref for EcommerceAISearchBar
   const aiSearchBarRef = useRef<AISearchBarRef>(null);
 
+  aiSearchBarRef.current?.closeAutocomplete();
+
   // Extract search query from URL if present
   const queryParams = new URLSearchParams(location.search);
   const searchQuery = queryParams.get('q') || '';
@@ -256,9 +258,9 @@ const EcommerceHome: React.FC = () => {
       if (searchQuery) {
         setCurrentSearchQuery(searchQuery);
         // Close autocomplete if we're loading with a search query (redirected from another page)
-        if (aiSearchBarRef.current) {
-          aiSearchBarRef.current.closeAutocomplete();
-        }
+        // if (aiSearchBarRef.current) {
+        //   aiSearchBarRef.current.closeAutocomplete();
+        // }
       }
       fetchProductsInternal(page, itemsPerPage, searchQuery);
       
@@ -326,9 +328,9 @@ const EcommerceHome: React.FC = () => {
     const urlQuery = urlParams.get('q') || '';
     
     // Close autocomplete when redirected with search query
-    if (aiSearchBarRef.current) {
-      aiSearchBarRef.current.closeAutocomplete();
-    }
+    // if (aiSearchBarRef.current) {
+    //   aiSearchBarRef.current.closeAutocomplete();
+    // }
     
     // Update search bar if URL query is different from current search query
     if (urlQuery !== currentSearchQuery) {

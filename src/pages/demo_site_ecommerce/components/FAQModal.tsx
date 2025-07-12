@@ -103,7 +103,7 @@ const FAQModal: React.FC<FAQModalProps> = ({ open, onClose, onQuestionClick, anc
       PaperProps={{
         sx: {
           width: { xs: 'calc(100vw - 32px)', sm: 380 },
-          maxHeight: { xs: '55vh', sm: '70vh' },
+          maxHeight: { xs: '60vh', sm: '70vh' },
           borderRadius: 3,
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           border: '1px solid',
@@ -160,7 +160,7 @@ const FAQModal: React.FC<FAQModalProps> = ({ open, onClose, onQuestionClick, anc
         </Box>
 
         {/* FAQ List */}
-        <Box sx={{ maxHeight: { xs: 'calc(55vh - 140px)', sm: 'calc(70vh - 140px)' }, overflow: 'auto' }}>
+        <Box sx={{ maxHeight: { xs: 'calc(60vh - 140px)', sm: 'calc(70vh - 140px)' }, overflow: 'auto' }}>
           <List sx={{ py: 0 }}>
             {faqs.map((faq, index) => (
               <React.Fragment key={index}>

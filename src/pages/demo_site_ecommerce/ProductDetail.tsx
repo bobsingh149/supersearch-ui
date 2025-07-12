@@ -111,7 +111,6 @@ const ProductDetail: React.FC = () => {
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [questionsOpen, setQuestionsOpen] = useState(false);
   const [_selectedQuestion, setSelectedQuestion] = useState<string>('');
-  const [productLoadingError, setProductLoadingError] = useState<string | null>(null);
   
   const questionsButtonRef = useRef<HTMLButtonElement>(null);
   const aiSearchBarRef = useRef<AISearchBarRef>(null);
@@ -159,8 +158,6 @@ const ProductDetail: React.FC = () => {
       if (!productId) return;
       
       try {
-        setProductLoadingError(null);
-        
         // First, fetch the product data
         const productData = await getProductById(productId);
         
@@ -199,7 +196,6 @@ const ProductDetail: React.FC = () => {
         
       } catch (error) {
         console.error('Error fetching product data:', error);
-        setProductLoadingError(error instanceof Error ? error.message : 'Failed to fetch product data');
         setReviewsError(error instanceof Error ? error.message : 'Failed to fetch data');
         setReviewsLoading(false);
       }
@@ -339,12 +335,12 @@ const ProductDetail: React.FC = () => {
               position: 'fixed',
               right: { xs: 16, sm: 32, md: 100 },
               left: { xs: 16, sm: 'auto' },
-              top: { xs: '18%', sm: '20%', md: questionsButtonRef.current?.getBoundingClientRect().top || 250 },
+              top: { xs: '20%', sm: '20%', md: questionsButtonRef.current?.getBoundingClientRect().top || 250 },
               transform: { xs: 'none', md: 'translateY(-50%)' },
               zIndex: 1300,
               width: { xs: 'calc(100% - 32px)', sm: 400 },
-              height: { xs: '330px', sm: 'auto' },
-              maxHeight: { xs: '330px', sm: '450px' },
+              height: { xs: '350px', sm: 'auto' },
+              maxHeight: { xs: '350px', sm: '450px' },
               overflowY: 'auto',
               borderRadius: { xs: 3, sm: 2 },
               p: { xs: 2, sm: 3 },
@@ -632,7 +628,7 @@ const ProductDetail: React.FC = () => {
     );
   }
 
-  if (productByIdError || productLoadingError) {
+  if (productByIdError) {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
@@ -642,7 +638,6 @@ const ProductDetail: React.FC = () => {
         }}>
           <GlobalHeader 
             onContactUs={() => setContactModalOpen(true)}
-            autoFocus={false}
           />
           <Container maxWidth="lg" sx={{ py: 8, pt: 16, textAlign: 'center' }}>
             <Typography variant="h4" gutterBottom>

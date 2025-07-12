@@ -249,7 +249,6 @@ const EcommerceHome: React.FC = () => {
     }
   };
 
-  aiSearchBarRef.current?.closeAutocomplete();
 
   // Initial load
   useEffect(() => {
@@ -259,13 +258,12 @@ const EcommerceHome: React.FC = () => {
       if (searchQuery) {
         setCurrentSearchQuery(searchQuery);
         // Close autocomplete if we're loading with a search query (redirected from another page)
-        // if (aiSearchBarRef.current) {
-        //   aiSearchBarRef.current.closeAutocomplete();
-        // }
+        if (aiSearchBarRef.current) {
+          aiSearchBarRef.current.closeAutocomplete();
+        }
       }
       fetchProductsInternal(page, itemsPerPage, searchQuery);
       
-      // Don't clear the URL query parameter - keep it for proper navigation
     }
   }, []);
 

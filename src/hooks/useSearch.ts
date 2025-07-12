@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import config from '../config';
+import { getTenantHeadersFromPath } from '../utils/tenantHeaders';
 
 // Type for search result item
 export interface SearchResultItem {
@@ -68,8 +69,8 @@ export const useSearch = () => {
       
       const { query, page = 1, size = 10, filters = {} } = params;
       
-      // Get authentication token
-      const token = 'dummy-auth-token';
+      // Get tenant headers based on current path
+      const headers = getTenantHeadersFromPath(window.location.pathname);
       
       // Build query parameters for pagination
       const queryParams = new URLSearchParams();
@@ -100,11 +101,7 @@ export const useSearch = () => {
         `${config.apiBaseUrl}/search?${queryParams.toString()}`, 
         {
           method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
+          headers,
           body: JSON.stringify(requestBody)
         }
       );

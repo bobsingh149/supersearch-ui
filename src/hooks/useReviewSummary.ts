@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import config from '../config';
+import { getTenantHeadersFromPath } from '../utils/tenantHeaders';
 
 interface ReviewSummary {
   summary: string;
@@ -18,7 +19,12 @@ export const useReviewSummary = () => {
     setError(null);
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.reviews}/${productId}/summary`);
+      // Get tenant headers based on current path
+      const headers = getTenantHeadersFromPath(window.location.pathname);
+      
+      const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.reviews}/${productId}/summary`, {
+        headers
+      });
       
       if (!response.ok) {
         throw new Error(`Failed to fetch review summary: ${response.status}`);

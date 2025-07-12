@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import config from '../config';
+import { getTenantHeadersFromPath } from '../utils/tenantHeaders';
 
 export interface SimilarProduct {
   id: string;
@@ -41,9 +42,12 @@ export const useSimilarProducts = () => {
     setError(null);
     
     try {
+      // Get tenant headers based on current path
+      const headers = getTenantHeadersFromPath(window.location.pathname);
+      
       const url = `${config.apiBaseUrl}${config.apiEndpoints.similarProducts.replace('{product_id}', productId)}?match_count=${matchCount}`;
       
-      const response = await axios.get<SimilarProduct[]>(url);
+      const response = await axios.get<SimilarProduct[]>(url, { headers });
       setSimilarProducts(response.data);
       return response.data;
     } catch (err) {

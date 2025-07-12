@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import config from '../config';
+import { getTenantHeadersFromPath } from '../utils/tenantHeaders';
 
 // Interface for search configuration
 export interface SearchConfig {
@@ -36,16 +37,13 @@ export const useSearchConfig = () => {
       setLoading(true);
       setConfigError(null);
       
-      // Get authentication token
-      const token = 'dummy-auth-token';
+      // Get tenant headers based on current path
+      const headers = getTenantHeadersFromPath(window.location.pathname);
       
       // Get configuration from the settings API
       const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.settings}/SEARCH_CONFIG`, {
         method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers,
       });
       
       if (!response.ok) {
@@ -98,17 +96,13 @@ export const useSearchConfig = () => {
       setSaveSuccess(false);
       setSaveError(null);
       
-      // Get authentication token
-      const token = 'dummy-auth-token';
+      // Get tenant headers based on current path
+      const headers = getTenantHeadersFromPath(window.location.pathname);
       
       // Save configuration using the search config API
       const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.searchConfig}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers,
         body: JSON.stringify(searchConfig),
       });
       

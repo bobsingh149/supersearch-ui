@@ -1,5 +1,6 @@
 import { useState} from 'react';
 import config from '../config';
+import { getTenantHeadersFromPath } from '../utils/tenantHeaders';
 
 interface Review {
   id: string;
@@ -26,10 +27,11 @@ export const useReviews = (): UseReviewsResult => {
     setLoading(true);
     setError(null);
     try {
+      // Get tenant headers based on current path
+      const headers = getTenantHeadersFromPath(window.location.pathname);
+      
       const response = await fetch(`${config.apiBaseUrl}/reviews/?product_id=${productId}`, {
-        headers: {
-          'accept': 'application/json',
-        },
+        headers,
       });
 
       if (!response.ok) {

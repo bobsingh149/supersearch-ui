@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import config from '../config';
 import { OrderItem, Address, PaymentInfo } from './useOrders';
+import { getTenantHeadersFromPath } from '../utils/tenantHeaders';
 
 export interface Order {
   id: string;
@@ -42,8 +43,12 @@ export const useOrdersList = () => {
     setError(null);
     
     try {
+      // Get tenant headers based on current path
+      const headers = getTenantHeadersFromPath(window.location.pathname);
+      
       const response = await axios.get<OrdersResponse>(
         `${config.apiBaseUrl}${config.apiEndpoints.getOrders}`, {
+          headers,
           params: {
             page: currentPage,
             size: currentPageSize

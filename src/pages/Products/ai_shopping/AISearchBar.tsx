@@ -45,6 +45,7 @@ import { keyframes } from '@mui/material/styles';
 import { useSearch, SearchResultItem } from '../../../hooks/useSearch';
 import ReactMarkdown from 'react-markdown';
 import config from '../../../config';
+import { getTenantHeadersFromPath } from '../../../utils/tenantHeaders';
 
 // Replace with Switch import
 import Switch from '@mui/material/Switch';
@@ -267,16 +268,13 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
 
     try {
       setIsLoadingAutocomplete(true);
-      const token = 'dummy-auth-token';
+      
+      // Get tenant headers based on current path
+      const headers = getTenantHeadersFromPath(window.location.pathname);
 
       const response = await fetch(
         `${config.apiBaseUrl}${config.apiEndpoints.autocomplete}?query=${encodeURIComponent(query)}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
+        { headers }
       );
 
       if (!response.ok) {
@@ -385,16 +383,13 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
   const fetchProductDetails = async (productId: string): Promise<SelectedProduct | null> => {
     try {
       setIsLoadingProducts(true);
-      const token = 'dummy-auth-token';
+      
+      // Get tenant headers based on current path
+      const headers = getTenantHeadersFromPath(window.location.pathname);
       
       const response = await fetch(
         `${config.apiBaseUrl}/products/${productId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
+        { headers }
       );
 
       if (!response.ok) {
@@ -628,9 +623,6 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
       setIsChatLoading(true);
       
       try {
-        // Get the authentication token
-        const token = 'dummy-auth-token';
-        
         // Combine passed productIds with any already in the selectedProducts state
         const allProductIds = [...new Set([
           ...productIds,
@@ -645,13 +637,17 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
           stream: isStreamMode // Use stream mode setting
         };
         
+        // Get tenant headers based on current path
+        const headers = getTenantHeadersFromPath(window.location.pathname);
+        // Override Accept header for streaming mode
+        const finalHeaders = {
+          ...headers,
+          'Accept': isStreamMode ? 'text/plain' : 'application/json'
+        };
+        
         const response = await fetch(API_ENDPOINT, {
           method: 'POST',
-          headers: {
-            'Accept': isStreamMode ? 'text/plain' : 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
+          headers: finalHeaders,
           body: JSON.stringify(payload)
         });
         
@@ -758,9 +754,6 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
     // Send the API request
     (async () => {
       try {
-        // Get the authentication token
-        const token = 'dummy-auth-token';
-        
         // Combine passed productIds with any already in the selectedProducts state
         const allProductIds = [...new Set([
           ...productIds,
@@ -775,13 +768,17 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
           stream: isStreamMode // Use stream mode setting
         };
         
+        // Get tenant headers based on current path
+        const headers = getTenantHeadersFromPath(window.location.pathname);
+        // Override Accept header for streaming mode
+        const finalHeaders = {
+          ...headers,
+          'Accept': isStreamMode ? 'text/plain' : 'application/json'
+        };
+        
         const response = await fetch(API_ENDPOINT, {
           method: 'POST',
-          headers: {
-            'Accept': isStreamMode ? 'text/plain' : 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
+          headers: finalHeaders,
           body: JSON.stringify(payload)
         });
         
@@ -1020,9 +1017,6 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
           // Set loading state
           setIsChatLoading(true);
           
-          // Get the authentication token
-          const token = 'dummy-auth-token';
-          
           // Create the request payload with all product IDs
           const payload = {
             query: messageToSend,
@@ -1031,13 +1025,17 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
             stream: isStreamMode // Use stream mode setting
           };
           
+          // Get tenant headers based on current path
+          const headers = getTenantHeadersFromPath(window.location.pathname);
+          // Override Accept header for streaming mode
+          const finalHeaders = {
+            ...headers,
+            'Accept': isStreamMode ? 'text/plain' : 'application/json'
+          };
+          
           const response = await fetch(API_ENDPOINT, {
             method: 'POST',
-            headers: {
-              'Accept': isStreamMode ? 'text/plain' : 'application/json',
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
+            headers: finalHeaders,
             body: JSON.stringify(payload)
           });
           

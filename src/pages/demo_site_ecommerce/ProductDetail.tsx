@@ -58,6 +58,7 @@ import GlobalHeader from './components/GlobalHeader';
 import EcommerceAISearchBar, { AISearchBarRef } from './components/EcommerceAISearchBar';
 import ecommerceTheme from './theme/ecommerceTheme';
 import config from '../../config';
+import { getTenantHeadersFromPath } from '../../utils/tenantHeaders';
 
 // Interfaces for API responses
 interface ReviewSummaryOutput {
@@ -131,15 +132,12 @@ const ProductDetail: React.FC = () => {
   // Fetch reviews and summary from the AI summary API
   const fetchReviewsAndSummary = useCallback(async (productId: string): Promise<GeneratedReviewsOutput | null> => {
     try {
-      const token = 'dummy-auth-token';
+      // Get tenant headers based on current path
+      const headers = getTenantHeadersFromPath(window.location.pathname);
+      
       const response = await fetch(
         `${config.apiBaseUrl}${config.apiEndpoints.reviews}/${productId}/summary`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
+        { headers }
       );
       
       if (!response.ok) {

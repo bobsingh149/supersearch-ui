@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import config from '../config';
+import { getTenantHeadersFromPath } from '../utils/tenantHeaders';
 
 // Movie product interface
 export interface MovieProduct {
@@ -113,15 +114,12 @@ export const useProducts = () => {
       setLoading(true);
       setError(null);
       
-      // Get authentication token
-      const token = 'dummy-auth-token';
+      // Get tenant headers based on current path
+      const headers = getTenantHeadersFromPath(window.location.pathname);
       
       const response = await fetch(`${config.apiBaseUrl}/products?page=${page}&size=${size}`, {
         method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers,
       });
       
       if (!response.ok) {
@@ -156,17 +154,14 @@ export const useProductById = () => {
       setLoading(true);
       setError(null);
       
-      // Get authentication token
-      const token = 'dummy-auth-token';
+      // Get tenant headers based on current path
+      const headers = getTenantHeadersFromPath(window.location.pathname);
       
       const response = await fetch(
         `${config.apiBaseUrl}/products/${productId}`, 
         {
           method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
+          headers,
         }
       );
       

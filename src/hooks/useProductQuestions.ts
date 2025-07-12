@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import axios from 'axios';
 import config from '../config';
+import { getTenantHeadersFromPath } from '../utils/tenantHeaders';
 
 export interface ProductQuestionsResponse {
   questions: string[];
@@ -16,9 +17,13 @@ export const useProductQuestions = () => {
     setError(null);
     
     try {
+      // Get tenant headers based on current path
+      const headers = getTenantHeadersFromPath(window.location.pathname);
+      
       const endpoint = config.apiEndpoints.productQuestions.replace('{product_id}', productId);
       const response = await axios.get<ProductQuestionsResponse>(
-        `${config.apiBaseUrl}${endpoint}`
+        `${config.apiBaseUrl}${endpoint}`,
+        { headers }
       );
       
       setQuestions(response.data.questions);

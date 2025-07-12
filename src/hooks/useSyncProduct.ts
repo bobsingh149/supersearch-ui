@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import config from '../config';
+import { getTenantHeadersFromPath } from '../utils/tenantHeaders';
 
 // Enums matching the backend
 export enum SyncSource {
@@ -140,16 +141,12 @@ export const useSyncProduct = () => {
       setLoading(true);
       setError(null);
       
-      // Get authentication token
-      const token = 'dummy-auth-token';
+      // Get tenant headers based on current path
+      const headers = getTenantHeadersFromPath(window.location.pathname);
       
       const response = await fetch(`${config.apiBaseUrl}/sync-products`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers,
         body: JSON.stringify(input),
       });
       
@@ -173,15 +170,12 @@ export const useSyncProduct = () => {
       setLoading(true);
       setError(null);
       
-      // Get authentication token
-      const token = 'dummy-auth-token';
+      // Get tenant headers based on current path
+      const headers = getTenantHeadersFromPath(window.location.pathname);
       
       const response = await fetch(`${config.apiBaseUrl}/sync-history?page=${page}&size=${size}`, {
         method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers,
       });
       
       if (!response.ok) {

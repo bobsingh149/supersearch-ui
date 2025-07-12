@@ -54,6 +54,7 @@ const EcommerceHome: React.FC = () => {
   const [itemsPerPage, setItemsPerPage] = useState(12);
   const [_totalResults, setTotalResults] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -235,6 +236,10 @@ const EcommerceHome: React.FC = () => {
 
     } catch (error) {
       console.error('Error fetching products:', error);
+    } finally {
+      if (isInitialLoading) {
+        setIsInitialLoading(false);
+      }
     }
   };
 
@@ -265,24 +270,24 @@ const EcommerceHome: React.FC = () => {
 
   // Fetch products when filters change
   useEffect(() => {
-    if (!isInitialRender.current) {
-      // We want to trigger a search when the user changes filters.
-      // We'll reset to page 1 to show the most relevant results.
-      setPage(1); 
-      fetchProductsInternal(1, itemsPerPage, currentSearchQuery);
-    }
+    if (isInitialLoading) return;
+
+    // We want to trigger a search when the user changes filters.
+    // We'll reset to page 1 to show the most relevant results.
+    setPage(1);
+    fetchProductsInternal(1, itemsPerPage, currentSearchQuery);
   }, [debouncedPriceRange, category, rating, sortBy]);
 
   // Page and page size changes
   useEffect(() => {
-    if (!isInitialRender.current) {
-      if (page !== previousPage.current || itemsPerPage !== previousItemsPerPage.current) {
-        // Update URL to maintain current search query
-        updateURLWithQuery(currentSearchQuery);
-        fetchProductsInternal(page, itemsPerPage, currentSearchQuery);
-        previousPage.current = page;
-        previousItemsPerPage.current = itemsPerPage;
-      }
+    if (isInitialLoading) return;
+
+    if (page !== previousPage.current || itemsPerPage !== previousItemsPerPage.current) {
+      // Update URL to maintain current search query
+      updateURLWithQuery(currentSearchQuery);
+      fetchProductsInternal(page, itemsPerPage, currentSearchQuery);
+      previousPage.current = page;
+      previousItemsPerPage.current = itemsPerPage;
     }
   }, [page, itemsPerPage]);
 
@@ -300,9 +305,7 @@ const EcommerceHome: React.FC = () => {
   // Sync search bar with URL parameters when location changes
   useEffect(() => {
     // Skip during initial render - let the initial load effect handle it
-    if (isInitialRender.current) {
-      return;
-    }
+    if (isInitialLoading) return;
     
     // Skip if this URL change was triggered by user search to avoid loop
     if (isSearchTriggeredByUser.current) {

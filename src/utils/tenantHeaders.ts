@@ -31,7 +31,7 @@ export const getTenantTypeFromPath = (pathname: string): TenantType => {
     return 'demo_movies';
   }
   // Default to demo_movies for backward compatibility
-  return 'demo_ecommerce';
+  return 'demo_movies';
 };
 
 // Helper function to get tenant headers based on current location

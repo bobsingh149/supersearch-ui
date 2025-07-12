@@ -1439,7 +1439,7 @@ const ProductDetail: React.FC = () => {
                         </Typography>
                       </Box>
                       <List dense disablePadding>
-                        {reviewSummary.pros.map((pro, index) => (
+                        {reviewSummary.pros && Array.isArray(reviewSummary.pros) ? reviewSummary.pros.map((pro, index) => (
                           <ListItem key={index} disableGutters sx={{ py: 0.5 }}>
                             <ListItemText 
                               primary={pro}
@@ -1448,7 +1448,17 @@ const ProductDetail: React.FC = () => {
                               }}
                             />
                           </ListItem>
-                        ))}
+                        )) : (
+                          <ListItem disableGutters sx={{ py: 0.5 }}>
+                            <ListItemText 
+                              primary="No pros available"
+                              primaryTypographyProps={{
+                                variant: 'body2',
+                                sx: { fontStyle: 'italic', color: 'text.secondary' }
+                              }}
+                            />
+                          </ListItem>
+                        )}
                       </List>
                     </Paper>
                   </Grid>
@@ -1473,7 +1483,7 @@ const ProductDetail: React.FC = () => {
                         </Typography>
                       </Box>
                       <List dense disablePadding>
-                        {reviewSummary.cons.map((con, index) => (
+                        {reviewSummary.cons && Array.isArray(reviewSummary.cons) ? reviewSummary.cons.map((con, index) => (
                           <ListItem key={index} disableGutters sx={{ py: 0.5 }}>
                             <ListItemText 
                               primary={con}
@@ -1482,7 +1492,17 @@ const ProductDetail: React.FC = () => {
                               }}
                             />
                           </ListItem>
-                        ))}
+                        )) : (
+                          <ListItem disableGutters sx={{ py: 0.5 }}>
+                            <ListItemText 
+                              primary="No cons available"
+                              primaryTypographyProps={{
+                                variant: 'body2',
+                                sx: { fontStyle: 'italic', color: 'text.secondary' }
+                              }}
+                            />
+                          </ListItem>
+                        )}
                       </List>
                     </Paper>
                   </Grid>

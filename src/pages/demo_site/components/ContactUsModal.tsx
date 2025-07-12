@@ -25,7 +25,6 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ open, onClose }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [formData, setFormData] = useState({
     name: '',
-    business_email: '',
     company_name: ''
   });
 
@@ -46,7 +45,7 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ open, onClose }) => {
     } else if (error) {
       // Extract specific error message
       if (error.includes('already exists')) {
-        setErrorMessage('Lead with this email already exists');
+        setErrorMessage('Lead with this information already exists');
       } else {
         setErrorMessage(error);
       }
@@ -56,7 +55,6 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ open, onClose }) => {
   const handleClose = () => {
     setFormData({
       name: '',
-      business_email: '',
       company_name: ''
     });
     setErrorMessage(null);
@@ -79,7 +77,11 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ open, onClose }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await submitLead(formData);
+      // Submit with team@cognishop.co as the business_email
+      await submitLead({
+        ...formData,
+        business_email: 'team@cognishop.co'
+      });
     } catch (err: any) {
       // If there's an error response with a detail field
       if (err?.response?.data?.detail) {
@@ -121,7 +123,7 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ open, onClose }) => {
               Contact Us
             </Typography>
             <Typography variant="body2" sx={{ mt: 0.5, opacity: 0.9 }}>
-              Tell us about your needs and we'll get back to you
+              Tell us about your needs and we'll get back to you at team@cognishop.co
             </Typography>
           </Box>
           
@@ -144,21 +146,6 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ open, onClose }) => {
                 <TextField
                   required
                   fullWidth
-                  label="Business Email"
-                  name="business_email"
-                  type="email"
-                  value={formData.business_email}
-                  onChange={handleFormChange}
-                  variant="outlined"
-                  InputProps={{
-                    sx: { borderRadius: 1.5 }
-                  }}
-                  error={!!errorMessage && errorMessage.toLowerCase().includes('email')}
-                  helperText={errorMessage && errorMessage.toLowerCase().includes('email') ? errorMessage : ''}
-                />
-                <TextField
-                  required
-                  fullWidth
                   label="Company Name"
                   name="company_name"
                   value={formData.company_name}
@@ -169,7 +156,8 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ open, onClose }) => {
                   }}
                   error={!!errorMessage && errorMessage.toLowerCase().includes('company')}
                 />
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, mt: 2 }}>
+                
+                <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
                   <Button
                     variant="outlined"
                     onClick={handleClose}
@@ -208,7 +196,7 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ open, onClose }) => {
                   </Button>
                 </Box>
 
-                {errorMessage && !errorMessage.toLowerCase().includes('email') && (
+                {errorMessage && (
                   <Typography color="error" variant="body2" sx={{ mt: 2 }}>
                     {errorMessage}
                   </Typography>

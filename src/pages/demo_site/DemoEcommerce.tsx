@@ -62,7 +62,7 @@ const DRAWER_WIDTH = 280;
 interface FilterCondition {
   field: string;
   value: any;
-  operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in';
+  operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'array_contains_any';
 }
 
 interface FilterOptions {
@@ -183,13 +183,12 @@ const DemoEcommerce: React.FC = () => {
         });
       }
       
-      // Add genre filter - using 'in' operator to check if the genre exists in the array
+      // Add genre filter - using 'array_contains_any' operator to check if the genre exists in the array
       if (genre !== 'all') {
         filterConditions.push({
           field: 'genres',
-          // Using a partial string match approach
-          value: genre,
-          operator: 'in'
+          value: [genre],
+          operator: 'array_contains_any'
         });
       }
       
@@ -350,13 +349,12 @@ const DemoEcommerce: React.FC = () => {
       });
     }
     
-    // Add genre filter - using 'in' operator to check if the genre exists in the array
+    // Add genre filter - using 'array_contains_any' operator to check if the genre exists in the array
     if (currentGenre !== 'all') {
       filterConditions.push({
         field: 'genres',
-        // Using a partial string match approach
-        value: currentGenre,
-        operator: 'in'
+        value: [currentGenre],
+        operator: 'array_contains_any'
       });
     }
     

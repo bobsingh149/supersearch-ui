@@ -56,44 +56,4 @@ export const isRateLimitError = (error: any): boolean => {
          error?.message?.includes('429') ||
          error?.message?.toLowerCase().includes('rate limit') ||
          error?.message?.toLowerCase().includes('too many requests');
-};
-
-/**
- * Leads API handler - collects only required information for leads API
- * Does not handle rate limit errors for leads API
- */
-export interface LeadsData {
-  name: string;
-  business_email: string;
-  company_name: string;
-}
-
-export const COGNISHOP_CONTACT_EMAIL = 'team@cognishop.co';
-
-/**
- * Handle leads API submission
- */
-export const handleLeadsSubmission = async (
-  data: LeadsData,
-  submitFunction: (data: LeadsData) => Promise<void>
-) => {
-  try {
-    // Validate required fields
-    if (!data.name || !data.business_email || !data.company_name) {
-      throw new Error('All fields are required');
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(data.business_email)) {
-      throw new Error('Please enter a valid email address');
-    }
-
-    // Submit the lead data
-    await submitFunction(data);
-  } catch (error) {
-    // Re-throw the error to be handled by the calling component
-    // Note: We don't handle rate limit errors for leads API as requested
-    throw error;
-  }
 }; 

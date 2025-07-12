@@ -68,7 +68,6 @@ const EcommerceHome: React.FC = () => {
   // Add ref for EcommerceAISearchBar
   const aiSearchBarRef = useRef<AISearchBarRef>(null);
 
-  aiSearchBarRef.current?.closeAutocomplete();
 
   // Extract search query from URL if present
   const queryParams = new URLSearchParams(location.search);
@@ -249,6 +248,8 @@ const EcommerceHome: React.FC = () => {
       }
     }
   };
+
+  aiSearchBarRef.current?.closeAutocomplete();
 
   // Initial load
   useEffect(() => {

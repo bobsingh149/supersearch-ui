@@ -59,6 +59,7 @@ import EcommerceAISearchBar, { AISearchBarRef } from './components/EcommerceAISe
 import ecommerceTheme from './theme/ecommerceTheme';
 import config from '../../config';
 import { getTenantHeadersFromPath } from '../../utils/tenantHeaders';
+import { isRateLimitError } from './utils/errorHandler';
 
 // Interfaces for API responses
 interface ReviewSummaryOutput {
@@ -148,6 +149,12 @@ const ProductDetail: React.FC = () => {
       return data;
     } catch (error) {
       console.error('Error fetching reviews and summary:', error);
+      
+      // Check if it's a rate limit error
+      if (isRateLimitError(error)) {
+        throw error; // Re-throw to be handled by the calling function
+      }
+      
       throw error;
     }
   }, []);
@@ -188,17 +195,31 @@ const ProductDetail: React.FC = () => {
             setReviewSummary(reviewsData.summary);
           } else if (results[2].status === 'rejected') {
             console.error('Error fetching reviews:', results[2].reason);
+            
+            // Check if it's a rate limit error
+            if (isRateLimitError(results[2].reason)) {
+              navigate('/demo_ecommerce/rate-limit');
+              return;
+            }
+            
             setReviewsError(results[2].reason instanceof Error ? results[2].reason.message : 'Failed to fetch reviews');
           }
           
           setReviewsLoading(false);
         }
         
-      } catch (error) {
-        console.error('Error fetching product data:', error);
-        setReviewsError(error instanceof Error ? error.message : 'Failed to fetch data');
-        setReviewsLoading(false);
-      }
+              } catch (error) {
+          console.error('Error fetching product data:', error);
+          
+          // Check if it's a rate limit error and redirect
+          if (isRateLimitError(error)) {
+            navigate('/demo_ecommerce/rate-limit');
+            return; // Exit early to prevent further processing
+          }
+          
+          setReviewsError(error instanceof Error ? error.message : 'Failed to fetch data');
+          setReviewsLoading(false);
+        }
     };
 
     fetchProductData();
@@ -317,7 +338,7 @@ const ProductDetail: React.FC = () => {
         aiSearchBarRef.current.openAiChat([productId]);
       } else {
         // Open AI assistant with the selected question and product context
-        aiSearchBarRef.current.openAiChatWithMessage(question, [productId]);
+      aiSearchBarRef.current.openAiChatWithMessage(question, [productId]);
       }
     }
   };
@@ -1062,13 +1083,13 @@ const ProductDetail: React.FC = () => {
                             // Handle both string and number types
                             if (typeof sizes === 'string') {
                               return sizes.split(',').map((size: string, index: number) => (
-                                <Chip
-                                  key={index}
-                                  label={size.trim()}
-                                  variant="outlined"
-                                  size="small"
-                                  sx={{ borderRadius: 1 }}
-                                />
+                            <Chip
+                              key={index}
+                              label={size.trim()}
+                              variant="outlined"
+                              size="small"
+                              sx={{ borderRadius: 1 }}
+                            />
                               ));
                             } else if (typeof sizes === 'number') {
                               return (

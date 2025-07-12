@@ -39,6 +39,7 @@ import ContactUsModal from './components/ContactUsModal';
 import FAQModal from './components/FAQModal';
 import GlobalHeader from './components/GlobalHeader';
 import { AISearchBarRef } from './components/EcommerceAISearchBar';
+import { handleApiError, isRateLimitError } from './utils/errorHandler';
 import { 
   EcommerceCustomData, 
   EcommerceSearchResultItem, 
@@ -242,6 +243,12 @@ const EcommerceHome: React.FC = () => {
 
     } catch (error) {
       console.error('Error fetching products:', error);
+      
+      // Check if it's a rate limit error and redirect
+      if (isRateLimitError(error)) {
+        handleApiError(error, navigate);
+        return; // Exit early to prevent further processing
+      }
     } finally {
       if (isInitialLoading) {
         setIsInitialLoading(false);

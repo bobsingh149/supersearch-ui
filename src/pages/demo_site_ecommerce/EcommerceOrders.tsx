@@ -38,6 +38,7 @@ import ContactUsModal from './components/ContactUsModal';
 import { AISearchBarRef } from './components/EcommerceAISearchBar';
 import { useOrdersList} from '../../hooks/useOrdersList';
 import { useNavigate } from 'react-router-dom';
+import { handleApiError, isRateLimitError } from './utils/errorHandler';
 
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
@@ -111,7 +112,21 @@ const EcommerceOrders: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchOrders(1, 10);
+    const loadOrders = async () => {
+      try {
+        await fetchOrders(1, 10);
+      } catch (error) {
+        // Check if it's a rate limit error and redirect
+        if (isRateLimitError(error)) {
+          handleApiError(error, navigate);
+          return;
+        }
+        // Let the hook handle other errors
+        console.error('Error loading orders:', error);
+      }
+    };
+    
+    loadOrders();
   }, []);
 
   const handleExpandOrder = (orderId: string) => {
@@ -231,7 +246,15 @@ const EcommerceOrders: React.FC = () => {
               <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
                 {error}
               </Typography>
-              <Button variant="contained" onClick={() => fetchOrders(1, 10)}>
+              <Button variant="contained" onClick={async () => {
+                try {
+                  await fetchOrders(1, 10);
+                } catch (error) {
+                  if (isRateLimitError(error)) {
+                    handleApiError(error, navigate);
+                  }
+                }
+              }}>
                 Try Again
               </Button>
             </Paper>

@@ -65,11 +65,15 @@ export const useOrdersList = () => {
       return response.data;
     } catch (err) {
       if (axios.isAxiosError(err) && err.response) {
+        // Add status code to error for rate limit handling
+        const error = new Error(err.response.data.message || 'Failed to fetch orders');
+        (error as any).status = err.response.status;
         setError(err.response.data.message || 'Failed to fetch orders');
+        throw error;
       } else {
         setError('An unexpected error occurred');
+        throw err;
       }
-      throw err;
     } finally {
       setLoading(false);
     }

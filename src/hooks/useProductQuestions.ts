@@ -29,9 +29,23 @@ export const useProductQuestions = () => {
       setQuestions(response.data.questions);
       return response.data.questions;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch product questions';
-      setError(errorMessage);
-      return [];
+      let errorMessage = 'Failed to fetch product questions';
+      
+      if (axios.isAxiosError(err) && err.response) {
+        // Add status code to error for rate limit handling
+        const error = new Error(err.response.data.message || errorMessage);
+        (error as any).status = err.response.status;
+        errorMessage = err.response.data.message || errorMessage;
+        setError(errorMessage);
+        throw error;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+        setError(errorMessage);
+        throw err;
+      } else {
+        setError(errorMessage);
+        throw new Error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

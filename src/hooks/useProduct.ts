@@ -123,7 +123,9 @@ export const useProducts = () => {
       });
       
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const error = new Error(`API error: ${response.status}`);
+        (error as any).status = response.status;
+        throw error;
       }
       
       return await response.json();
@@ -166,7 +168,9 @@ export const useProductById = () => {
       );
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch product: ${response.status} ${response.statusText}`);
+        const error = new Error(`Failed to fetch product: ${response.status} ${response.statusText}`);
+        (error as any).status = response.status;
+        throw error;
       }
       
       const data = await response.json();

@@ -52,9 +52,23 @@ export const useSimilarProducts = () => {
       return response.data;
     } catch (err) {
       console.error('Error fetching similar products:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-      setError(errorMessage);
-      return [];
+      let errorMessage = 'Unknown error occurred';
+      
+      if (axios.isAxiosError(err) && err.response) {
+        // Add status code to error for rate limit handling
+        const error = new Error(err.response.data.message || 'Failed to fetch similar products');
+        (error as any).status = err.response.status;
+        errorMessage = err.response.data.message || 'Failed to fetch similar products';
+        setError(errorMessage);
+        throw error;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+        setError(errorMessage);
+        throw err;
+      } else {
+        setError(errorMessage);
+        throw new Error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

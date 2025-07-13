@@ -80,7 +80,7 @@ function App() {
             <Route path="/demo_ecommerce/*" element={<EcommerceDemoIndex />} />
             
             {/* Temporary route to direct all paths to DemoSiteIndex while protected routes are not ready */}
-            <Route path="/*" element={<Navigate to="/demo_ecommerce" replace />} />
+            {/* <Route path="/*" element={<Navigate to="/demo_ecommerce" replace />} /> */}
             
             Protected routes inside ClerkProvider - temporarily disabled 
             <Route

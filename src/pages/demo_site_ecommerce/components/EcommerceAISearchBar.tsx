@@ -314,12 +314,8 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
     debouncedFetchAutocomplete(searchQuery);
   }, [searchQuery, debouncedFetchAutocomplete]);
 
-  // Automatically perform search when initialQuery is provided
-  useEffect(() => {
-    if (initialQuery && initialQuery.trim() !== '') {
-      handleSearch();
-    }
-  }, [initialQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Note: Automatic search is handled by the parent component (EcommerceHome.tsx)
+  // to prevent cycling issues with URL management
 
   // Handle selecting an autocomplete suggestion
   const handleAutocompleteSelect = (result: AutocompleteResult) => {
@@ -349,13 +345,6 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
       handleSearch();
       setShowAutocomplete(false);
     }
-  };
-
-  // Handle mobile keyboard submit (for iOS/Android virtual keyboards)
-  const handleInputSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    handleSearch();
-    setShowAutocomplete(false);
   };
 
   // Check if user is near bottom of chat
@@ -1125,7 +1114,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
 
   // Reset state when query changes (from URL parameters when navigating)
   useEffect(() => {
-    if (initialQuery !== searchQuery && initialQuery) {
+    if (initialQuery !== searchQuery && initialQuery !== '') {
       setSearchQuery(initialQuery);
       setShowAutocomplete(false); // Close autocomplete when query changes due to navigation
     }
@@ -1176,20 +1165,19 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
         mx: 'auto',
       }}>
         <Box ref={searchInputRef}>
-          <form onSubmit={handleInputSubmit} style={{ width: '100%' }}>
-            <TextField
-              fullWidth
-              placeholder="Try AI Search - Ask anything!"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={handleSearchKeyPress}
-              onFocus={() => {
-                if (autocompleteResults.length > 0) {
-                  setShowAutocomplete(true);
-                }
-              }}
-              autoFocus={autoFocus}
-              variant="outlined"
+          <TextField
+            fullWidth
+            placeholder="Try AI Search - Ask anything!"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={handleSearchKeyPress}
+            onFocus={() => {
+              if (autocompleteResults.length > 0) {
+                setShowAutocomplete(true);
+              }
+            }}
+            autoFocus={autoFocus}
+            variant="outlined"
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
@@ -1352,7 +1340,6 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
               )
             }}
           />
-          </form>
         </Box>
 
         {/* Autocomplete dropdown */}

@@ -963,6 +963,15 @@ const DemoEcommerce: React.FC = () => {
                 ref={aiSearchBarRef}
                 autoFocus={true}
                 onSearch={() => {
+                  // Close autocomplete dropdown
+                  aiSearchBarRef.current?.closeAutocomplete();
+                  
+                  // Close keyboard on mobile (even though this is desktop search, it's good to have)
+                  const activeElement = document.activeElement as HTMLElement;
+                  if (activeElement && activeElement.blur) {
+                    activeElement.blur();
+                  }
+                  
                   // Get search query directly from the AISearchBar
                   const newQuery = aiSearchBarRef.current?.getSearchQuery() || '';
                   if (newQuery) {
@@ -1052,6 +1061,15 @@ const DemoEcommerce: React.FC = () => {
               ref={mobileSearchRef}
               autoFocus={true}
               onSearch={() => {
+                // Close autocomplete dropdown
+                mobileSearchRef.current?.closeAutocomplete();
+                
+                // Close keyboard on mobile
+                const activeElement = document.activeElement as HTMLElement;
+                if (activeElement && activeElement.blur) {
+                  activeElement.blur();
+                }
+                
                 // Get search query directly from the AISearchBar
                 const newQuery = mobileSearchRef.current?.getSearchQuery() || '';
                 if (newQuery) {

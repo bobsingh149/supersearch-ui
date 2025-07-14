@@ -1422,28 +1422,38 @@ const ProductDetail: React.FC = () => {
                   <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
                     Care Instructions
                   </Typography>
-                  <Stack spacing={1}>
-                    {product.custom_data?.material_care ? (
-                      <Typography variant="body2" color="text.secondary">
-                        {product.custom_data.material_care}
+                  {product.custom_data?.material_care ? (
+                    <Box sx={{ 
+                      color: 'text.secondary',
+                      lineHeight: 1.6,
+                      '& p': { mb: 1 },
+                      '& ul, & ol': { pl: 2, mb: 1 },
+                      '& li': { mb: 0.5 },
+                      '& strong': { fontWeight: 600 },
+                      '& em': { fontStyle: 'italic' }
+                    }}>
+                      <div 
+                        dangerouslySetInnerHTML={{ 
+                          __html: product.custom_data.material_care 
+                        }} 
+                      />
+                    </Box>
+                  ) : (
+                    <Stack spacing={1}>
+                      <Typography key="care-1" variant="body2" color="text.secondary">
+                        • Follow care label instructions
                       </Typography>
-                    ) : (
-                      <>
-                        <Typography key="care-1" variant="body2" color="text.secondary">
-                          • Follow care label instructions
-                        </Typography>
-                        <Typography key="care-2" variant="body2" color="text.secondary">
-                          • Store in a cool, dry place
-                        </Typography>
-                        <Typography key="care-3" variant="body2" color="text.secondary">
-                          • Handle with care
-                        </Typography>
-                        <Typography key="care-4" variant="body2" color="text.secondary">
-                          • Professional cleaning recommended
-                        </Typography>
-                      </>
-                    )}
-                  </Stack>
+                      <Typography key="care-2" variant="body2" color="text.secondary">
+                        • Store in a cool, dry place
+                      </Typography>
+                      <Typography key="care-3" variant="body2" color="text.secondary">
+                        • Handle with care
+                      </Typography>
+                      <Typography key="care-4" variant="body2" color="text.secondary">
+                        • Professional cleaning recommended
+                      </Typography>
+                    </Stack>
+                  )}
                 </Paper>
               </Grid>
             </Grid>

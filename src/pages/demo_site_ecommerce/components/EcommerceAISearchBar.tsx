@@ -631,9 +631,10 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
       
       try {
         // Combine passed productIds with any already in the selectedProducts state
+        // Ensure all product IDs are strings
         const allProductIds = [...new Set([
-          ...productIds,
-          ...selectedProducts.map(p => p.id)
+          ...productIds.map(id => String(id)),
+          ...selectedProducts.map(p => String(p.id))
         ])];
         
         // Create the request payload
@@ -762,9 +763,10 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
     (async () => {
       try {
         // Combine passed productIds with any already in the selectedProducts state
+        // Ensure all product IDs are strings
         const allProductIds = [...new Set([
-          ...productIds,
-          ...selectedProducts.map(p => p.id)
+          ...productIds.map(id => String(id)),
+          ...selectedProducts.map(p => String(p.id))
         ])];
         
         // Create the request payload
@@ -1025,10 +1027,11 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
           setIsChatLoading(true);
           
           // Create the request payload with all product IDs
+          // Ensure product IDs are strings
           const payload = {
             query: messageToSend,
             conversation_id: conversationId,
-            product_ids: productIds,
+            product_ids: productIds.map(id => String(id)),
             stream: isStreamMode // Use stream mode setting
           };
           

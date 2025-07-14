@@ -432,6 +432,15 @@ const EcommerceHome: React.FC = () => {
               // Close autocomplete dropdown
               aiSearchBarRef.current?.closeAutocomplete();
               
+              // Close keyboard on mobile
+              if (isMobile) {
+                // Blur any active input element to close keyboard
+                const activeElement = document.activeElement as HTMLElement;
+                if (activeElement && activeElement.blur) {
+                  activeElement.blur();
+                }
+              }
+              
               // Get search query directly from the AISearchBar
               const newQuery = aiSearchBarRef.current?.getSearchQuery() || '';
               

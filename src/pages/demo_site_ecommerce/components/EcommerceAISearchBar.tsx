@@ -1167,7 +1167,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
         <Box ref={searchInputRef}>
           <TextField
             fullWidth
-            placeholder="Try AI Search - Ask anything!"
+            placeholder="Try AI Search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleSearchKeyPress}
@@ -2088,7 +2088,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                                   maxWidth: { xs: '90%', sm: '80%' },
                                   color: 'text.primary',
                                   '& a': {
-                                    color: theme.palette.primary.main,
+                                    color: theme.palette.secondary.main,
                                     textDecoration: 'none',
                                     fontWeight: 'bold',
                                     transition: 'all 0.2s ease',
@@ -2173,10 +2173,25 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                                           
                                           {/* Price & Rating */}
                                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5 }}>
-                                            {(product.custom_data?.price || product.custom_data?.discounted_price) && (
-                                              <Typography variant="body2" fontWeight="medium" color="secondary.main">
-                                                ₹{product.custom_data?.discounted_price || product.custom_data?.price}
-                                              </Typography>
+                                            {(product.custom_data?.discounted_price || product.custom_data?.price) && (
+                                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Typography variant="body2" fontWeight="medium" color="secondary.main">
+                                                  ₹{product.custom_data?.discounted_price || product.custom_data?.price}
+                                                </Typography>
+                                                {product.custom_data?.discounted_price && product.custom_data?.price && 
+                                                 parseFloat(product.custom_data.price) > parseFloat(product.custom_data.discounted_price) && (
+                                                  <Typography 
+                                                    variant="caption" 
+                                                    sx={{ 
+                                                      textDecoration: 'line-through',
+                                                      color: 'text.disabled',
+                                                      fontSize: '0.75rem'
+                                                    }}
+                                                  >
+                                                    ₹{product.custom_data.price}
+                                                  </Typography>
+                                                )}
+                                              </Box>
                                             )}
                                             
                                             {product.custom_data?.average_rating && (
@@ -2283,13 +2298,13 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
                                                     rel="noopener noreferrer"
                                                     variant="body2"
                                                     sx={{
-                                                      color: 'primary.main',
+                                                      color: 'secondary.main',
                                                       textDecoration: 'none',
                                                       display: 'inline',
                                                       fontWeight: 'bold',
                                                       '&:hover': {
                                                         textDecoration: 'underline',
-                                                        color: 'primary.main'
+                                                        color: 'secondary.main'
                                                       }
                                                     }}
                                                   >

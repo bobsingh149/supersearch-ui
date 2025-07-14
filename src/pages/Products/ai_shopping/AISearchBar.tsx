@@ -1173,7 +1173,7 @@ const AISearchBar = forwardRef<AISearchBarRef, AISearchBarProps>(({ setData, onS
         <Box ref={searchInputRef}>
           <TextField
             fullWidth
-            placeholder="Try AI Search - Ask anything!"
+            placeholder="Try AI Search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleSearchKeyPress}

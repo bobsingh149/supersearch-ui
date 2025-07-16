@@ -559,6 +559,24 @@ const ProductDetail: React.FC = () => {
               objectFit: 'cover'
             }}
           />
+          
+          {/* Discount Badge */}
+          {product.custom_data?.discounted_price && product.custom_data?.price && 
+           parseFloat(product.custom_data.price) > parseFloat(product.custom_data.discounted_price) && (
+            <Chip
+              label={`${Math.round(((parseFloat(product.custom_data.price) - parseFloat(product.custom_data.discounted_price)) / parseFloat(product.custom_data.price)) * 100)}% OFF`}
+              size="small"
+              color="error"
+              sx={{
+                position: 'absolute',
+                top: 8,
+                left: 8,
+                fontWeight: 600,
+                fontSize: '0.65rem',
+                height: 20
+              }}
+            />
+          )}
         </Box>
         <Box sx={{ p: 2, flexGrow: 1 }}>
           <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 600, mb: 1 }}>

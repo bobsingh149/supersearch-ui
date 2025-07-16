@@ -569,6 +569,29 @@ const ProductDetail: React.FC = () => {
               {product.custom_data.brand}
             </Typography>
           )}
+          
+          {/* Price */}
+          {(product.custom_data?.discounted_price || product.custom_data?.price) && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Typography variant="body1" fontWeight="600" color="secondary.main">
+                ₹{product.custom_data?.discounted_price || product.custom_data?.price}
+              </Typography>
+              {product.custom_data?.discounted_price && product.custom_data?.price && 
+               parseFloat(product.custom_data.price) > parseFloat(product.custom_data.discounted_price) && (
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    textDecoration: 'line-through',
+                    color: 'text.disabled',
+                    fontSize: '0.75rem'
+                  }}
+                >
+                  ₹{product.custom_data.price}
+                </Typography>
+              )}
+            </Box>
+          )}
+          
           {product.custom_data?.average_rating && (
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Rating

@@ -77,7 +77,7 @@ const EcommerceHome: React.FC = () => {
   const shouldOpenContactModal = queryParams.get('contactUs') === 'true';
 
   // Filter states - adapted for ecommerce
-  const [priceRange, setPriceRange] = useState<number[]>([0, 5000]);
+  const [priceRange, setPriceRange] = useState<number[]>([0, 15000]);
   const [debouncedPriceRange, setDebouncedPriceRange] = useState<number[]>(priceRange);
   const [sortBy, setSortBy] = useState('popularity');
   const [category, setCategory] = useState('all');
@@ -137,7 +137,7 @@ const EcommerceHome: React.FC = () => {
   // Reset filters
   const resetFilters = () => {
     setCategory('all');
-    setPriceRange([0, 5000]);
+    setPriceRange([0, 15000]);
     setRating(0);
     setSortBy('popularity');
   };
@@ -159,7 +159,7 @@ const EcommerceHome: React.FC = () => {
       const filterConditions: FilterCondition[] = [];
       
       // Add price filter (using discounted_price field)
-      if (debouncedPriceRange[0] > 0 || debouncedPriceRange[1] < 5000) {
+      if (debouncedPriceRange[0] > 0 || debouncedPriceRange[1] < 15000) {
         filterConditions.push({
           field: 'discounted_price',
           value: debouncedPriceRange[0],
@@ -538,7 +538,7 @@ const EcommerceHome: React.FC = () => {
                         onChange={(_, newValue) => setPriceRange(newValue as number[])}
                         valueLabelDisplay="auto"
                         min={0}
-                        max={5000}
+                        max={15000}
                         step={50}
                         valueLabelFormat={(value) => `₹${value}`}
                         sx={{ 
@@ -678,7 +678,7 @@ const EcommerceHome: React.FC = () => {
                     onChange={(_, newValue) => setPriceRange(newValue as number[])}
                     valueLabelDisplay="auto"
                     min={0}
-                    max={5000}
+                    max={15000}
                     step={50}
                   />
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
